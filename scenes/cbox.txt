@@ -1,0 +1,58 @@
+Scene{
+    atmosphere{
+        sunDirection: [-1,12,2]
+        sunIntensity: 0.0
+    }
+}
+
+Integrator{
+    type: Path
+    maxDepth: 4
+    samplePerPixel: 32
+    filmSize: [1280,720]
+    numPhotons: 4000
+    numPhotonsEstimation: 50
+    visualizePhoton: false
+    
+    accel{
+        type: CWBVH
+    }
+}
+
+Camera{
+    type: ThinLen
+    from: [0, 1, 4]
+    to:   [0, 1, 0]
+    fov:  1.2
+    lenRadius: 0.0
+    focusDistance: 4.0
+}
+
+Light{
+    name: light0
+    type: Area
+    position:[0,1.97,0]
+    ex: [0.4,0.0,0]
+    ey: [0,0.0,0.4]
+    color: [1,1,1]
+}
+
+
+Shape{
+    name: shape1
+    type: TriangleMesh
+    file: cbox/cbox.obj
+    material: material0
+}
+
+Material{
+    name: material0
+    type: LayeredMaterial
+    layer0{
+        type: DiffuseBSDF
+        albedo{
+            type: Constant
+            vec3: [1.0,1.0,1.0]
+        }
+    }
+}
