@@ -15,5 +15,5 @@ cmake --build build
 ```
 build/pine scenes/nspheres.txt result.bmp
 ```
-which should produce something like this:  
+then you can find the result `result.bmp` in the same folder
 <img src="docs/results/nspheres.bmp" width="600"/>
