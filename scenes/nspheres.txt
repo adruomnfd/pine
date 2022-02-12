@@ -8,7 +8,7 @@ Scene{
 Integrator{
     type: Path
     maxDepth: 4
-    samplePerPixel: 1024
+    samplePerPixel: 128
     filmSize: [1280,360]
     accel{
         type: BVH
