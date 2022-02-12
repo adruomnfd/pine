@@ -11,7 +11,7 @@ cmake -Bbuild
 cmake --build build
 ```
 
-### usage:
+### example:
 ```
 build/pine scenes/nspheres.txt result.bmp
 ```
