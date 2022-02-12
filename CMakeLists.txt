@@ -4,7 +4,7 @@ project(pine LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -pthread -mfma -mavx -ffast-math -ffp-contract=fast")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -ffast-math -ffp-contract=fast")
 
 include_directories(
     ./
@@ -41,6 +41,9 @@ src/impl/accel/cwbvh.cpp
 )
 
 set_target_properties(pinelib PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if(UNIX)
+target_link_libraries(pinelib pthread)
+endif()
 
 #Pine CommandLine
 add_executable(pine src/cmd/main.cpp)

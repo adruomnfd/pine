@@ -41,7 +41,7 @@ Integrator::Integrator(const Parameters& parameters) {
     film = Image(filmSize);
     aovs["result"] = {film.Data(), filmSize};
 
-    pr = ProgressReporter("Rendering", "Sample", samplePerPixel, filmSize.x * filmSize.y);
+    pr = ProgressReporter("Rendering", "Samples", samplePerPixel, filmSize.x * filmSize.y);
 }
 void Integrator::Initialize(const Scene* scene) {
     Profiler _("IntegratorInit");

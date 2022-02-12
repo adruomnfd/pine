@@ -80,8 +80,8 @@ Node* Node::Create(const Parameters& params) {
         return new nodes::Tan(Create(params["input"]));
     } else if (type == "Fract") {
         return new nodes::Fract(Create(params["input"]));
-    } else if (type == "Checkboard") {
-        return new nodes::Checkboard(Create(params["input"]), Create(params["frequency"]));
+    } else if (type == "Checkerboard") {
+        return new nodes::Checkerboard(Create(params["input"]), Create(params["frequency"]));
     } else if (type == "Noise") {
         return new nodes::Noise(Create(params["input"]), Create(params["frequency"]),
                                 Create(params["octaves"]));

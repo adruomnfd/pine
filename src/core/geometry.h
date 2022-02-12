@@ -48,8 +48,8 @@ struct Interaction {
         Ray ray;
         ray.o = p;
         ray.d = Normalize(p2 - p, ray.tmax);
-        ray.tmax *= 1.0f - 1e-4f;
-        ray.tmin = 1e-4f;
+        ray.tmin = ray.tmax * 1e-3f;
+        ray.tmax *= 1.0f - 1e-3f;
         ray.medium = GetMedium(ray.d);
         return ray;
     }
@@ -72,6 +72,7 @@ struct Interaction {
     MediumInterface mediumInterface;
     PhaseFunction phaseFunction;
     bool isMediumInteraction = false;
+    float pdf = 0.0f;
     float bvh = 0.0f;
 };
 
@@ -230,8 +231,7 @@ struct Sphere {
 struct Triangle {
     static Triangle Create(const Parameters& params);
     Triangle() = default;
-    Triangle(vec3 v0, vec3 v1, vec3 v2) : v0(v0), v1(v1), v2(v2) {
-    };
+    Triangle(vec3 v0, vec3 v1, vec3 v2) : v0(v0), v1(v1), v2(v2){};
 
     bool Hit(const Ray& ray) const {
         return Hit(ray, v0, v1, v2);
@@ -282,36 +282,6 @@ struct Triangle {
             return false;
         ray.tmax = t;
         it.uv = vec2(u, v);
-        return true;
-    }
-
-    static inline bool Hit(const Ray& ray, vec3 v0, vec3 crossE1E2, vec3 crossE2N, vec3 crossNE1,
-                    float invDet) {
-        float co = Dot(crossE1E2, ray.o - v0);
-        float cd = Dot(crossE1E2, ray.d);
-        float t = -co / cd;
-        if (t <= ray.tmin || t >= ray.tmax)
-            return false;
-        vec3 p = ray(t) - v0;
-        float u = Dot(p, crossE2N) * invDet;
-        float v = Dot(p, crossNE1) * invDet;
-        return u < 0.0f && v >= 0.0f && u <= 1.0f && v <= 1.0f;
-    }
-    static inline bool Intersect(Ray& ray, Interaction& it, vec3 v0, vec3 crossE1E2, vec3 crossE2N,
-                          vec3 crossNE1, float invDet) {
-        float co = Dot(crossE1E2, ray.o - v0);
-        float cd = Dot(crossE1E2, ray.d);
-        float t = -co / cd;
-        if (t <= ray.tmin || t >= ray.tmax)
-            return false;
-        vec3 p = ray(t) - v0;
-        float u = Dot(p, crossE2N) * invDet;
-        float v = Dot(p, crossNE1) * invDet;
-        if (u < 0.0f || v < 0.0f || u > 1.0f || v > 1.0f)
-            return false;
-        it.uv.x = u;
-        it.uv.y = v;
-        ray.tmax = t;
         return true;
     }
 

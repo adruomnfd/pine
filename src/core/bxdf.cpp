@@ -13,6 +13,7 @@ BSDFSample DiffuseBSDF::Sample(vec3 wi, float, vec2 u, NodeEvalContext nc) const
     vec3 wo = CosineWeightedSampling(u);
     if (CosTheta(wi) < 0)
         wo *= -1;
+    DCHECK(SameHemisphere(wi, wo));
 
     bs.wo = wo;
     bs.pdf = AbsCosTheta(bs.wo) / Pi;
@@ -27,7 +28,7 @@ vec3 DiffuseBSDF::F(vec3 wi, vec3 wo, NodeEvalContext nc) const {
 }
 float DiffuseBSDF::PDF(vec3 wi, vec3 wo, NodeEvalContext) const {
     if (!SameHemisphere(wi, wo))
-        return 0.0f;
+        return Epsilon;
     return AbsCosTheta(wo) / Pi;
 }
 

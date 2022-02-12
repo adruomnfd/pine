@@ -301,9 +301,9 @@ struct Fract : Node {
     NodeInput input;
 };
 
-struct Checkboard : Node {
-    Checkboard() = default;
-    Checkboard(NodeInput input, NodeInput frequency) : input(input), frequency(frequency) {
+struct Checkerboard : Node {
+    Checkerboard() = default;
+    Checkerboard(NodeInput input, NodeInput frequency) : input(input), frequency(frequency) {
     }
 
     float EvalFloat(NodeEvalContext c) const override {

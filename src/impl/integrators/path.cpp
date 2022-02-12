@@ -1,4 +1,5 @@
 #include <impl/integrators/path.h>
+#include <core/scene.h>
 #include <core/color.h>
 #include <util/parameters.h>
 
@@ -6,11 +7,13 @@ namespace pine {
 
 PathIntegrator::PathIntegrator(const Parameters& parameters) : PixelSampleIntegrator(parameters) {
     maxDepth = parameters.GetInt("maxDepth", 4);
+    clamp = parameters.GetFloat("clamp", FloatMax);
 }
 vec3 PathIntegrator::Li(Ray ray, RNG& rng) {
     SampledProfiler _(ProfilePhase::EstimateLi);
     vec3 L(0.0f);
     vec3 beta(1.0f);
+    float bsdfPDF;
 
     for (int depth = 0; depth < maxDepth; depth++) {
         Interaction it;
@@ -53,8 +56,12 @@ vec3 PathIntegrator::Li(Ray ray, RNG& rng) {
         // Accounting for visible emssive surface
         vec3 le = it.material.Le(mc);
         if (le != vec3(0.0f)) {
-            if (depth == 0)
+            if (depth == 0) {
                 L += beta * le;
+            } else {
+                float lightPdf = it.pdf / scene->lights.size();
+                L += beta * le * PowerHeuristic(1, bsdfPDF, 1, lightPdf);
+            }
             break;
         }
 
@@ -69,10 +76,13 @@ vec3 PathIntegrator::Li(Ray ray, RNG& rng) {
         if (bs.wo == vec3(0.0f))
             break;
         beta *= AbsDot(bs.wo, it.n) * bs.f / bs.pdf;
-        ray = it.SpawnRay(bs.wo);
+        bsdfPDF = bs.pdf;
+        Ray next = it.SpawnRay(bs.wo);
+        next.tmin *= ray.tmax;
+        ray = next;
     }
 
-    return L;
+    return Clamp(L, vec3(0), vec3(clamp));
 }
 
 }  // namespace pine

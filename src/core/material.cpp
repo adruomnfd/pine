@@ -13,7 +13,7 @@ BSDFSample LayeredMaterial::Sample(MaterialEvalContext c) const {
     BSDFSample bs;
     for (auto bsdf : bsdfs) {
         bs = bsdf.Sample(c.wi, c.u1, c.u2, c);
-        if (CosTheta(bs.wo) > 0.0f)
+        if (SameHemisphere(c.wi, bs.wo))
             break;
     }
 
@@ -41,7 +41,7 @@ LayeredMaterial::LayeredMaterial(const Parameters& params) {
     }
 
     std::sort(layers.begin(), layers.end(),
-              [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
+              [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
 
     for (auto& layer : layers) {
         bsdfs.push_back(BSDF::Create(layer.second));

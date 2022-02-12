@@ -41,6 +41,11 @@ inline vec3 UniformHemisphereSampling(vec2 u) {
 inline float BalanceHeuristic(int nF, float pF, int nG, float pG) {
     return nF * pF / (nF * pF + nG * pG);
 }
+inline float PowerHeuristic(int nF, float pF, int nG, float pG) {
+    float f = nF * pF;
+    float g = nG * pG;
+    return Sqr(f) / (Sqr(f) + Sqr(g));
+}
 
 }  // namespace pine
 

@@ -186,6 +186,7 @@ bool Rect::Intersect(Ray& ray, Interaction& it) const {
     it.p = p;
     it.n = n;
     it.uv = vec2(u, v);
+    it.pdf = 1.0f / (lx * ly);
     return true;
 }
 AABB Rect::GetAABB() const {

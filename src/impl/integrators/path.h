@@ -10,6 +10,7 @@ struct PathIntegrator : PixelSampleIntegrator {
     virtual vec3 Li(Ray ray, RNG& rng);
     
     int maxDepth;
+    float clamp;
 };
 
 }  // namespace pine
