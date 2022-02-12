@@ -78,7 +78,7 @@ Parameters ParseBlock(std::string_view block, size_t& recursiveBlockEnd) {
 
 Parameters Parse(std::string_view raw) {
     Profiler _("Parse");
-    LOG_VERBOSE("[FileIO]Parse parameters");
+    LOG_VERBOSE("[FileIO]Parsing parameters");
     Timer timer;
 
     Parameters parameters;

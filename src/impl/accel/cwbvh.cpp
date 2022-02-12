@@ -891,10 +891,8 @@ bool CWBVH::Intersect(Ray& ray, Interaction& it) const {
 
     vec3 invdir = SafeRcp(ray.d);
     int octant = 0;
-#pragma unroll
     for (int b = 0; b < 3; b++)
-        if (invdir[b] < 0)
-            octant |= 1 << b;
+        octant |= (invdir[b] < 0) << b;
     uint64_t octinv8 = (7 - octant) * 0x0101010101010101;
     const bool octl[3] = {std::signbit(ray.d[0]), std::signbit(ray.d[1]), std::signbit(ray.d[2])};
     const bool octh[3] = {!octl[0], !octl[1], !octl[2]};

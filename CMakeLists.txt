@@ -40,9 +40,6 @@ src/impl/accel/bvh.cpp
 src/impl/accel/cwbvh.cpp
 )
 
-add_subdirectory(ext/llc)
-target_link_libraries(pinelib llc)
-
 set_target_properties(pinelib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 #Pine CommandLine

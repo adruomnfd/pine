@@ -15,7 +15,7 @@ Integrator{
     visualizePhoton: false
     
     accel{
-        type: CWBVH
+        type: BVH
     }
 }
 
