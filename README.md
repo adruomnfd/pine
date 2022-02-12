@@ -1,6 +1,6 @@
 ## work-in-progress
 
-### clone repo:
+### clone the repo:
 ```
 git clone --recursive https://github.com/adruomnfd/pine
 ```
