@@ -8,7 +8,7 @@
 namespace pine {
 
 void BVH::Initialize(const TriangleMesh* mesh) {
-    Profiler _("BVHBuild");
+    Profiler _("BuildBVH");
     LOG_VERBOSE("[BVH]Building BVH");
     Timer timer;
 
@@ -24,9 +24,9 @@ void BVH::Initialize(const TriangleMesh* mesh) {
 
     nodes.reserve(primitives.size());
     // BuildSAHBinned(primitives.data(), primitives.data() + primitives.size(), aabb);
-    // BuildSAHFull(primitives.data(), primitives.data() + primitives.size(), aabb);
-    BuildSpatialSplit(primitives.data(), primitives.data() + primitives.size(), aabb,
-                      aabb.SurfaceArea());
+    BuildSAHFull(primitives.data(), primitives.data() + primitives.size(), aabb);
+    // BuildSpatialSplit(primitives.data(), primitives.data() + primitives.size(), aabb,
+    //                   aabb.SurfaceArea());
     rootIndex = (int)nodes.size() - 1;
     // Optimize();
 
@@ -321,7 +321,7 @@ int BVH::BuildSpatialSplit(Primitive* begin, Primitive* end, AABB aabb, float SA
         int exits = 0;
         AABB aabb;
     };
-    const int nBins = 64;
+    const int nBins = 16;
     const int nSplits = nBins - 1;
     const vec3 binSize = aabb.Diagonal() / nBins;
 
@@ -432,6 +432,8 @@ int BVH::BuildSpatialSplit(Primitive* begin, Primitive* end, AABB aabb, float SA
     {  // Spatial splitting
         int axis = aabbCentroid.MaxDim();
         // for (int axis = 0; axis < 3; axis++) {
+        //     if (!aabbCentroid.IsValid(axis))
+        //         continue;
         Bin spatialBins[nBins];
         for (int i = 0; i < numPrimitives; i++) {
             struct Line {
@@ -450,8 +452,6 @@ int BVH::BuildSpatialSplit(Primitive* begin, Primitive* end, AABB aabb, float SA
             };
             int triangleLeftBin = std::floor(aabb.Offset(begin[i].aabb.lower[axis], axis) * nBins);
             int triangleRightBin = std::floor(aabb.Offset(begin[i].aabb.upper[axis], axis) * nBins);
-            CHECK_GE(begin[i].aabb.upper[axis], begin[i].aabb.lower[axis]);
-            CHECK_GE(triangleRightBin, triangleLeftBin);
             triangleLeftBin = Clamp(triangleLeftBin, 0, nBins - 1);
             triangleRightBin = Clamp(triangleRightBin, 0, nBins - 1);
             spatialBins[triangleLeftBin].entries++;
@@ -501,8 +501,8 @@ int BVH::BuildSpatialSplit(Primitive* begin, Primitive* end, AABB aabb, float SA
                 spatialSplitBestAxis = axis;
             }
         }
-        // }
     }
+    // }
 
     float leafCost = numPrimitives;
     float lambda = SAintersection / SAroot;
@@ -525,14 +525,11 @@ int BVH::BuildSpatialSplit(Primitive* begin, Primitive* end, AABB aabb, float SA
             primRight.push_back(*prim);
     }
 
-    bool vaildSplitting = primLeft.size() && primRight.size() &&
+    bool validSplitting = primLeft.size() && primRight.size() &&
                           (int)primLeft.size() != numPrimitives &&
                           (int)primRight.size() != numPrimitives;
 
-    if (spatialMinCost < objectMinCost && lambda > 1e-5f && vaildSplitting) {
-        CHECK_NE(primLeft.size(), 0);
-        CHECK_NE(primRight.size(), 0);
-
+    if (spatialMinCost < objectMinCost && lambda > 1e-5f && validSplitting) {
         for (auto& p : primLeft) {
             p.aabb.upper[spatialSplitBestAxis] =
                 std::min(p.aabb.upper[spatialSplitBestAxis], spatialSplitPos);
@@ -595,7 +592,6 @@ struct Pair {
     int index = -1;
     float inefficiency;
 };
-
 void BVH::Optimize() {
     auto FindNodeForReinsertion = [&](int nodeIndex) {
         float eps = 1e-20f;

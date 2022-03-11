@@ -40,7 +40,7 @@ LightSample AreaLight::Sample(vec3 p, float, vec2 u2) const {
     LightSample ls;
     ls.p = position + (u2[0] - 0.5f) * ex + (u2[1] - 0.5f) * ey;
     ls.wo = Normalize(ls.p - p, ls.distance);
-    ls.pdf = Sqr(ls.distance) / AbsDot(ls.wo, n);
+    ls.pdf = Sqr(ls.distance) / AbsDot(ls.wo, n) / area;
     ls.Le = color;
     ls.isDelta = false;
     return ls;

@@ -20,7 +20,7 @@ void Profiler::ReportStat() {
 
     LOG("#structured:");
     auto ReportRecord = [](auto& me, Record record, size_t indent, double totalTime) -> void {
-        if (record.time / totalTime < 0.005f)
+        if (totalTime != 0.0f && record.time / totalTime < 0.005f)
             return;
         if (record.name != "") {
             LOG("& &< &9 calls &10.1 ms    &3.2 %", Format(indent), "", Format(40 - indent),

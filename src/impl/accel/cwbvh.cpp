@@ -34,7 +34,7 @@ void CWBVH::Initialize(const TriangleMesh* mesh) {
     }
 
     LOG_VERBOSE_SAMELINE("[CWBVH]Optimizing nodes");
-    ReinsertOptimization();
+    ReinsertionOptimization();
     LOG_VERBOSE_SAMELINE("[CWBVH]Optimizing nodes           (&.1 ms)\n", timer.Reset());
 
     LOG_VERBOSE_SAMELINE("[CWBVH]Computing optimal SAH cost");
@@ -443,7 +443,7 @@ struct Pair {
     int index = -1;
     float inefficiency;
 };
-void CWBVH::ReinsertOptimization() {
+void CWBVH::ReinsertionOptimization() {
     auto FindNodeForReinsertion = [&](int nodeIndex) {
         float eps = 1e-20f;
         float costBest = FloatMax;
@@ -837,44 +837,36 @@ void CWBVH::Node8Compressed::SetChildAABB(int index, AABB b) {
     }
 }
 
-static inline uint64_t sign_extend_s8x8(uint64_t v) {
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    return v;
+static inline uint64_t sign_extend_s8x8(uint64_t x) {
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    return x;
 }
-static inline int highest_set_bit(uint32_t v) {
-    int i = 0;
-    v >>= 1;
-    while (v) {
-        i++;
-        v >>= 1;
-    }
-    return i;
+static inline int highest_set_bit(uint32_t x) {
+    union {
+        float f;
+        uint32_t i;
+    };
+    f = (float)x;
+
+    return (0xff & (i >> 23)) - 127;
 }
-static inline int popc(uint32_t v) {
-    v = v - ((v >> 1) & 0x55555555);
-    v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-    v = (v + (v >> 4)) & 0x0f0f0f0f;
-    return (v * 0x01010101) >> 24;
-    // int b = 0;
-    // while (v) {
-    //     if (1u & v) {
-    //         b++;
-    //     }
-    //     v >>= 1;
-    // }
-    // return b;
+static inline int popc(uint32_t x) {
+    x = x - ((x >> 1) & 0x55555555);
+    x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+    x = (x + (x >> 4)) & 0x0f0f0f0f;
+    return (x * 0x01010101) >> 24;
 }
-static inline uint64_t extract_byte(uint64_t v, int n) {
-    return (v >> (n * 8)) & 0xff;
+static inline uint64_t extract_byte(uint64_t x, int n) {
+    return (x >> (n << 3)) & 0xff;
 }
 static inline float exp2i8(int8_t e) {
     union {
         float f;
-        uint32_t u = 0;
+        uint32_t i = 0;
     };
-    u |= (e + 127) << 23;
+    i |= (e + 127) << 23;
     return f;
 }
 

@@ -56,6 +56,7 @@ PhotonMap::Neighbors PhotonMap::SearchNeighbors(vec3 position, uint32_t numNeigh
 
     Neighbors collection;
     collection.neighbors.resize(queue.size());
+
     for (auto& neighbor : collection.neighbors) {
         neighbor = queue.top();
         collection.maxDistance = std::max(collection.maxDistance, neighbor.distance);

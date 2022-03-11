@@ -6,12 +6,12 @@ Scene{
 }
 
 Integrator{
-    type: Path
+    type: Photon
     maxDepth: 4
-    samplePerPixel: 32
-    filmSize: [1280,720]
-    numPhotons: 4000
-    numPhotonsEstimation: 50
+    samplePerPixel: 8
+    filmSize: [720,480]
+    numPhotons: 10000
+    numPhotonsEstimation: 100
     visualizePhoton: false
     
     accel{
@@ -30,7 +30,7 @@ Camera{
 
 Light{
     name: light0
-    type: Area
+    type: Point
     position:[0,1.97,0]
     ex: [0.4,0.0,0]
     ey: [0,0.0,0.4]

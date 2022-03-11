@@ -156,7 +156,7 @@ class CWBVH : public Accel {
     void BuildBinnedBVH(const TriangleMesh* mesh);
     void BuildSweepSahBVH(const TriangleMesh* mesh);
 
-    void ReinsertOptimization();
+    void ReinsertionOptimization();
 
     bool Hit(Ray ray) const override;
     bool Intersect(Ray& ray, Interaction& it) const override;

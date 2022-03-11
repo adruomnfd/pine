@@ -45,7 +45,12 @@ struct DirectionalLight {
 struct AreaLight {
     static AreaLight Create(const Parameters& params);
     AreaLight(vec3 position, vec3 ex, vec3 ey, vec3 color)
-        : position(position), ex(ex), ey(ey), n(Normalize(Cross(ex, ey))), color(color){};
+        : position(position),
+          ex(ex),
+          ey(ey),
+          n(Normalize(Cross(ex, ey))),
+          area(Length(Cross(ex, ey))),
+          color(color){};
 
     LightSample Sample(vec3 p, float u1, vec2 u2) const;
     LightEmissionSample SampleEmission(float u1, vec2 up, vec2 ud) const;
@@ -54,6 +59,7 @@ struct AreaLight {
     vec3 ex;
     vec3 ey;
     vec3 n;
+    float area;
     vec3 color;
 };
 

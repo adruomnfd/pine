@@ -59,8 +59,8 @@ vec3 PathIntegrator::Li(Ray ray, RNG& rng) {
             if (depth == 0) {
                 L += beta * le;
             } else {
-                float lightPdf = it.pdf / scene->lights.size();
-                L += beta * le * PowerHeuristic(1, bsdfPDF, 1, lightPdf);
+                // float lightPdf = it.pdf / scene->lights.size();
+                // L += beta * le * PowerHeuristic(1, bsdfPDF, 1, lightPdf);
             }
             break;
         }
