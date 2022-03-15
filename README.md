@@ -1,10 +1,5 @@
 ## work-in-progress
 
-### clone the repo:
-```
-git clone --recursive https://github.com/adruomnfd/pine
-```
-
 ### build with CMake:
 ```
 cmake -Bbuild
