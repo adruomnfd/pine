@@ -844,6 +844,8 @@ static inline uint64_t sign_extend_s8x8(uint64_t x) {
     return x;
 }
 static inline int highest_set_bit(uint32_t x) {
+    // return 31 - __builtin_clz(x);
+
     union {
         float f;
         uint32_t i;
@@ -853,6 +855,8 @@ static inline int highest_set_bit(uint32_t x) {
     return (0xff & (i >> 23)) - 127;
 }
 static inline int popc(uint32_t x) {
+    // return __builtin_popcount(x);
+
     x = x - ((x >> 1) & 0x55555555);
     x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
     x = (x + (x >> 4)) & 0x0f0f0f0f;
@@ -903,8 +907,8 @@ bool CWBVH::Intersect(Ray& ray, Interaction& it) const {
         float tmax1 = node.qlohi[1][octh[1]][nodeIndex] * dir[1] + org[1];
         float tmin2 = node.qlohi[2][octl[2]][nodeIndex] * dir[2] + org[2];
         float tmax2 = node.qlohi[2][octh[2]][nodeIndex] * dir[2] + org[2];
-        return fmaxf(fmaxf(fmaxf(tmin, tmin0), tmin1), tmin2) <=
-               fminf(fminf(fminf(tmax, tmax0), tmax1), tmax2);
+        return max(max(max(tmin, tmin0), tmin1), tmin2) <=
+               min(min(min(tmax, tmax0), tmax1), tmax2);
     };
     auto GetClosestNode = [&](uint64_t& G) {
         int bit_index = highest_set_bit(G & 0xff000000);

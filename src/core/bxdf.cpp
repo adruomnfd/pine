@@ -164,15 +164,14 @@ float DielectricBSDF::PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const {
 
 BSDF BSDF::Create(const Parameters& params) {
     std::string type = params.GetString("type");
-    if (type == "DiffuseBSDF") {
-        return new DiffuseBSDF(params);
-    } else if (type == "DielectricBSDF") {
-        return new DielectricBSDF(params);
-    } else if (type == "ConductorBSDF") {
-        return new ConductorBSDF(params);
-    } else {
-        LOG_WARNING("[BSDF][Create]Unknown type \"&\"", type);
-        return new DiffuseBSDF(params);
+    SWITCH(type) {
+        CASE("Diffuse") return new DiffuseBSDF(params);
+        CASE("Dielectric") return new DielectricBSDF(params);
+        CASE("Conductor") return new ConductorBSDF(params);
+        DEFAULT {
+            LOG_WARNING("[BSDF][Create]Unknown type \"&\"", type);
+            return new DiffuseBSDF(params);
+        }
     }
 }
 

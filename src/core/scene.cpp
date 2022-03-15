@@ -8,11 +8,11 @@ void Scene::Initialize() {
 
     int lightId = 0;
     for (Light light : lights) {
-        if (light.Tag() == Light::type::Index<AreaLight>()) {
+        if (light.Tag() == Light::types::Index<AreaLight>()) {
             AreaLight* areaLight = (AreaLight*)light.Ptr();
             Parameters materialParams;
             std::string materialName = "areaLightMaterial" + ToString(lightId++);
-            materialParams.Set("type", "EmissiveMaterial");
+            materialParams.Set("type", "Emissive");
             materialParams["color"].Set("type", "Constant");
             materialParams["color"].Set("vec3", areaLight->color);
             materials[materialName] = Material::Create(materialParams);

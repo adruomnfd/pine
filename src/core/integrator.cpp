@@ -21,17 +21,15 @@ AOV Integrator::GetAOV(std::string name) {
 }
 std::shared_ptr<Integrator> Integrator::Create(const Parameters& parameters) {
     std::string type = parameters.GetString("type");
-    if (type == "AO") {
-        return std::make_shared<AOIntegrator>(parameters);
-    } else if (type == "Path") {
-        return std::make_shared<PathIntegrator>(parameters);
-    } else if (type == "BvhViz") {
-        return std::make_shared<BvhVizIntegrator>(parameters);
-    } else if (type == "Photon") {
-        return std::make_shared<PhotonIntegrator>(parameters);
-    } else {
-        LOG_WARNING("[Integrator][Create]Unknown type \"&\"", type);
-        return std::make_shared<AOIntegrator>(parameters);
+    SWITCH(type) {
+        CASE("AO") return std::make_shared<AOIntegrator>(parameters);
+        CASE("Path") return std::make_shared<PathIntegrator>(parameters);
+        CASE("BvhViz") return std::make_shared<BvhVizIntegrator>(parameters);
+        CASE("Photon") return std::make_shared<PhotonIntegrator>(parameters);
+        DEFAULT {
+            LOG_WARNING("[Integrator][Create]Unknown type \"&\"", type);
+            return std::make_shared<AOIntegrator>(parameters);
+        }
     }
 }
 Integrator::Integrator(const Parameters& parameters) {

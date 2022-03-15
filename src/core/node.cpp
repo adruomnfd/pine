@@ -40,62 +40,64 @@ vec3 nodes::Texture::EvalVec3(NodeEvalContext c) const {
 
 Node* Node::Create(const Parameters& params) {
     std::string type = params.GetString("type");
-    if (type == "Constant") {
+    SWITCH(type) {
+        CASE("Constant")
         return new nodes::Constant(params.GetFloat("float"), params.GetVec3("vec3"));
-    } else if (type == "Position") {
+        CASE("Position")
         return new nodes::Position();
-    } else if (type == "Normal") {
+        CASE("Normal")
         return new nodes::Normal();
-    } else if (type == "TexCoord") {
+        CASE("TexCoord")
         return new nodes::TexCoord();
-    } else if (type == "Decompose") {
+        CASE("Decompose")
         return new nodes::Decompose(Create(params["input"]), params.GetInt("dimension"));
-    } else if (type == "Composite") {
+        CASE("Composite")
         return new nodes::Composite(Create(params["inputX"]), Create(params["inputY"]),
                                     Create(params["inputZ"]));
-    } else if (type == "Add") {
+        CASE("Add")
         return new nodes::Add(Create(params["input"]), Create(params["factor"]));
-    } else if (type == "Substract") {
+        CASE("Substract")
         return new nodes::Substract(Create(params["input"]), Create(params["factor"]));
-    } else if (type == "Multiply") {
+        CASE("Multiply")
         return new nodes::Multiply(Create(params["input"]), Create(params["factor"]));
-    } else if (type == "Divide") {
+        CASE("Divide")
         return new nodes::Divide(Create(params["input"]), Create(params["factor"]));
-    } else if (type == "MultiplyAdd") {
+        CASE("MultiplyAdd")
         return new nodes::MultiplyAdd(Create(params["input"]), Create(params["mulFactor"]),
                                       Create(params["addFactor"]));
-    } else if (type == "Length") {
+        CASE("Length")
         return new nodes::Length(Create(params["input"]));
-    } else if (type == "Sqr") {
+        CASE("Sqr")
         return new nodes::Sqr(Create(params["input"]));
-    } else if (type == "Sqrt") {
+        CASE("Sqrt")
         return new nodes::Sqrt(Create(params["input"]));
-    } else if (type == "Pow") {
+        CASE("Pow")
         return new nodes::Pow(Create(params["input"]), Create(params["power"]));
-    } else if (type == "Sin") {
+        CASE("Sin")
         return new nodes::Sin(Create(params["input"]));
-    } else if (type == "Cos") {
+        CASE("Cos")
         return new nodes::Cos(Create(params["input"]));
-    } else if (type == "Tan") {
+        CASE("Tan")
         return new nodes::Tan(Create(params["input"]));
-    } else if (type == "Fract") {
+        CASE("Fract")
         return new nodes::Fract(Create(params["input"]));
-    } else if (type == "Checkerboard") {
+        CASE("Checkerboard")
         return new nodes::Checkerboard(Create(params["input"]), Create(params["frequency"]));
-    } else if (type == "Noise") {
+        CASE("Noise")
         return new nodes::Noise(Create(params["input"]), Create(params["frequency"]),
                                 Create(params["octaves"]));
-    } else if (type == "Noise3D") {
+        CASE("Noise3D")
         return new nodes::Noise3D(Create(params["input"]), Create(params["frequency"]),
                                   Create(params["octaves"]));
-    } else if (type == "Texture") {
+        CASE("Texture")
         return new nodes::Texture(Create(params["texcoord"]), params.GetString("filename"));
-    } else if (type == "Invert") {
+        CASE("Invert")
         return new nodes::Invert(Create(params["input"]));
-    } else {
-        LOG_WARNING("[NodeInput][Create]Unknown type \"&\"", type);
-        return new nodes::Constant(params.GetFloat("float", 0.5f),
-                                   params.GetVec3("vec3", vec3(0.5f)));
+        DEFAULT {
+            LOG_WARNING("[NodeInput][Create]Unknown type \"&\"", type);
+            return new nodes::Constant(params.GetFloat("float", 0.5f),
+                                       params.GetVec3("vec3", vec3(0.5f)));
+        }
     }
 }
 

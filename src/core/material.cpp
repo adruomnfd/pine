@@ -110,13 +110,13 @@ vec3 Material::Le(MaterialEvalContext c) const {
 
 Material Material::Create(const Parameters& params) {
     std::string type = params.GetString("type");
-    if (type == "LayeredMaterial") {
-        return new LayeredMaterial(params);
-    } else if (type == "EmissiveMaterial") {
-        return new EmissiveMaterial(params);
-    } else {
-        LOG_WARNING("[Material][Create]Unknown type \"&\"", type);
-        return new LayeredMaterial(params);
+    SWITCH(type) {
+        CASE("Layered") return new LayeredMaterial(params);
+        CASE("Emissive") return new EmissiveMaterial(params);
+        DEFAULT {
+            LOG_WARNING("[Material][Create]Unknown type \"&\"", type);
+            return new LayeredMaterial(params);
+        }
     }
 }
 

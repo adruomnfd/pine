@@ -15,7 +15,7 @@ inline float AbsCosTheta(vec3 w) {
     return fabsf(w.z);
 }
 inline float Sin2Theta(vec3 w) {
-    return fmaxf(1.0f - Cos2Theta(w), 0.0f);
+    return max(1.0f - Cos2Theta(w), 0.0f);
 }
 inline float SinTheta(vec3 w) {
     return sqrtf(Sin2Theta(w));
@@ -53,7 +53,7 @@ inline bool Refract(vec3 wi, vec3 n, float eta, vec3& wt, float* etap = nullptr)
         n = -n;
     }
 
-    float sin2ThetaI = fmaxf(0.0f, 1.0f - Sqr(cosThetaI));
+    float sin2ThetaI = max(0.0f, 1.0f - Sqr(cosThetaI));
     float sin2ThetaT = sin2ThetaI / Sqr(eta);
     if (sin2ThetaT >= 1)
         return false;

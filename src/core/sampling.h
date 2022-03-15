@@ -26,7 +26,7 @@ inline vec2 SampleDiskConcentric(vec2 u) {
 
 inline vec3 CosineWeightedSampling(vec2 u) {
     vec2 d = SampleDiskConcentric(u);
-    float z = sqrtf(fmaxf(1.0f - d.x * d.x - d.y * d.y, 0.0f));
+    float z = sqrtf(max(1.0f - d.x * d.x - d.y * d.y, 0.0f));
     return vec3(d.x, d.y, z);
 }
 

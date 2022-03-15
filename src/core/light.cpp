@@ -93,16 +93,15 @@ MeshLight MeshLight::Create(const Parameters&, const Scene*) {
 
 Light Light::Create(const Parameters& params, const Scene* scene) {
     std::string type = params.GetString("type");
-    if (type == "Point") {
-        return new PointLight(PointLight::Create(params));
-    } else if (type == "Directional") {
-        return new DirectionalLight(DirectionalLight::Create(params));
-    } else if (type == "Area") {
-        return new AreaLight(AreaLight::Create(params));
-    } else if (type == "Mesh") {
-        return new MeshLight(MeshLight::Create(params, scene));
-    } else {
-        return new PointLight(PointLight::Create(params));
+    SWITCH(type) {
+        CASE("Point") return new PointLight(PointLight::Create(params));
+        CASE("Directional") return new DirectionalLight(DirectionalLight::Create(params));
+        CASE("Area") return new AreaLight(AreaLight::Create(params));
+        CASE("Mesh") return new MeshLight(MeshLight::Create(params, scene));
+        DEFAULT {
+            LOG_WARNING("[Light][Create]Unknown type \"&\"", type);
+            return new PointLight(PointLight::Create(params));
+        }
     }
 }
 

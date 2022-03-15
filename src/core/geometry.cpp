@@ -198,6 +198,19 @@ AABB Rect::GetAABB() const {
     return aabb;
 }
 
+bool Cylinder::Hit(Ray ray) const {
+    (void)ray;
+    return false;
+}
+bool Cylinder::Intersect(Ray& ray, Interaction& it) const {
+    (void)ray;
+    (void)it;
+    return false;
+}
+AABB Cylinder::GetAABB() const {
+    return {p - vec3(r, r, 0.0f), p + vec3(r, r, h)};
+}
+
 bool Shape::Hit(Ray ray) const {
     SampledProfiler _(ProfilePhase::ShapeIntersect);
     return Dispatch([&](auto ptr) { return ptr->Hit(ray); });
@@ -219,7 +232,12 @@ AABB Shape::GetAABB() const {
 }
 
 Sphere Sphere::Create(const Parameters& params) {
-    return Sphere(params.GetVec3("center"), params.GetFloat("radius"));
+    return Sphere(params.GetVec3("position"), params.GetFloat("radius"));
+}
+
+Cylinder Cylinder::Create(const Parameters& params) {
+    return Cylinder(params.GetVec3("position"), params.GetFloat("radius"), params.GetFloat("zmin"),
+                    params.GetFloat("zmax"), params.GetFloat("phiMax"));
 }
 
 Plane Plane::Create(const Parameters& params) {
@@ -237,18 +255,19 @@ Rect Rect::Create(const Parameters& params) {
 Shape Shape::Create(const Parameters& params, Scene* scene) {
     std::string type = params.GetString("type");
     Shape shape;
-    if (type == "Sphere") {
-        shape = new Sphere(Sphere::Create(params));
-    } else if (type == "Plane") {
-        shape = new Plane(Plane::Create(params));
-    } else if (type == "Triangle") {
-        shape = new Triangle(Triangle::Create(params));
-    } else if (type == "Rect") {
-        shape = new Rect(Rect::Create(params));
-    } else {
-        LOG_WARNING("[Shape][Create]Unknown type \"&\"", type);
-        shape = new Sphere(Sphere::Create(params));
+
+    SWITCH(type) {
+        CASE("Sphere") shape = new Sphere(Sphere::Create(params));
+        CASE("Plane") shape = new Plane(Plane::Create(params));
+        CASE("Triangle") shape = new Triangle(Triangle::Create(params));
+        CASE("Rect") shape = new Rect(Rect::Create(params));
+        CASE("Cylinder") shape = new Cylinder(Cylinder::Create(params));
+        DEFAULT {
+            LOG_WARNING("[Shape][Create]Unknown type \"&\"", type);
+            shape = new Sphere(Sphere::Create(params));
+        }
     }
+
     shape.material = scene->materials[params.GetString("material")];
     shape.mediumInterface.inside = scene->mediums[params.GetString("mediumInside")];
     shape.mediumInterface.outside = scene->mediums[params.GetString("mediumOutside")];

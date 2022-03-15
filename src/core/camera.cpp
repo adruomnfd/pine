@@ -33,14 +33,16 @@ Ray ThinLenCamera::GenRay(vec2 co, vec2 u2) const {
 Camera Camera::Create(const Parameters& params, Scene* scene) {
     Camera camera;
     std::string type = params.GetString("type");
-    if (type == "PinHole") {
-        camera = new PinHoleCamera(PinHoleCamera::Create(params));
-    } else if (type == "ThinLen") {
-        camera = new ThinLenCamera(ThinLenCamera::Create(params));
-    } else {
-        LOG_WARNING("[Camera][Create]Unknown type \"&\"", type);
-        camera = new PinHoleCamera(PinHoleCamera::Create(params));
+
+    SWITCH(type) {
+        CASE("PinHole") camera = new PinHoleCamera(PinHoleCamera::Create(params));
+        CASE("ThinLen") camera = new ThinLenCamera(ThinLenCamera::Create(params));
+        DEFAULT {
+            LOG_WARNING("[Camera][Create]Unknown type \"&\"", type);
+            camera = new PinHoleCamera(PinHoleCamera::Create(params));
+        }
     }
+
     camera.medium = scene->mediums[params.GetString("medium")];
     if (camera.medium)
         LOG_VERBOSE("[Camera]In medium");

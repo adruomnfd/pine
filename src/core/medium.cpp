@@ -155,14 +155,13 @@ GridMedium GridMedium::Create(const Parameters& params) {
 
 Medium Medium::Create(const Parameters& params) {
     std::string type = params.GetString("type");
-    if (type == "HomogeneousMedium") {
-        return new HomogeneousMedium(HomogeneousMedium::Create(params));
-    }
-    if (type == "GridMedium") {
-        return new GridMedium(GridMedium::Create(params));
-    } else {
-        LOG_WARNING("[Medium][Create]Unknown type \"&\"", type);
-        return new HomogeneousMedium(HomogeneousMedium::Create(params));
+    SWITCH(params.GetString("type")) {
+        CASE("Homogeneous") return new HomogeneousMedium(HomogeneousMedium::Create(params));
+        CASE("Grid") return new GridMedium(GridMedium::Create(params));
+        DEFAULT {
+            LOG_WARNING("[Medium][Create]Unknown type \"&\"", type);
+            return new HomogeneousMedium(HomogeneousMedium::Create(params));
+        }
     }
 }
 

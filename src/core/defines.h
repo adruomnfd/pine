@@ -28,16 +28,27 @@
     ClassName(ClassName&&) = default;                \
     ClassName& operator=(ClassName&&) = default;
 
+#define SWITCH(x)                    \
+    const auto& _switchVariable = x; \
+    if (false)
+#define CASE(x) \
+    }           \
+    else if (_switchVariable == x) {
+#define DEFAULT \
+    }           \
+    else {
 #if defined(__GNUC__) || defined(__clang__)
 #define PINE_LIKELY(x) __builtin_expect(x, true)
-#define PINE_UNLIKELY(x) __builtin_expect(x,false)
+#define PINE_UNLIKELY(x) __builtin_expect(x, false)
 #define PINE_RESTRICT __restrict
 #define PINE_ALWAYS_INLINE __attribute__((always_inline))
+#define UNREACHABLE __builtin_unreachable()
 #else
 #define PINE_LIKELY(x) x
 #define PINE_UNLIKELY(x) x
-#define PINE_RESTRICT 
+#define PINE_RESTRICT
 #define PINE_ALWAYS_INLINE
+#define UNREACHABLE
 #endif
 
 namespace pine {

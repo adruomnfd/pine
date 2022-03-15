@@ -17,21 +17,6 @@ struct TypePack<T> {
         static_assert(std::is_same<T, Ty>(), "Type \"Ty\" is not a member of this TypePack");
         return 0;
     }
-
-    template <int index>
-    static constexpr auto ToPtr(void* ptr) {
-        return (T*)ptr;
-    }
-
-    template <int index>
-    static constexpr auto ToPtrConst(const void* ptr) {
-        return (const T*)ptr;
-    }
-
-    template <int index, typename... Args>
-    static constexpr auto ToConcrete(Args&&... args) {
-        return T(std::forward<Args...>(args...));
-    }
 };
 
 template <typename T, typename... Ts>
@@ -43,34 +28,199 @@ struct TypePack<T, Ts...> : TypePack<Ts...> {
         else
             return 1 + TypePack<Ts...>::template Index<Ty>();
     }
-
-    template <int index>
-    static constexpr auto ToPtr(void* ptr) {
-        if constexpr (index == 0)
-            return (T*)ptr;
-        else
-            return TypePack<Ts...>::template ToPtr<index - 1>(ptr);
-    }
-    template <int index>
-    static constexpr auto ToPtrConst(const void* ptr) {
-        if constexpr (index == 0)
-            return (const T*)ptr;
-        else
-            return TypePack<Ts...>::template ToPtrConst<index - 1>(ptr);
-    }
-
-    template <int index, typename... Args>
-    static constexpr auto ToConcrete(Args&&... args) {
-        if constexpr (index == 0)
-            return T(std::forward<Args...>(args...));
-        else
-            return TypePack<Ts...>::template ToConcrete<index - 1>(std::forward<Args...>(args...));
-    }
 };
+
+template <typename T0, typename F>
+decltype(auto) Dispatch(F&& func, int tag, void* ptr) {
+    switch (tag) {
+    case 0: return func((T0*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename F>
+decltype(auto) Dispatch(F&& func, int tag, void* ptr) {
+    switch (tag) {
+    case 0: return func((T0*)ptr);
+    case 1: return func((T1*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename F>
+decltype(auto) Dispatch(F&& func, int tag, void* ptr) {
+    switch (tag) {
+    case 0: return func((T0*)ptr);
+    case 1: return func((T1*)ptr);
+    case 2: return func((T2*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename T3, typename F>
+decltype(auto) Dispatch(F&& func, int tag, void* ptr) {
+    switch (tag) {
+    case 0: return func((T0*)ptr);
+    case 1: return func((T1*)ptr);
+    case 2: return func((T2*)ptr);
+    case 3: return func((T3*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename T3, typename T4, typename F>
+decltype(auto) Dispatch(F&& func, int tag, void* ptr) {
+    switch (tag) {
+    case 0: return func((T0*)ptr);
+    case 1: return func((T1*)ptr);
+    case 2: return func((T2*)ptr);
+    case 3: return func((T3*)ptr);
+    case 4: return func((T4*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename F>
+decltype(auto) Dispatch(F&& func, int tag, void* ptr) {
+    switch (tag) {
+    case 0: return func((T0*)ptr);
+    case 1: return func((T1*)ptr);
+    case 2: return func((T2*)ptr);
+    case 3: return func((T3*)ptr);
+    case 4: return func((T4*)ptr);
+    case 5: return func((T5*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+          typename F>
+decltype(auto) Dispatch(F&& func, int tag, void* ptr) {
+    switch (tag) {
+    case 0: return func((T0*)ptr);
+    case 1: return func((T1*)ptr);
+    case 2: return func((T2*)ptr);
+    case 3: return func((T3*)ptr);
+    case 4: return func((T4*)ptr);
+    case 5: return func((T5*)ptr);
+    case 6: return func((T6*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+          typename T7, typename F>
+decltype(auto) Dispatch(F&& func, int tag, void* ptr) {
+    switch (tag) {
+    case 0: return func((T0*)ptr);
+    case 1: return func((T1*)ptr);
+    case 2: return func((T2*)ptr);
+    case 3: return func((T3*)ptr);
+    case 4: return func((T4*)ptr);
+    case 5: return func((T5*)ptr);
+    case 6: return func((T6*)ptr);
+    case 7: return func((T7*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename F>
+decltype(auto) DispatchConst(F&& func, int tag, const void* ptr) {
+    switch (tag) {
+    case 0: return func((const T0*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename F>
+decltype(auto) DispatchConst(F&& func, int tag, const void* ptr) {
+    switch (tag) {
+    case 0: return func((const T0*)ptr);
+    case 1: return func((const T1*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename F>
+decltype(auto) DispatchConst(F&& func, int tag, const void* ptr) {
+    switch (tag) {
+    case 0: return func((const T0*)ptr);
+    case 1: return func((const T1*)ptr);
+    case 2: return func((const T2*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename T3, typename F>
+decltype(auto) DispatchConst(F&& func, int tag, const void* ptr) {
+    switch (tag) {
+    case 0: return func((const T0*)ptr);
+    case 1: return func((const T1*)ptr);
+    case 2: return func((const T2*)ptr);
+    case 3: return func((const T3*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename T3, typename T4, typename F>
+decltype(auto) DispatchConst(F&& func, int tag, const void* ptr) {
+    switch (tag) {
+    case 0: return func((const T0*)ptr);
+    case 1: return func((const T1*)ptr);
+    case 2: return func((const T2*)ptr);
+    case 3: return func((const T3*)ptr);
+    case 4: return func((const T4*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename F>
+decltype(auto) DispatchConst(F&& func, int tag, const void* ptr) {
+    switch (tag) {
+    case 0: return func((const T0*)ptr);
+    case 1: return func((const T1*)ptr);
+    case 2: return func((const T2*)ptr);
+    case 3: return func((const T3*)ptr);
+    case 4: return func((const T4*)ptr);
+    case 5: return func((const T5*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+          typename F>
+decltype(auto) DispatchConst(F&& func, int tag, const void* ptr) {
+    switch (tag) {
+    case 0: return func((const T0*)ptr);
+    case 1: return func((const T1*)ptr);
+    case 2: return func((const T2*)ptr);
+    case 3: return func((const T3*)ptr);
+    case 4: return func((const T4*)ptr);
+    case 5: return func((const T5*)ptr);
+    case 6: return func((const T6*)ptr);
+    }
+    UNREACHABLE;
+}
+
+template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+          typename T7, typename F>
+decltype(auto) DispatchConst(F&& func, int tag, const void* ptr) {
+    switch (tag) {
+    case 0: return func((const T0*)ptr);
+    case 1: return func((const T1*)ptr);
+    case 2: return func((const T2*)ptr);
+    case 3: return func((const T3*)ptr);
+    case 4: return func((const T4*)ptr);
+    case 5: return func((const T5*)ptr);
+    case 6: return func((const T6*)ptr);
+    case 7: return func((const T7*)ptr);
+    }
+    UNREACHABLE;
+}
 
 template <typename... Ts>
 struct TaggedPointer {
-    using type = TypePack<Ts...>;
+    using types = TypePack<Ts...>;
 
     TaggedPointer() = default;
 
@@ -79,7 +229,7 @@ struct TaggedPointer {
         CHECK(bits == 0);
         CHECK((uint64_t)ptr == ((uint64_t)ptr & ptrMask));
         bits = (uint64_t)ptr;
-        bits |= uint64_t(type::template Index<T>()) << tagShift;
+        bits |= uint64_t(types::template Index<T>()) << tagShift;
     }
 
     TaggedPointer(const TaggedPointer&) = default;
@@ -118,58 +268,26 @@ struct TaggedPointer {
     }
     template <typename U>
     U* Cast() {
-        if (Tag() != type::template Index<U>())
+        if (Tag() != types::template Index<U>())
             return nullptr;
         return (U*)Ptr();
     }
     template <typename U>
-    const U* Cast() const{
-        if (Tag() != type::template Index<U>())
+    const U* Cast() const {
+        if (Tag() != types::template Index<U>())
             return nullptr;
         return (U*)Ptr();
     }
 
     template <typename F>
-    decltype(auto) Dispatch(F func) {
+    decltype(auto) Dispatch(F&& f) {
         CHECK(Ptr() != nullptr);
-        switch (Tag()) {
-        case 0: return func(type::template ToPtr<0>(Ptr()));
-        case 1: return func(type::template ToPtr<1>(Ptr()));
-        case 2: return func(type::template ToPtr<2>(Ptr()));
-        case 3: return func(type::template ToPtr<3>(Ptr()));
-        case 4: return func(type::template ToPtr<4>(Ptr()));
-        case 5: return func(type::template ToPtr<5>(Ptr()));
-        case 6: return func(type::template ToPtr<6>(Ptr()));
-        default: return func(type::template ToPtr<7>(Ptr()));
-        }
+        return pine::Dispatch<Ts...>(f, Tag(), Ptr());
     }
     template <typename F>
-    decltype(auto) Dispatch(F func) const {
+    decltype(auto) Dispatch(F&& f) const {
         CHECK(Ptr() != nullptr);
-        switch (Tag()) {
-        case 0: return func(type::template ToPtrConst<0>(Ptr()));
-        case 1: return func(type::template ToPtrConst<1>(Ptr()));
-        case 2: return func(type::template ToPtrConst<2>(Ptr()));
-        case 3: return func(type::template ToPtrConst<3>(Ptr()));
-        case 4: return func(type::template ToPtrConst<4>(Ptr()));
-        case 5: return func(type::template ToPtrConst<5>(Ptr()));
-        case 6: return func(type::template ToPtrConst<6>(Ptr()));
-        default: return func(type::template ToPtrConst<7>(Ptr()));
-        }
-    }
-
-    template <typename... Args, typename F>
-    static decltype(auto) DispatchConcrete(int tag, F func, Args&&... args) {
-        switch (tag) {
-        case 0: return func(type::template ToConcrete<0>(std::forward<Args...>(args...)));
-        case 1: return func(type::template ToConcrete<1>(std::forward<Args...>(args...)));
-        case 2: return func(type::template ToConcrete<2>(std::forward<Args...>(args...)));
-        case 3: return func(type::template ToConcrete<3>(std::forward<Args...>(args...)));
-        case 4: return func(type::template ToConcrete<4>(std::forward<Args...>(args...)));
-        case 5: return func(type::template ToConcrete<5>(std::forward<Args...>(args...)));
-        case 6: return func(type::template ToConcrete<6>(std::forward<Args...>(args...)));
-        default: return func(type::template ToConcrete<7>(std::forward<Args...>(args...)));
-        }
+        return pine::DispatchConst<Ts...>(f, Tag(), Ptr());
     }
 
     void InvokeDestructor() {

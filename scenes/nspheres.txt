@@ -1,7 +1,7 @@
 Scene{
     atmosphere{
-        sunDirection: [-1,12,2]
-        sunIntensity: 0.0
+        sunDirection: -1 12 2
+        sunIntensity: 0
     }
 }
 
@@ -9,42 +9,42 @@ Integrator{
     type: Path
     maxDepth: 4
     samplePerPixel: 128
-    filmSize: [1280,360]
+    filmSize: 1280 360
     accel{
         type: BVH
     }
-    clamp: 4.0
+    clamp: 4
 }
 
 Camera{
     type: PinHole
-    from: [0, 16, 32]
-    to:   [0, 0, 0]
+    from: 0 16 32
+    to:   0 0 0
     fov:  0.1
 }
 
 Light{
     name: light0
     type: Area
-    position:[0,4,0]
-    ex: [1,0,0]
-    ey: [0,0,1]
-    color: [20]
+    position: 0 4 0
+    ex: 1 0 0
+    ey: 0 0 1
+    color: 20
 }
 
 
 Shape{
     name: plane
     type: Plane
-    position: [0,0,0]
-    normal: [0,1,0]
+    position: 0 0 0
+    normal: 0 1 0
     material: diffuse
 }
 
 Shape{
     name: sphere0
     type: Sphere
-    center: [-2.5,0.5,1]
+    position: -2.5 0.5 1
     radius: 0.5
     material: glass
 }
@@ -52,7 +52,7 @@ Shape{
 Shape{
     name: sphere1
     type: Sphere
-    center: [-1.25,0.5,1]
+    position: -1.25 0.5 1
     radius: 0.5
     material: plastic
 }
@@ -60,7 +60,7 @@ Shape{
 Shape{
     name: sphere2
     type: Sphere
-    center: [0,0.5,1]
+    position: 0 0.5 1
     radius: 0.5
     material: diffuse
 }
@@ -68,7 +68,7 @@ Shape{
 Shape{
     name: sphere3
     type: Sphere
-    center: [1.25,0.5,1]
+    position: 1.25 0.5 1
     radius: 0.5
     material: silver
 }
@@ -76,16 +76,16 @@ Shape{
 Shape{
     name: sphere4
     type: Sphere
-    center: [2.5,0.5,1]
+    position: 2.5 0.5 1
     radius: 0.5
     material: diffuse-checkerboard
 }
 
 Material{
     name: diffuse-checkerboard
-    type: LayeredMaterial
+    type: Layered
     layer0{
-        type: DiffuseBSDF
+        type: Diffuse
         albedo{
             type: Checkerboard
             input{
@@ -101,21 +101,21 @@ Material{
 
 Material{
     name: diffuse
-    type: LayeredMaterial
+    type: Layered
     layer0{
-        type: DiffuseBSDF
+        type: Diffuse
         albedo{
             type: Constant
-            vec3: [1.0,1.0,1.0]
+            vec3: 1.0 1.0 1.0
         }
     }
 }
 
 Material{
     name: glass
-    type: LayeredMaterial
+    type: Layered
     layer0{
-        type: DielectricBSDF
+        type: Dielectric
         roughness{
             type: Constant
             float: 0.0
@@ -129,19 +129,19 @@ Material{
 
 Material{
     name: plastic
-    type: LayeredMaterial
+    type: Layered
     layer0{
-        type: DiffuseBSDF
+        type: Diffuse
         albedo{
             type: Constant
-            vec3: [0.98,0.55,0.02]
+            vec3: 0.98 0.55 0.02
         }
     }
     layer1{
-        type: DielectricBSDF
+        type: Dielectric
         albedo{
             type: Constant
-            vec3: [1.0]
+            vec3: 1.0
         }
         roughness{
             type: Constant
@@ -156,12 +156,12 @@ Material{
 
 Material{
     name: silver
-    type: LayeredMaterial
+    type: Layered
     layer0{
-        type: ConductorBSDF
+        type: Conductor
         albedo{
             type: Constant
-            vec3: [0.99]
+            vec3: 0.99
         }
         roughness{
             type: Constant

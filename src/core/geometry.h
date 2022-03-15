@@ -135,25 +135,25 @@ struct AABB {
     bool Hit(Ray ray) const;
     bool Hit(Ray ray, float& tmin, float& tmax) const;
 
-    PINE_ALWAYS_INLINE bool Hit(vec3 negOrgDivDir, vec3 invdir, float tmin, float tmax) const {
+    bool Hit(vec3 negOrgDivDir, vec3 invdir, float tmin, float tmax) const {
 #pragma unroll
         for (int i = 0; i < 3; i++) {
             float t0 = lower[i] * invdir[i] + negOrgDivDir[i];
             float t1 = upper[i] * invdir[i] + negOrgDivDir[i];
-            tmin = fmaxf(tmin, fminf(t0, t1));
-            tmax = fminf(tmax, fmaxf(t0, t1));
+            tmin = max(tmin, min(t0, t1));
+            tmax = min(tmax, max(t0, t1));
             if (tmin > tmax)
                 return false;
         }
         return true;
     }
-    PINE_ALWAYS_INLINE bool Hit(vec3 negOrgDivDir, vec3 invdir, float tmin, float* tmax) const {
+    bool Hit(vec3 negOrgDivDir, vec3 invdir, float tmin, float* tmax) const {
 #pragma unroll
         for (int i = 0; i < 3; i++) {
             float t0 = lower[i] * invdir[i] + negOrgDivDir[i];
             float t1 = upper[i] * invdir[i] + negOrgDivDir[i];
-            tmin = fmaxf(tmin, fminf(t0, t1));
-            *tmax = fminf(*tmax, fmaxf(t0, t1));
+            tmin = max(tmin, min(t0, t1));
+            *tmax = min(*tmax, max(t0, t1));
             if (tmin > *tmax)
                 return false;
         }
@@ -171,8 +171,8 @@ struct AABB {
         float tmax1 = p[4 - octantx3[1]] * invDir[1] + negOrgDivDir[1];
         float tmax2 = p[5 - octantx3[2]] * invDir[2] + negOrgDivDir[2];
 
-        tmin = fmaxf(fmaxf(fmaxf(tmin0, tmin1), tmin2), tmin);
-        tmax = fminf(fminf(fminf(tmax0, tmax1), tmax2), tmax);
+        tmin = max(max(max(tmin0, tmin1), tmin2), tmin);
+        tmax = min(min(min(tmax0, tmax1), tmax2), tmax);
         return tmin <= tmax;
     }
     PINE_ALWAYS_INLINE bool Hit(int octantx3[3], vec3 negOrgDivDir, vec3 invDir, float tmin,
@@ -186,8 +186,8 @@ struct AABB {
         float tmax1 = p[4 - octantx3[1]] * invDir[1] + negOrgDivDir[1];
         float tmax2 = p[5 - octantx3[2]] * invDir[2] + negOrgDivDir[2];
 
-        tmin = fmaxf(fmaxf(fmaxf(tmin0, tmin1), tmin2), tmin);
-        *tmax = fminf(fminf(fminf(tmax0, tmax1), tmax2), *tmax);
+        tmin = max(max(max(tmin0, tmin1), tmin2), tmin);
+        *tmax = min(min(min(tmax0, tmax1), tmax2), *tmax);
         return tmin <= *tmax;
     }
 
@@ -216,7 +216,7 @@ struct Plane {
 struct Sphere {
     static Sphere Create(const Parameters& params);
     Sphere() = default;
-    Sphere(vec3 center, float radius) : c(center), r(radius){};
+    Sphere(vec3 position, float radius) : c(position), r(radius){};
 
     bool Hit(Ray ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
@@ -226,6 +226,21 @@ struct Sphere {
 
     vec3 c;
     float r;
+};
+
+struct Cylinder {
+    static Cylinder Create(const Parameters& params);
+    Cylinder() = default;
+    Cylinder(vec3 p, float r, float h, float phiMax) : p(p), r(r), h(h), phiMax(phiMax){};
+
+    bool Hit(Ray ray) const;
+    bool Intersect(Ray& ray, Interaction& it) const;
+    AABB GetAABB() const;
+
+    vec3 p;
+    float r;
+    float h;
+    float phiMax;
 };
 
 struct Triangle {
@@ -359,7 +374,7 @@ struct TriangleMesh {
     MediumInterface mediumInterface;
 };
 
-struct Shape : TaggedPointer<Sphere, Plane, Triangle, Rect> {
+struct Shape : TaggedPointer<Sphere, Plane, Triangle, Rect, Cylinder> {
     using TaggedPointer::TaggedPointer;
     static Shape Create(const Parameters& params, Scene* scene);
     static void Destory(Shape shape) {
