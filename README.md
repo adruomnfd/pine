@@ -10,6 +10,6 @@ cmake --build build
 ```
 build/pine scenes/nspheres.txt result.bmp
 ```
-All the settings like spp or image size are specified in the scene file.  
+All the settings like `samplePerPixel` or `filmSize` are specified in the scene file (in this case `scenes/nspheres.txt`).  
 After rendering is finished, you can find the result `result.bmp` in the same folder  
 <img src="docs/results/nspheres.bmp" width="600"/>

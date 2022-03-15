@@ -11,7 +11,7 @@ class BvhVizIntegrator : public PixelSampleIntegrator {
 
     vec3 Li(Ray ray, RNG&) override {
         Interaction it;
-        return Intersect(ray, it) ? ColorMap(it.bvh / 300.0f) : vec3(0.0f);
+        return Abs(Intersect(ray, it) ? it.p : vec3(0.0f));
     }
 };
 

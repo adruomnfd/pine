@@ -199,16 +199,105 @@ AABB Rect::GetAABB() const {
 }
 
 bool Cylinder::Hit(Ray ray) const {
-    (void)ray;
-    return false;
+    Interaction it;
+    return Intersect(ray, it);
 }
 bool Cylinder::Intersect(Ray& ray, Interaction& it) const {
-    (void)ray;
-    (void)it;
-    return false;
+    vec3 o = ray.o - pos, d = ray.d;
+    float a = Sqr(d.x) + Sqr(d.z);
+    float b = 2 * (o.x * d.x + o.z * d.z);
+    float c = Sqr(o.x) + Sqr(o.z) - Sqr(r);
+    float determinant = b * b - 4 * a * c;
+    if (determinant <= 0)
+        return false;
+    determinant = std::sqrt(determinant);
+
+    float t = (-b - determinant) / (2 * a);
+    vec3 ip = ray(t) - pos;
+    if (t < ray.tmin || ip.y < 0 || ip.y > height || Phi2pi(ip.x, ip.z) > phiMax)
+        t = (-b + determinant) / (2 * a);
+    ip = ray(t) - pos;
+    if (t < ray.tmin || t > ray.tmax || ip.y < 0 || ip.y > height || Phi2pi(ip.x, ip.z) > phiMax)
+        return false;
+
+    ray.tmax = t;
+    it.p = ray(t);
+    it.n = Normalize(vec3(ip.x, 0.0f, ip.z));
+    it.uv = vec2(Phi2pi(ip.x, ip.z) / (Pi * 2), ip.y / height);
+    it.pdf = 1.0f / (r * phiMax * height);
+
+    return true;
 }
 AABB Cylinder::GetAABB() const {
-    return {p - vec3(r, r, 0.0f), p + vec3(r, r, h)};
+    return {pos - vec3(r, r, 0.0f), pos + vec3(r, r, height)};
+}
+
+bool Disk::Hit(Ray ray) const {
+    float t = (Dot(position, n) - Dot(ray.o, n)) / Dot(ray.d, n);
+    if (t < ray.tmin)
+        return false;
+    if (t >= ray.tmax)
+        return false;
+    vec3 p = ray.o + t * ray.d - position;
+    if (LengthSquared(p) > Sqr(r))
+        return false;
+    return true;
+}
+bool Disk::Intersect(Ray& ray, Interaction& it) const {
+    float t = (Dot(position, n) - Dot(ray.o, n)) / Dot(ray.d, n);
+    if (t < ray.tmin)
+        return false;
+    if (t >= ray.tmax)
+        return false;
+    vec3 p = ray.o + t * ray.d - position;
+    if (LengthSquared(p) > Sqr(r))
+        return false;
+
+    ray.tmax = t;
+    it.p = ray.o + t * ray.d;
+    it.n = n;
+    it.uv = vec2(Length(p) / r, Phi2pi(p.x, p.z) / (Pi * 2));
+    return true;
+}
+
+AABB Disk::GetAABB() const {
+    return {position - vec3(r, 0.0f, r), position + vec3(r, 0.0f, r)};
+}
+
+bool Line::Hit(Ray ray) const {
+    (void)ray;
+    return false;
+}
+bool Line::Intersect(Ray& ray, Interaction& it) const {
+    mat4 r2o = LookAt(ray.o, ray.o + ray.d);
+    mat4 o2r = Inverse(r2o);
+    vec3 p0 = o2r * vec4(this->p0, 1.0f);
+    vec3 p1 = o2r * vec4(this->p1, 1.0f);
+
+    vec3 o = p0;
+    vec3 d = p1 - p0;
+    vec2 tz = Inverse(mat2(Dot(d, d), -d.z, -d.z, 1.0f)) * vec2(-Dot(o, d), o.z);
+    float t = Clamp(tz.x, 0.0f, 1.0f);
+    float z = Clamp(o.z + t * d.z, ray.tmin + thickness, ray.tmax);
+
+    float D = Length(o + t * d - vec3(0.0f, 0.0f, z));
+
+    if (D > thickness)
+        return false;
+
+    ray.tmax = z;
+    it.p = ray(z);
+    it.n = -ray.d;
+
+    return true;
+}
+AABB Line::GetAABB() const {
+    AABB aabb;
+    aabb.Extend(p0 - vec3(thickness));
+    aabb.Extend(p1 - vec3(thickness));
+    aabb.Extend(p0 + vec3(thickness));
+    aabb.Extend(p1 + vec3(thickness));
+    return aabb;
 }
 
 bool Shape::Hit(Ray ray) const {
@@ -235,9 +324,18 @@ Sphere Sphere::Create(const Parameters& params) {
     return Sphere(params.GetVec3("position"), params.GetFloat("radius"));
 }
 
+Line Line::Create(const Parameters& params) {
+    return Line(params.GetVec3("p0"), params.GetVec3("p1"), params.GetFloat("thickness"));
+}
+
 Cylinder Cylinder::Create(const Parameters& params) {
     return Cylinder(params.GetVec3("position"), params.GetFloat("radius"),
                     params.GetFloat("height"), params.GetFloat("phiMax"));
+}
+
+Disk Disk::Create(const Parameters& params) {
+    return Disk(params.GetVec3("position"), Normalize(params.GetVec3("normal")),
+                params.GetFloat("radius"));
 }
 
 Plane Plane::Create(const Parameters& params) {
@@ -262,6 +360,8 @@ Shape Shape::Create(const Parameters& params, Scene* scene) {
         CASE("Triangle") shape = new Triangle(Triangle::Create(params));
         CASE("Rect") shape = new Rect(Rect::Create(params));
         CASE("Cylinder") shape = new Cylinder(Cylinder::Create(params));
+        CASE("Disk") shape = new Disk(Disk::Create(params));
+        CASE("Line") shape = new Line(Line::Create(params));
         DEFAULT {
             LOG_WARNING("[Shape][Create]Unknown type \"&\"", type);
             shape = new Sphere(Sphere::Create(params));

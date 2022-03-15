@@ -44,7 +44,7 @@ Integrator::Integrator(const Parameters& parameters) {
 void Integrator::Initialize(const Scene* scene) {
     Profiler _("IntegratorInit");
     this->scene = scene;
-    outputFileName = scene->parameters.GetString("outputFileName");
+    outputFileName = scene->parameters.GetString("outputFileName", "result.bmp");
     sunDirection =
         Normalize(scene->parameters["atmosphere"].GetVec3("sunDirection", vec3(1, 4, 1)));
     sunIntensity = scene->parameters["atmosphere"].GetFloat("sunIntensity", 1.0f);

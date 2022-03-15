@@ -63,6 +63,11 @@ float Parameters::GetFloat(const std::string& name, float fallback) const {
         return fallback;
     }
 
+    if (str == "Pi")
+        return Pi;
+    if (str == "2Pi")
+        return 2 * Pi;
+
     return std::stof(str);
 }
 

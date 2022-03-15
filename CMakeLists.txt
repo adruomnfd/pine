@@ -46,5 +46,9 @@ target_link_libraries(pinelib pthread)
 endif()
 
 #Pine CommandLine
-add_executable(pine src/cmd/main.cpp)
+add_executable(pine src/cli/main.cpp)
 target_link_libraries(pine pinelib)
+
+#Pine Test
+add_executable(pine_test test/test_main.cpp)
+target_link_libraries(pine_test pinelib)

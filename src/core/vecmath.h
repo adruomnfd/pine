@@ -417,6 +417,110 @@ struct Vector4 {
 };
 
 template <typename T>
+struct Matrix2 {
+    static Matrix2 Zero() {
+        return Matrix2(0, 0, 0, 0);
+    }
+
+    static Matrix2 Identity() {
+        return Matrix2(1, 0, 1, 0);
+    }
+
+    static bool IsIdentity(const Matrix2 &m) {
+        return m == Identity();
+    }
+
+    static bool IsZero(const Matrix2 &m) {
+        return m == Zero();
+    }
+
+    Matrix2() {
+        *this = Identity();
+    }
+
+    Matrix2(T x0, T y0, T x1, T y1) : x(x0, x1), y(y0, y1) {
+    }
+
+    Matrix2(Vector2<T> x, Vector2<T> y) : x(x), y(y){};
+
+    Matrix2 &operator+=(const Matrix2 &rhs) {
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
+                (*this)[c][r] += rhs[c][r];
+        return *this;
+    }
+
+    Matrix2 &operator-=(const Matrix2 &rhs) {
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
+                (*this)[c][r] -= rhs[c][r];
+        return *this;
+    }
+
+    Matrix2 &operator*=(T rhs) {
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
+                (*this)[c][r] *= rhs;
+        return *this;
+    }
+
+    Matrix2 &operator/=(T rhs) {
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
+                (*this)[c][r] /= rhs;
+        return *this;
+    }
+
+    friend Matrix2 operator*(Matrix2 lhs, T rhs) {
+        return lhs *= rhs;
+    }
+    friend Matrix2 operator/(Matrix2 lhs, T rhs) {
+        return lhs /= rhs;
+    }
+
+    friend Matrix2 operator*(const Matrix2 &lhs, const Matrix2 &rhs) {
+        Matrix2 ret = Zero();
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++) {
+                for (int i = 0; i < N; i++)
+                    ret[c][r] += lhs[i][r] * rhs[c][i];
+            }
+
+        return ret;
+    }
+
+    Vector2<T> Row(int i) const {
+        return {x[i], y[i]};
+    }
+
+    Vector2<T> &operator[](int i) {
+        return (&x)[i];
+    }
+    const Vector2<T> &operator[](int i) const {
+        return (&x)[i];
+    }
+
+    friend bool operator==(const Matrix2 &m0, const Matrix2 &m1) {
+        return m0.x == m1.x && m0.y == m1.y;
+    }
+    friend bool operator!=(const Matrix2 &m0, const Matrix2 &m1) {
+        return m0.x != m1.x || m0.y != m1.y;
+    }
+
+    FormattedString Formatting(Format fmt) const {
+        return FormattedString(fmt, "\n[&\n &\n]", x, y);
+    }
+    std::string ToString() const {
+        return pine::ToString("\n[", x, "\n ", y, ']');
+    }
+
+    PINE_ARCHIVE(x, y)
+
+    static constexpr int N = 2;
+    Vector2<T> x, y;
+};
+
+template <typename T>
 struct Matrix3 {
     static Matrix3 Zero() {
         return Matrix3(0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -445,29 +549,29 @@ struct Matrix3 {
     Matrix3(Vector3<T> x, Vector3<T> y, Vector3<T> z) : x(x), y(y), z(z){};
 
     Matrix3 &operator+=(const Matrix3 &rhs) {
-        for (int c = 0; c < 3; c++)
-            for (int r = 0; r < 3; r++)
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
                 (*this)[c][r] += rhs[c][r];
         return *this;
     }
 
     Matrix3 &operator-=(const Matrix3 &rhs) {
-        for (int c = 0; c < 3; c++)
-            for (int r = 0; r < 3; r++)
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
                 (*this)[c][r] -= rhs[c][r];
         return *this;
     }
 
     Matrix3 &operator*=(T rhs) {
-        for (int c = 0; c < 3; c++)
-            for (int r = 0; r < 3; r++)
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
                 (*this)[c][r] *= rhs;
         return *this;
     }
 
     Matrix3 &operator/=(T rhs) {
-        for (int c = 0; c < 3; c++)
-            for (int r = 0; r < 3; r++)
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
                 (*this)[c][r] /= rhs;
         return *this;
     }
@@ -481,9 +585,9 @@ struct Matrix3 {
 
     friend Matrix3 operator*(const Matrix3 &lhs, const Matrix3 &rhs) {
         Matrix3 ret = Zero();
-        for (int c = 0; c < 3; c++)
-            for (int r = 0; r < 3; r++) {
-                for (int i = 0; i < 3; i++)
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++) {
+                for (int i = 0; i < N; i++)
                     ret[c][r] += lhs[i][r] * rhs[c][i];
             }
 
@@ -517,6 +621,7 @@ struct Matrix3 {
 
     PINE_ARCHIVE(x, y, z)
 
+    static constexpr int N = 3;
     Vector3<T> x, y, z;
 };
 
@@ -548,34 +653,35 @@ struct Matrix4 {
     }
 
     Matrix4(Vector4<T> x, Vector4<T> y, Vector4<T> z, Vector4<T> w) : x(x), y(y), z(z), w(w){};
+
     operator Matrix3<T>() const {
         return Matrix3<T>(x, y, z);
     }
 
     Matrix4 &operator+=(const Matrix4 &rhs) {
-        for (int c = 0; c < 4; c++)
-            for (int r = 0; r < 4; r++)
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
                 (*this)[c][r] += rhs[c][r];
         return *this;
     }
 
     Matrix4 &operator-=(const Matrix4 &rhs) {
-        for (int c = 0; c < 4; c++)
-            for (int r = 0; r < 4; r++)
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
                 (*this)[c][r] -= rhs[c][r];
         return *this;
     }
 
     Matrix4 &operator*=(T rhs) {
-        for (int c = 0; c < 4; c++)
-            for (int r = 0; r < 4; r++)
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
                 (*this)[c][r] *= rhs;
         return *this;
     }
 
     Matrix4 &operator/=(T rhs) {
-        for (int c = 0; c < 4; c++)
-            for (int r = 0; r < 4; r++)
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++)
                 (*this)[c][r] /= rhs;
         return *this;
     }
@@ -589,9 +695,9 @@ struct Matrix4 {
 
     friend Matrix4 operator*(const Matrix4 &lhs, const Matrix4 &rhs) {
         Matrix4 ret = Zero();
-        for (int c = 0; c < 4; c++)
-            for (int r = 0; r < 4; r++) {
-                for (int i = 0; i < 4; i++)
+        for (int c = 0; c < N; c++)
+            for (int r = 0; r < N; r++) {
+                for (int i = 0; i < N; i++)
                     ret[c][r] += lhs[i][r] * rhs[c][i];
             }
         return ret;
@@ -624,6 +730,7 @@ struct Matrix4 {
 
     PINE_ARCHIVE(x, y, z, w)
 
+    static constexpr int N = 4;
     Vector4<T> x, y, z, w;
 };
 
@@ -650,8 +757,14 @@ typedef Vector4<int> vec4i;
 typedef Vector2<float> vec2;
 typedef Vector3<float> vec3;
 typedef Vector4<float> vec4;
+typedef Matrix2<float> mat2;
 typedef Matrix3<float> mat3;
 typedef Matrix4<float> mat4;
+
+template <typename T>
+inline Vector2<T> operator*(const Matrix2<T> &m, const Vector2<T> &v) {
+    return m.x * v.x + m.y * v.y;
+}
 
 template <typename T>
 inline Vector3<T> operator*(const Matrix3<T> &m, const Vector3<T> &v) {
@@ -953,6 +1066,10 @@ inline T PerlinInterp(Vector3<T> c[2][2][2], Vector3<T> uvw) {
 }
 
 template <typename T>
+inline Matrix2<T> Transpose(const Matrix2<T> &m) {
+    return {m.Row(0), m.Row(1)};
+}
+template <typename T>
 inline Matrix3<T> Transpose(const Matrix3<T> &m) {
     return {m.Row(0), m.Row(1), m.Row(2)};
 }
@@ -963,13 +1080,13 @@ inline Matrix4<T> Transpose(const Matrix4<T> &m) {
 
 // Floating-point vecmath
 
-inline vec3 SafeRcp(vec3 v){
+inline vec3 SafeRcp(vec3 v) {
     v.x = v.x == 0.0f ? 1e+20f : 1.0f / v.x;
     v.y = v.y == 0.0f ? 1e+20f : 1.0f / v.y;
     v.z = v.z == 0.0f ? 1e+20f : 1.0f / v.z;
     return v;
 }
-inline vec4 SafeRcp(vec4 v){
+inline vec4 SafeRcp(vec4 v) {
     v.x = v.x == 0.0f ? 1e+20f : 1.0f / v.x;
     v.y = v.y == 0.0f ? 1e+20f : 1.0f / v.y;
     v.z = v.z == 0.0f ? 1e+20f : 1.0f / v.z;
@@ -979,6 +1096,16 @@ inline vec4 SafeRcp(vec4 v){
 
 inline float Determinant(const mat3 &m) {
     return Dot(m.x, Cross(m.y, m.z));
+}
+
+inline mat2 Inverse(const mat2 &m) {
+    float d = m[0][0] * m[1][1] - m[1][0] * m[0][1];
+    // clang-format off
+    return mat2(
+     m[1][1], -m[1][0], 
+    -m[0][1],  m[0][0]
+    ) / d;
+    // clang-format on
 }
 
 inline mat3 Inverse(const mat3 &m) {
@@ -1004,6 +1131,36 @@ inline mat3 Inverse(const mat3 &m) {
 
     return r / determinant;
 }
+
+inline mat4 Inverse(const mat4 &m) {
+    mat4 r;
+    float determinant = 0;
+    // clang-format off
+    for (int i = 0; i < 4; i++)
+        determinant += (m[(1 + i) % 4][0] * (m[(2 + i) % 4][1] *  m[(3 + i) % 4][2] - 
+                                             m[(3 + i) % 4][1] *  m[(2 + i) % 4][2]) +
+                        m[(2 + i) % 4][0] * (m[(3 + i) % 4][1] *  m[(1 + i) % 4][2] -  
+                                             m[(1 + i) % 4][1] *  m[(3 + i) % 4][2]) +
+                        m[(3 + i) % 4][0] * (m[(1 + i) % 4][1] *  m[(2 + i) % 4][2] -  
+                                             m[(2 + i) % 4][1] *  m[(1 + i) % 4][2])) * 
+                        m[i % 4][3] * (i % 2 ? -1 : 1);
+    if (determinant == 0)
+        return r;
+
+    for (int v = 0; v < 4; v++)
+        for (int i = 0; i < 4; i++)
+            r[v][i] = (m[(1 + i) % 4][(1 + v) % 4] * (m[(2 + i) % 4][(2 + v) % 4] *  m[(3 + i) % 4][(3 + v) % 4] -  
+                                                      m[(3 + i) % 4][(2 + v) % 4] *  m[(2 + i) % 4][(3 + v) % 4]) +
+                       m[(2 + i) % 4][(1 + v) % 4] * (m[(3 + i) % 4][(2 + v) % 4] *  m[(1 + i) % 4][(3 + v) % 4] -  
+                                                      m[(1 + i) % 4][(2 + v) % 4] *  m[(3 + i) % 4][(3 + v) % 4]) +
+                       m[(3 + i) % 4][(1 + v) % 4] * (m[(1 + i) % 4][(2 + v) % 4] *  m[(2 + i) % 4][(3 + v) % 4] -  
+                                                      m[(2 + i) % 4][(2 + v) % 4] *  m[(1 + i) % 4][(3 + v) % 4]))
+                        * ((v + i) % 2 ? 1 : -1);
+
+    // clang-format on
+    return r / determinant;
+}
+
 inline mat4 Translate(float x, float y, float z) {
     // clang-format off
   return {1.0f, 0.0f, 0.0f, x, 
@@ -1048,7 +1205,7 @@ inline mat4 LookAt(vec3 from, vec3 at, vec3 up = vec3(0, 1, 0)) {
 
     vec3 x = Normalize(Cross(up, z));
     vec3 y = Cross(z, x);
-    return mat4((vec4)x, (vec4)y, (vec4)z, (vec4)from);
+    return mat4((vec4)x, (vec4)y, (vec4)z, vec4(from, 1.0f));
 }
 
 inline mat3 CoordinateSystem(vec3 n) {
@@ -1064,6 +1221,11 @@ inline mat3 CoordinateSystem(vec3 n) {
 inline vec3 SphericalToCartesian(float phi, float theta) {
     float sinTheta = std::sin(theta);
     return vec3(sinTheta * std::cos(phi), sinTheta * std::sin(phi), std::cos(theta));
+}
+
+inline float Phi2pi(float x, float y) {
+    float phi = atan2f(y, x);
+    return phi < 0.0f ? Pi * 2 + phi : phi;
 }
 
 inline vec2 CartesianToSpherical(vec3 d) {

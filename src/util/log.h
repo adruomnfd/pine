@@ -10,36 +10,51 @@ namespace pine {
 extern bool verbose;
 
 template <typename... Args>
-inline void LOG(Args... args) {
+inline void LOG(const Args&... args) {
     printf("%s\n", FormattedString(args...).c_str());
 }
 template <typename... Args>
-inline void LOG_SAMELINE(Args... args) {
+inline void LOG_SAMELINE(const Args&... args) {
     printf("\33[2K\r%s\r", FormattedString(args...).c_str());
     fflush(stdout);
 }
 template <typename... Args>
-inline void LOG_VERBOSE(Args... args) {
+inline void LOG_VERBOSE(const Args&... args) {
     if (!verbose)
         return;
     printf("%s\n", FormattedString(args...).c_str());
 }
 template <typename... Args>
-inline void LOG_VERBOSE_SAMELINE(Args... args) {
+inline void LOG_VERBOSE_SAMELINE(const Args&... args) {
     if (!verbose)
         return;
     printf("\r\33[2K%s\r", FormattedString(args...).c_str());
     fflush(stdout);
 }
 template <typename... Args>
-inline void LOG_WARNING(Args... args) {
+inline void LOG_WARNING(const Args&... args) {
     printf("\033[1;33m%s\033[0m\n", FormattedString(args...).c_str());
 }
 
 template <typename... Args>
-inline void LOG_FATAL(Args... args) {
+inline void LOG_FATAL(const Args&... args) {
     printf("\033[1;31m%s\033[0m\n", FormattedString(args...).c_str());
     abort();
+}
+
+template <typename... Args>
+inline void print(const Args&... args) {
+    auto fmt = Format(-1, 4, true, false, false, true);
+    switch (sizeof...(args)) {
+    case 1: return LOG(fmt, "&", args...);
+    case 2: return LOG(fmt, "& &", args...);
+    case 3: return LOG(fmt, "& & &", args...);
+    case 4: return LOG(fmt, "& & & &", args...);
+    case 5: return LOG(fmt, "& & & & &", args...);
+    case 6: return LOG(fmt, "& & & & & &", args...);
+    case 7: return LOG(fmt, "& & & & & & &", args...);
+    case 8: return LOG(fmt, "& & & & & & & &", args...);
+    }
 }
 
 #define CHECK(x)                                                                          \

@@ -65,6 +65,10 @@ struct Interaction {
         return Dot(w, n) > 0 ? mediumInterface.outside : mediumInterface.inside;
     }
 
+    FormattedString Formatting(Format fmt) const {
+        return FormattedString(fmt, "[Interaction]p & n & uv &", p, n, uv);
+    }
+
     vec3 p;
     vec3 n;
     vec2 uv;
@@ -231,16 +235,49 @@ struct Sphere {
 struct Cylinder {
     static Cylinder Create(const Parameters& params);
     Cylinder() = default;
-    Cylinder(vec3 p, float r, float h, float phiMax) : p(p), r(r), h(h), phiMax(phiMax){};
+    Cylinder(vec3 pos, float r, float height, float phiMax)
+        : pos(pos), r(r), height(height), phiMax(phiMax){};
 
     bool Hit(Ray ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
 
-    vec3 p;
+    vec3 pos;
     float r;
-    float h;
+    float height;
     float phiMax;
+};
+
+struct Disk {
+    static Disk Create(const Parameters& params);
+    Disk() = default;
+    Disk(vec3 position, vec3 normal, float r) : position(position), n(normal), r(r) {
+        mat3 tbn = CoordinateSystem(normal);
+        u = tbn.x;
+        v = tbn.y;
+    };
+
+    bool Hit(Ray ray) const;
+    bool Intersect(Ray& ray, Interaction& it) const;
+    AABB GetAABB() const;
+
+    vec3 position;
+    vec3 n;
+    vec3 u, v;
+    float r;
+};
+
+struct Line {
+    static Line Create(const Parameters& params);
+    Line() = default;
+    Line(vec3 p0, vec3 p1, float thickness) : p0(p0), p1(p1), thickness(thickness){};
+
+    bool Hit(Ray ray) const;
+    bool Intersect(Ray& ray, Interaction& it) const;
+    AABB GetAABB() const;
+
+    vec3 p0, p1;
+    float thickness;
 };
 
 struct Triangle {
@@ -374,7 +411,7 @@ struct TriangleMesh {
     MediumInterface mediumInterface;
 };
 
-struct Shape : TaggedPointer<Sphere, Plane, Triangle, Rect, Cylinder> {
+struct Shape : TaggedPointer<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line> {
     using TaggedPointer::TaggedPointer;
     static Shape Create(const Parameters& params, Scene* scene);
     static void Destory(Shape shape) {
