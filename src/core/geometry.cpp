@@ -236,8 +236,8 @@ Sphere Sphere::Create(const Parameters& params) {
 }
 
 Cylinder Cylinder::Create(const Parameters& params) {
-    return Cylinder(params.GetVec3("position"), params.GetFloat("radius"), params.GetFloat("zmin"),
-                    params.GetFloat("zmax"), params.GetFloat("phiMax"));
+    return Cylinder(params.GetVec3("position"), params.GetFloat("radius"),
+                    params.GetFloat("height"), params.GetFloat("phiMax"));
 }
 
 Plane Plane::Create(const Parameters& params) {
