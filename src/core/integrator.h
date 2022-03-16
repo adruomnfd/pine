@@ -2,6 +2,7 @@
 #define PINE_CORE_INTEGRATOR_H
 
 #include <core/geometry.h>
+#include <core/sampler.h>
 #include <core/accel.h>
 #include <core/image.h>
 #include <util/parameters.h>
@@ -11,25 +12,19 @@
 
 namespace pine {
 
-struct AOV {
-    const vec4* data = nullptr;
-    vec2i size;
-
-    size_t SizeInBytes() const {
-        return sizeof(data[0]) * size.x * size.y;
-    }
-};
-
 class Integrator {
   public:
     static std::shared_ptr<Integrator> Create(const Parameters& parameters);
 
     Integrator(const Parameters& parameters);
-    virtual ~Integrator() = default;
+    virtual ~Integrator() {
+        for (auto& sampler : samplers)
+            Sampler::Destory(sampler);
+    }
+    PINE_DELETE_COPY_MOVE(Integrator)
+
     virtual void Initialize(const Scene* scene);
     virtual void Render() = 0;
-    virtual bool NextIteration() = 0;
-    AOV GetAOV(std::string name);
 
   protected:
     const Scene* scene;
@@ -37,25 +32,20 @@ class Integrator {
     Image film;
     vec2i filmSize;
     std::string outputFileName;
-    std::map<std::string, AOV> aovs;
 
-    ProgressReporter pr;
-    int sampleIndex = 0;
-    int samplePerPixel;
-
-    vec3 sunDirection;
-    float sunIntensity;
+    std::vector<Sampler> samplers;
+    int samplesPerPixel;
 };
 
 class RayIntegrator : public Integrator {
   public:
     RayIntegrator(const Parameters& parameters);
-    virtual void Initialize(const Scene* scene);
+    virtual void Initialize(const Scene* scene) override;
 
     bool Hit(Ray ray);
     bool Intersect(Ray& ray, Interaction& it);
-    bool IntersectTr(Ray ray, vec3& tr, RNG& rng);
-    vec3 EstimateDirect(Ray ray, Interaction it, RNG& rng);
+    bool IntersectTr(Ray ray, vec3& tr, Sampler& sampler);
+    vec3 EstimateDirect(Ray ray, Interaction it, Sampler& sampler);
 
     std::vector<std::shared_ptr<Accel>> accels;
     Parameters parameters;
@@ -64,9 +54,17 @@ class RayIntegrator : public Integrator {
 class PixelSampleIntegrator : public RayIntegrator {
   public:
     PixelSampleIntegrator(const Parameters& parameters) : RayIntegrator(parameters){};
+
     virtual void Render();
-    virtual bool NextIteration();
-    virtual vec3 Li(Ray ray, RNG& rng) = 0;
+    virtual vec3 Li(Ray ray, Sampler& sampler) = 0;
+};
+
+class SinglePassIntegrator : public RayIntegrator {
+  public:
+    SinglePassIntegrator(const Parameters& parameters) : RayIntegrator(parameters){};
+
+    virtual void Render();
+    virtual vec3 Li(Ray ray, Sampler& sampler) = 0;
 };
 
 }  // namespace pine

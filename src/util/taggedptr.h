@@ -299,6 +299,13 @@ struct TaggedPointer {
         }
     }
 
+    TaggedPointer Clone() const {
+        Dispatch([](auto ptr) {
+            using T = std::decay_t<decltype(*ptr)>;
+            return new T(*ptr);
+        });
+    }
+
     void Delete() {
         if (bits) {
             Dispatch([](auto ptr) { delete ptr; });

@@ -632,7 +632,7 @@ void BVH::Optimize() {
         return nodeBest;
     };
 
-    RNG rng;
+    RNG sampler;
     float startCost = nodes[rootIndex].ComputeCost(nodes.data()) / 100000.0f;
     float lastCost = startCost;
     int numConvergedPasses = 0;
@@ -694,7 +694,7 @@ void BVH::Optimize() {
             for (int i = 0; i < (int)nodes.size() / 100; i++) {
                 int nodeIndex = -1;
                 do {
-                    nodeIndex = rng.Uniform64u() % nodes.size();
+                    nodeIndex = sampler.Uniform64u() % nodes.size();
                 } while ((nodes[nodeIndex].triangles || nodes[nodeIndex].removed ||
                           nodes[nodeIndex].parent == -1 || nodes[nodes[nodeIndex].parent].removed ||
                           nodes[nodes[nodeIndex].parent].parent == -1 ||

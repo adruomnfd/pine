@@ -48,7 +48,7 @@ struct Interaction {
         Ray ray;
         ray.o = p;
         ray.d = Normalize(p2 - p, ray.tmax);
-        ray.tmin = 1e-4f;
+        ray.tmin = min(ray.tmax * 1e-2f, 1e-2f);
         ray.tmax *= 1.0f - 1e-3f;
         ray.medium = GetMedium(ray.d);
         return ray;
@@ -57,7 +57,7 @@ struct Interaction {
         Ray ray;
         ray.o = p;
         ray.d = w;
-        ray.tmin = 1e-4f;
+        ray.tmin = 1e-3f;
         ray.medium = GetMedium(ray.d);
         return ray;
     }

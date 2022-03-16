@@ -5,27 +5,18 @@
 #include <util/parallel.h>
 #include <util/profiler.h>
 #include <util/fileio.h>
-#include <util/rng.h>
 #include <impl/integrators/ao.h>
+#include <impl/integrators/viz.h>
 #include <impl/integrators/path.h>
-#include <impl/integrators/bvhviz.h>
-#include <impl/integrators/photon.h>
 
 namespace pine {
 
-// Integrator definition
-AOV Integrator::GetAOV(std::string name) {
-    if (aovs.find(name) == aovs.end())
-        LOG_WARNING("[Integrator]AOV \"&\" does not exist", name);
-    return aovs[name];
-}
 std::shared_ptr<Integrator> Integrator::Create(const Parameters& parameters) {
     std::string type = parameters.GetString("type");
     SWITCH(type) {
         CASE("AO") return std::make_shared<AOIntegrator>(parameters);
         CASE("Path") return std::make_shared<PathIntegrator>(parameters);
-        CASE("BvhViz") return std::make_shared<BvhVizIntegrator>(parameters);
-        CASE("Photon") return std::make_shared<PhotonIntegrator>(parameters);
+        CASE("Viz") return std::make_shared<VizIntegrator>(parameters);
         DEFAULT {
             LOG_WARNING("[Integrator][Create]Unknown type \"&\"", type);
             return std::make_shared<AOIntegrator>(parameters);
@@ -33,24 +24,23 @@ std::shared_ptr<Integrator> Integrator::Create(const Parameters& parameters) {
     }
 }
 Integrator::Integrator(const Parameters& parameters) {
-    samplePerPixel = parameters.GetInt("samplePerPixel", 32);
     filmSize = parameters.GetVec2i("filmSize", vec2i(1280, 720));
 
     film = Image(filmSize);
-    aovs["result"] = {film.Data(), filmSize};
 
-    pr = ProgressReporter("Rendering", "Samples", samplePerPixel, filmSize.x * filmSize.y);
+    Parameters samplerParams = parameters["sampler"];
+    samplerParams.Set("filmSize", filmSize);
+    samplers = {Sampler::Create(samplerParams)};
+    for (int i = 0; i < NumThreads() - 1; i++)
+        samplers.push_back(samplers[0].Clone());
+    samplesPerPixel = samplers[0].SamplesPerPixel();
 }
 void Integrator::Initialize(const Scene* scene) {
     Profiler _("IntegratorInit");
     this->scene = scene;
     outputFileName = scene->parameters.GetString("outputFileName", "result.bmp");
-    sunDirection =
-        Normalize(scene->parameters["atmosphere"].GetVec3("sunDirection", vec3(1, 4, 1)));
-    sunIntensity = scene->parameters["atmosphere"].GetFloat("sunIntensity", 1.0f);
 }
 
-// RayIntegrator definition
 RayIntegrator::RayIntegrator(const Parameters& parameters)
     : Integrator(parameters), parameters(parameters) {
 }
@@ -88,7 +78,7 @@ bool RayIntegrator::Intersect(Ray& ray, Interaction& it) {
 
     return hit;
 }
-bool RayIntegrator::IntersectTr(Ray ray, vec3& tr, RNG& rng) {
+bool RayIntegrator::IntersectTr(Ray ray, vec3& tr, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::IntersectTr);
 
     vec3 p2 = ray(ray.tmax);
@@ -98,7 +88,7 @@ bool RayIntegrator::IntersectTr(Ray ray, vec3& tr, RNG& rng) {
     while (true) {
         bool hitSurface = Intersect(ray, it);
         if (ray.medium)
-            tr *= ray.medium.Tr(ray, rng);
+            tr *= ray.medium.Tr(ray, sampler);
         if (!hitSurface)
             return false;
         if (it.material)
@@ -106,28 +96,28 @@ bool RayIntegrator::IntersectTr(Ray ray, vec3& tr, RNG& rng) {
         ray = it.SpawnRayTo(p2);
     }
 }
-vec3 RayIntegrator::EstimateDirect(Ray ray, Interaction it, RNG& rng) {
+vec3 RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::EstimateDirect);
 
     LightSample ls;
 
-    float lightChoiceProb = scene->lights.size() ? (sunIntensity == 0.0f ? 1.0f : 0.5f) : 0.0f;
+    // float lightChoiceProb = scene->lights.size() ? (sunIntensity == 0.0f ? 1.0f : 0.5f) : 0.0f;
 
-    if (rng.Uniformf() < lightChoiceProb) {
-        uint64_t lightIndex = rng.Uniformf() * scene->lights.size();
-        ls = scene->lights[lightIndex].Sample(it.p, rng.Uniformf(), rng.Uniform2f());
-        ls.pdf = ls.pdf / lightChoiceProb;
-    } else {
-        ls.Le = AtmosphereColor(sunDirection, sunDirection, sunIntensity);
-        ls.wo = sunDirection;
-        ls.distance = 1e+10f;
-        ls.p = ls.wo * ls.distance;
-        ls.isDelta = true;
-        ls.pdf = 1.0f / (1.0f - lightChoiceProb);
-    }
+    // if (sampler.Get1D() < lightChoiceProb) {
+    uint64_t lightIndex = sampler.Get1D() * scene->lights.size();
+    ls = scene->lights[lightIndex].Sample(it.p, sampler.Get1D(), sampler.Get2D());
+    ls.pdf = ls.pdf;  // / lightChoiceProb;
+    // } else {
+    //     ls.Le = AtmosphereColor(sunDirection, sunDirection, sunIntensity);
+    //     ls.wo = sunDirection;
+    //     ls.distance = 1e+10f;
+    //     ls.p = ls.wo * ls.distance;
+    //     ls.isDelta = true;
+    //     ls.pdf = 1.0f / (1.0f - lightChoiceProb);
+    // }
 
     vec3 tr = vec3(1.0f);
-    if (IntersectTr(it.SpawnRayTo(ls.p), tr, rng))
+    if (IntersectTr(it.SpawnRayTo(ls.p), tr, sampler))
         return vec3(0.0f);
 
     if (it.IsSurfaceInteraction()) {
@@ -140,12 +130,25 @@ vec3 RayIntegrator::EstimateDirect(Ray ray, Interaction it, RNG& rng) {
     }
 }
 
-// PixelSampleIntegrator definition
 void PixelSampleIntegrator::Render() {
     Profiler _("Render");
-    sampleIndex = 0;
 
-    while (NextIteration()) {
+    ProgressReporter pr("Rendering", "Samples", "Samples", samplesPerPixel,
+                        filmSize.x * filmSize.y);
+
+    for (int sampleIndex = 0; sampleIndex < samplesPerPixel; sampleIndex++) {
+        ScopedPR(pr, sampleIndex);
+
+        ThreadIdParallelFor(filmSize, [&](int id, vec2i p) {
+            Sampler& sampler = samplers[id];
+            sampler.StartPixel(p, sampleIndex);
+            Ray ray = scene->camera.GenRay(
+                (p - filmSize / 2 + sampler.Get2D() - vec2(0.5f)) / filmSize.y, sampler.Get2D());
+
+            vec3 color = Li(ray, sampler);
+            film[p] =
+                vec4(color, 1.0f) / (sampleIndex + 1) + film[p] * sampleIndex / (sampleIndex + 1);
+        });
     }
 
     ParallelFor(filmSize, [&](vec2i p) {
@@ -153,25 +156,44 @@ void PixelSampleIntegrator::Render() {
     });
     SaveBMPImage(outputFileName, film.Size(), 4, (float*)film.Data());
 }
-bool PixelSampleIntegrator::NextIteration() {
-    if (sampleIndex >= samplePerPixel)
-        return false;
 
-    pr.Report(sampleIndex);
+void SinglePassIntegrator::Render() {
+    Profiler _("Render");
 
-    ParallelFor(filmSize, [&](vec2 p) {
-        RNG rng(Hash(p, sampleIndex));
-        Ray ray = scene->camera.GenRay(
-            (p - filmSize / 2 + rng.Uniform2f() - vec2(0.5f)) / filmSize.y, rng.Uniform2f());
+    int total = filmSize.x * filmSize.y;
+    int groupSize = max(total / 100, 1);
+    int nGroups = (total + groupSize - 1) / groupSize;
 
-        vec3 color = Li(ray, rng);
-        film[p] = vec4(color, 1.0f) / (sampleIndex + 1) + film[p] * sampleIndex / (sampleIndex + 1);
-    });
+    ProgressReporter pr("Rendering", "Pixels", "Pixels", total, total);
 
-    if (++sampleIndex == samplePerPixel)
-        pr.Report(sampleIndex);
+    for (int i = 0; i < nGroups; i++) {
+        ScopedPR(pr, i * groupSize);
 
-    return sampleIndex < samplePerPixel;
+        ThreadIdParallelFor(groupSize, [&](int id, int index) {
+            index += i * groupSize;
+            if (index >= total)
+                return;
+            vec2i p = {index % filmSize.x, index / filmSize.x};
+
+            Sampler& sampler = samplers[id];
+            sampler.StartPixel(p, 0);
+
+            vec3 color;
+            for (int sampleIndex = 0; sampleIndex < samplesPerPixel; sampleIndex++) {
+                Ray ray = scene->camera.GenRay(
+                    (p - filmSize / 2 + sampler.Get2D() - vec2(0.5f)) / filmSize.y,
+                    sampler.Get2D());
+                color += Li(ray, sampler);
+                sampler.StartNextSample();
+            }
+
+            color /= samplesPerPixel;
+            color = Pow(Uncharted2Flimic(color), 1.0f / 2.2f);
+            film[p] = vec4(color, 1.0f);
+        });
+    }
+
+    SaveBMPImage(outputFileName, film.Size(), 4, (float*)film.Data());
 }
 
 }  // namespace pine

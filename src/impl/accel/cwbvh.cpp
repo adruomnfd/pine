@@ -1,6 +1,5 @@
 #include <impl/accel/cwbvh.h>
 #include <util/parallel.h>
-#include <util/rng.h>
 
 #include <algorithm>
 #include <queue>
@@ -487,7 +486,7 @@ void CWBVH::ReinsertionOptimization() {
         return nodeBest;
     };
 
-    RNG rng;
+    RNG sampler;
     float startCost = nodes2[node2Root].ComputeSAHCost(nodes2.data()) / 100000.0f;
     float lastCost = startCost;
     int numConvergedPasses = 0;
@@ -549,7 +548,7 @@ void CWBVH::ReinsertionOptimization() {
             for (int i = 0; i < (int)nodes2.size() / 100; i++) {
                 int nodeIndex = -1;
                 do {
-                    nodeIndex = rng.Uniform64u() % nodes2.size();
+                    nodeIndex = sampler.Uniform64u() % nodes2.size();
                 } while (!nodes2[nodeIndex].isInternalNode || nodes2[nodeIndex].removed ||
                          nodes2[nodeIndex].parent == -1 ||
                          nodes2[nodes2[nodeIndex].parent].removed ||

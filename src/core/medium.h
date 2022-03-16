@@ -2,6 +2,7 @@
 #define PINE_CORE_MEDIUM_H
 
 #include <core/vecmath.h>
+#include <core/sampler.h>
 #include <util/taggedptr.h>
 #include <util/profiler.h>
 
@@ -28,8 +29,8 @@ struct HomogeneousMedium {
     HomogeneousMedium(vec3 sigma_a, vec3 sigma_s, float g)
         : sigma_a(sigma_a), sigma_s(sigma_s), sigma_t(sigma_a + sigma_s), g(g){};
 
-    vec3 Tr(const Ray& ray, RNG& rng) const;
-    MediumSample Sample(const Ray& ray, Interaction& mi, RNG& rng) const;
+    vec3 Tr(const Ray& ray, Sampler& sampler) const;
+    MediumSample Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const;
 
     vec3 sigma_a;
     vec3 sigma_s;
@@ -42,8 +43,8 @@ struct GridMedium {
     GridMedium(vec3 sigma_a, vec3 sigma_s, float g, vec3i size, vec3 lower, vec3 upper,
                float* density);
 
-    vec3 Tr(const Ray& ray, RNG& rng) const;
-    MediumSample Sample(const Ray& ray, Interaction& mi, RNG& rng) const;
+    vec3 Tr(const Ray& ray, Sampler& sampler) const;
+    MediumSample Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const;
     float Density(vec3 p) const;
     float D(vec3i pi) const;
 
@@ -65,13 +66,13 @@ struct Medium : TaggedPointer<HomogeneousMedium, GridMedium> {
         medium.Delete();
     }
 
-    vec3 Tr(const Ray& ray, RNG& rng) const {
+    vec3 Tr(const Ray& ray, Sampler& sampler) const {
         SampledProfiler _(ProfilePhase::MediumTr);
-        return Dispatch([&](auto ptr) { return ptr->Tr(ray, rng); });
+        return Dispatch([&](auto ptr) { return ptr->Tr(ray, sampler); });
     }
-    MediumSample Sample(const Ray& ray, Interaction& mi, RNG& rng) const {
+    MediumSample Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const {
         SampledProfiler _(ProfilePhase::MediumSample);
-        return Dispatch([&](auto ptr) { return ptr->Sample(ray, mi, rng); });
+        return Dispatch([&](auto ptr) { return ptr->Sample(ray, mi, sampler); });
     }
 };
 

@@ -5,12 +5,11 @@
 
 namespace pine {
 
-class AOIntegrator : public RayIntegrator {
+class AOIntegrator : public SinglePassIntegrator {
   public:
-    AOIntegrator(const Parameters& parameters) : RayIntegrator(parameters){};
+    AOIntegrator(const Parameters& parameters) : SinglePassIntegrator(parameters){};
 
-    void Render() override;
-    bool NextIteration() override;
+    vec3 Li(Ray ray, Sampler& sampler) override;
 };
 
 }  // namespace pine

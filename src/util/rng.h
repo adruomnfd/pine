@@ -15,7 +15,7 @@ template <typename T, typename... Ts>
 inline uint64_t Hash(T first, Ts... rest) {
     uint64_t bits[(sizeof(T) + 7) / sizeof(uint64_t)] = {};
     memcpy(bits, &first, sizeof(T));
-    
+
     uint64_t h = 0;
     for (size_t i = 0; i < sizeof(bits) / sizeof(bits[0]); i++)
         h = Hash64u(h ^ bits[i]);
@@ -26,11 +26,29 @@ inline uint64_t Hash(T first, Ts... rest) {
     return h;
 }
 
+template <typename... Ts>
+inline float Hashf(Ts... vals) {
+    uint64_t h = Hash(vals...);
+    uint32_t h32 = h ^ (h >> 32);
+    if (h32 == -1u)
+        h32 = -2u;
+    return h32 / float(-1u);
+}
+
 inline uint64_t SplitMix64(uint64_t& s) {
     uint64_t r = s += 0x9E3779B97f4A7C15ULL;
     r = (r ^ (r >> 30)) * 0xBF58476D1CE4E5B9ULL;
     r = (r ^ (r >> 27)) * 0x94D049BB133111EBULL;
     return r ^ (r >> 31);
+}
+
+inline uint64_t MixBits(uint64_t v) {
+    v ^= (v >> 31);
+    v *= 0x7fb5d329728ea185;
+    v ^= (v >> 27);
+    v *= 0x81dadef4bc2dd44d;
+    v ^= (v >> 33);
+    return v;
 }
 
 inline uint32_t Rotl32(uint32_t x, int k) {
@@ -44,6 +62,19 @@ struct RNG {
     RNG(uint64_t seed = 0) {
         s[0] = SplitMix64(seed);
         s[1] = SplitMix64(seed);
+    }
+
+    uint64_t Uniform64u(uint64_t max) {
+        return Uniform64u() % max;
+    }
+
+    uint32_t Uniform32u(uint32_t max) {
+        return Uniform32u() % max;
+    }
+
+    uint32_t Uniform32u() {
+        uint64_t h = Uniform64u();
+        return h ^ (h >> 32);
     }
 
     uint64_t Uniform64u() {

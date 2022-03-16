@@ -1,5 +1,6 @@
 #include <core/noise.h>
 #include <util/log.h>
+#include <util/rng.h>
 
 namespace pine {
 
@@ -51,19 +52,19 @@ vec3 Turbulence3D(vec3 np, float frequency, int octaves) {
 
 std::vector<vec2> GenerateWhiteNoise(vec2i size, int seed) {
     std::vector<vec2> noise(size.x * size.y);
-    RNG rng(seed);
+    RNG sampler(seed);
     for (int y = 0; y < size.y; y++)
         for (int x = 0; x < size.x; x++)
-            noise[x + y * size.x] = rng.Uniform2f();
+            noise[x + y * size.x] = sampler.Uniform2f();
 
     return noise;
 }
 std::vector<vec2> GenerateBlueNoise(vec2i size, int seed) {
     std::vector<vec2> noise(size.x * size.y);
-    RNG rng(seed);
+    RNG sampler(seed);
     for (int y = 0; y < size.y; y++)
         for (int x = 0; x < size.x; x++)
-            noise[x + y * size.x] = rng.Uniform2f();
+            noise[x + y * size.x] = sampler.Uniform2f();
 
     const int r = 1;
     const float sigma_i2 = 2.1f * 2.1f;
@@ -87,8 +88,8 @@ std::vector<vec2> GenerateBlueNoise(vec2i size, int seed) {
     };
 
     for (int i = 0; i < numIterations; i++) {
-        vec2i qi0 = rng.Uniform2f() * size;
-        vec2i qi1 = rng.Uniform2f() * size;
+        vec2i qi0 = sampler.Uniform2f() * size;
+        vec2i qi1 = sampler.Uniform2f() * size;
         float E0 = Energy(qi0) + Energy(qi1);
         std::swap(noise[qi0.x + qi0.y * size.x], noise[qi1.x + qi1.y * size.x]);
         float E1 = Energy(qi0) + Energy(qi1);

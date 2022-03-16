@@ -5,10 +5,10 @@
 
 namespace pine {
 
-struct PathIntegrator : PixelSampleIntegrator {
+struct PathIntegrator : SinglePassIntegrator {
     PathIntegrator(const Parameters& parameters);
-    virtual vec3 Li(Ray ray, RNG& rng);
-    
+    vec3 Li(Ray ray, Sampler& sampler) override;
+
     int maxDepth;
     float clamp;
 };

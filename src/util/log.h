@@ -45,16 +45,10 @@ inline void LOG_FATAL(const Args&... args) {
 template <typename... Args>
 inline void print(const Args&... args) {
     auto fmt = Format(-1, 4, true, false, false, true);
-    switch (sizeof...(args)) {
-    case 1: return LOG(fmt, "&", args...);
-    case 2: return LOG(fmt, "& &", args...);
-    case 3: return LOG(fmt, "& & &", args...);
-    case 4: return LOG(fmt, "& & & &", args...);
-    case 5: return LOG(fmt, "& & & & &", args...);
-    case 6: return LOG(fmt, "& & & & & &", args...);
-    case 7: return LOG(fmt, "& & & & & & &", args...);
-    case 8: return LOG(fmt, "& & & & & & & &", args...);
-    }
+    std::string format;
+    for (size_t i = 0; i < sizeof...(args); i++)
+        format += "& ";
+    LOG(fmt, format.c_str(), args...);
 }
 
 #define CHECK(x)                                                                          \
@@ -115,17 +109,34 @@ struct Timer {
 
 struct ProgressReporter {
     ProgressReporter() = default;
-    ProgressReporter(std::string tag, std::string desc, int total, int workCount)
-        : tag(tag), desc(desc), total(total), workCount(workCount) {
+    ProgressReporter(std::string tag, std::string desc, std::string performance, int total,
+                     int workCount)
+        : tag(tag), desc(desc), performance(performance), workCount(workCount), total(total) {
     }
 
     void Report(int current);
 
   private:
-    std::string tag, desc;
+    std::string tag, desc, performance;
     Timer ETA, interval;
-    int total;
     int workCount;
+
+  public:
+    int total;
+};
+
+struct ScopedPR {
+    ScopedPR(ProgressReporter& pr, int current) : pr(pr), current(current) {
+        pr.Report(current);
+    }
+    ~ScopedPR() {
+        if (current + 1 == pr.total)
+            pr.Report(current + 1);
+    }
+    PINE_DELETE_COPY_MOVE(ScopedPR)
+
+    ProgressReporter& pr;
+    int current;
 };
 
 }  // namespace pine

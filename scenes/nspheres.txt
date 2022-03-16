@@ -7,13 +7,21 @@ Scene{
 
 Integrator{
     type: Path
-    maxDepth: 4
-    samplePerPixel: 128
+    maxDepth: 3
     filmSize: 1280 360
     accel{
         type: BVH
     }
-    clamp: 4
+    sampler{
+        type: Sobol
+        samplesPerPixel: 32
+        xPixelSamples: 4
+        yPixelSamples: 4
+        jitter: true
+        randomizeStrategyH: permutateDigits
+        randomizeStrategy: none
+        nSampledDimensions: 16
+    }
 }
 
 Camera{

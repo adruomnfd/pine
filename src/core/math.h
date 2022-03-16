@@ -12,14 +12,12 @@ namespace pine {
 
 static constexpr float Pi = 3.1415926535897f;
 static constexpr float Epsilon = std::numeric_limits<float>::epsilon();
-static constexpr float OneMinusEpsilon = 1.0f - Epsilon;
+static constexpr float OneMinusEpsilon = 0x1.fffffep-1;
 static constexpr float FloatMax = std::numeric_limits<float>::max();
 static constexpr float Infinity = std::numeric_limits<float>::infinity();
 
 template <typename Dst, typename Src>
 Dst Reinterpret(const Src& src) {
-    static_assert(sizeof(Src) >= sizeof(Dst),
-                  "sizeof _Src_ must be at least as large as sizeof _Dst_");
     Dst dst;
     memcpy(&dst, &src, sizeof(Dst));
     return dst;
@@ -33,6 +31,12 @@ inline T max(T a, T b) {
 template <typename T>
 inline T min(T a, T b) {
     return a < b ? a : b;
+}
+
+template <typename T>
+inline T Mod(T a, T b) {
+    T result = a - (a / b) * b;
+    return T(result < 0 ? result + b : result);
 }
 
 template <typename T>
@@ -96,6 +100,58 @@ struct float16unsigned {
     }
     uint16_t bits = 0;
 };
+
+inline uint32_t ReverseBits32(uint32_t x) {
+    x = (x & 0x55555555) << 1 | (x & 0xaaaaaaaa) >> 1;
+    x = (x & 0x33333333) << 2 | (x & 0xcccccccc) >> 2;
+    x = (x & 0x0f0f0f0f) << 4 | (x & 0xf0f0f0f0) >> 4;
+    x = (x & 0x00ff00ff) << 8 | (x & 0xff00ff00) >> 8;
+
+    return (x << 16) | (x >> 16);
+}
+
+inline uint64_t ReverseBits64(uint64_t x) {
+    return ((uint64_t)ReverseBits32(x) << 32) | (uint64_t)ReverseBits32(x >> 32);
+}
+
+inline uint32_t GrayCode(uint32_t n) {
+    return (n >> 1) ^ n;
+}
+
+inline uint32_t SeperateLowestSetBit(uint32_t x) {
+    return x & -x;
+}
+
+inline int HighestSetBit(uint32_t x) {
+    union {
+        float f;
+        uint32_t i;
+    };
+    f = (float)x;
+
+    return (0xff & (i >> 23)) - 127;
+}
+inline int Log2Int(int x) {
+    if (x <= 0)
+        return 0;
+    return HighestSetBit(x);
+}
+
+inline int CountTrailingZero(uint32_t x) {
+    // return __builtin_ctz(x);
+    return HighestSetBit(SeperateLowestSetBit(x));
+}
+
+inline uint32_t RoundUpPow2(uint32_t x) {
+    x -= 1;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    x += 1;
+    return x;
+}
 
 }  // namespace pine
 

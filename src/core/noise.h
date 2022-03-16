@@ -2,7 +2,6 @@
 #define PINE_CORE_NOISE_H
 
 #include <core/vecmath.h>
-#include <util/rng.h>
 
 #include <vector>
 

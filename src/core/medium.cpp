@@ -3,7 +3,6 @@
 #include <core/sampling.h>
 #include <util/parameters.h>
 #include <util/fileio.h>
-#include <util/rng.h>
 
 namespace pine {
 
@@ -31,13 +30,13 @@ float PhaseFunction::Sample(vec3 wi, vec3& wo, vec2 u2) const {
     return PhaseHG(cosTheta, g);
 }
 
-vec3 HomogeneousMedium::Tr(const Ray& ray, RNG&) const {
+vec3 HomogeneousMedium::Tr(const Ray& ray, Sampler&) const {
     return Exp(-ray.tmax * sigma_t);
 }
-MediumSample HomogeneousMedium::Sample(const Ray& ray, Interaction& mi, RNG& rng) const {
+MediumSample HomogeneousMedium::Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const {
     MediumSample ms;
-    float u1 = rng.Uniformf();
-    vec2 u2 = rng.Uniform2f();
+    float u1 = sampler.Get1D();
+    vec2 u2 = sampler.Get2D();
     int channel = int(u1 * 3);
     u1 = u1 * 3 - int(u1 * 3);
     float dist = -std::log(1.0f - u1) / (sigma_t[channel]);
@@ -59,7 +58,7 @@ MediumSample HomogeneousMedium::Sample(const Ray& ray, Interaction& mi, RNG& rng
     return ms;
 }
 
-vec3 GridMedium::Tr(const Ray& ray, RNG& rng) const {
+vec3 GridMedium::Tr(const Ray& ray, Sampler& sampler) const {
     vec3 tr = vec3(1.0f);
     float tmin, tmax;
     AABB bound(lower, upper);
@@ -68,7 +67,7 @@ vec3 GridMedium::Tr(const Ray& ray, RNG& rng) const {
 
     float t = tmin;
     while (true) {
-        t -= std::log(1.0f - rng.Uniformf()) * invMaxDensity / sigma_t;
+        t -= std::log(1.0f - sampler.Get1D()) * invMaxDensity / sigma_t;
         if (t >= tmax)
             break;
         float density = Density(ray(t));
@@ -76,7 +75,7 @@ vec3 GridMedium::Tr(const Ray& ray, RNG& rng) const {
     }
     return tr;
 }
-MediumSample GridMedium::Sample(const Ray& ray, Interaction& mi, RNG& rng) const {
+MediumSample GridMedium::Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const {
     MediumSample ms;
     float tmin, tmax;
     AABB bound(lower, upper);
@@ -85,16 +84,16 @@ MediumSample GridMedium::Sample(const Ray& ray, Interaction& mi, RNG& rng) const
 
     float t = tmin;
     while (true) {
-        t -= std::log(1.0f - rng.Uniformf()) * invMaxDensity / sigma_t;
+        t -= std::log(1.0f - sampler.Get1D()) * invMaxDensity / sigma_t;
         if (t >= tmax)
             break;
-        if (Density(ray(t)) * invMaxDensity > rng.Uniformf()) {
+        if (Density(ray(t)) * invMaxDensity > sampler.Get1D()) {
             mi.p = ray(t);
             mi.isMediumInteraction = true;
             mi.mediumInterface = MediumInterface(Medium(const_cast<GridMedium*>(this)));
             mi.phaseFunction = PhaseFunction(g);
             PhaseFunction pf(0.0f);
-            pf.Sample(-ray.d, ms.wo, rng.Uniform2f());
+            pf.Sample(-ray.d, ms.wo, sampler.Get2D());
             ms.tr = sigma_s / sigma_t;
         }
     }
