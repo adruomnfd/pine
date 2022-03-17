@@ -43,8 +43,8 @@ class RayIntegrator : public Integrator {
 
     bool Hit(Ray ray);
     bool Intersect(Ray& ray, Interaction& it);
-    bool IntersectTr(Ray ray, vec3& tr, Sampler& sampler);
-    vec3 EstimateDirect(Ray ray, Interaction it, Sampler& sampler);
+    bool IntersectTr(Ray ray, Spectrum& tr, Sampler& sampler);
+    Spectrum EstimateDirect(Ray ray, Interaction it, Sampler& sampler);
 
     std::vector<std::shared_ptr<Accel>> accels;
     Parameters parameters;
@@ -55,7 +55,7 @@ class PixelSampleIntegrator : public RayIntegrator {
     PixelSampleIntegrator(const Parameters& parameters) : RayIntegrator(parameters){};
 
     virtual void Render();
-    virtual vec3 Li(Ray ray, Sampler& sampler) = 0;
+    virtual Spectrum Li(Ray ray, Sampler& sampler) = 0;
 };
 
 class SinglePassIntegrator : public RayIntegrator {
@@ -63,7 +63,7 @@ class SinglePassIntegrator : public RayIntegrator {
     SinglePassIntegrator(const Parameters& parameters) : RayIntegrator(parameters){};
 
     virtual void Render();
-    virtual vec3 Li(Ray ray, Sampler& sampler) = 0;
+    virtual Spectrum Li(Ray ray, Sampler& sampler) = 0;
 };
 
 }  // namespace pine

@@ -2,6 +2,7 @@
 #define PINE_CORE_LIGHT_H
 
 #include <core/vecmath.h>
+#include <core/spectrum.h>
 #include <util/taggedptr.h>
 
 namespace pine {
@@ -9,7 +10,7 @@ namespace pine {
 struct LightSample {
     vec3 p;
     vec3 wo;
-    vec3 Le;
+    Spectrum Le;
     float distance = 1.0f;
     float pdf = 1.0f;
     bool isDelta = false;
@@ -17,29 +18,31 @@ struct LightSample {
 struct LightEmissionSample {
     vec3 p;
     vec3 wo;
-    vec3 Le;
+    Spectrum Le;
 };
 
 struct PointLight {
     static PointLight Create(const Parameters& params);
-    PointLight(vec3 position, vec3 color) : position(position), color(color){};
+    PointLight(vec3 position, vec3 color)
+        : position(position), color(Spectrum(color, SpectrumType::Illuminant)){};
 
     LightSample Sample(vec3 p, float u1, vec2 u2) const;
     LightEmissionSample SampleEmission(float u1, vec2 up, vec2 ud) const;
 
     vec3 position;
-    vec3 color;
+    Spectrum color;
 };
 
 struct DirectionalLight {
     static DirectionalLight Create(const Parameters& params);
-    DirectionalLight(vec3 direction, vec3 color) : direction(Normalize(direction)), color(color){};
+    DirectionalLight(vec3 direction, vec3 color)
+        : direction(Normalize(direction)), color(Spectrum(color, SpectrumType::Illuminant)){};
 
     LightSample Sample(vec3 p, float u1, vec2 u2) const;
     LightEmissionSample SampleEmission(float u1, vec2 up, vec2 ud) const;
 
     vec3 direction;
-    vec3 color;
+    Spectrum color;
 };
 
 struct AreaLight {
@@ -50,7 +53,7 @@ struct AreaLight {
           ey(ey),
           n(Normalize(Cross(ex, ey))),
           area(Length(Cross(ex, ey))),
-          color(color){};
+          color(Spectrum(color, SpectrumType::Illuminant)){};
 
     LightSample Sample(vec3 p, float u1, vec2 u2) const;
     LightEmissionSample SampleEmission(float u1, vec2 up, vec2 ud) const;
@@ -60,7 +63,7 @@ struct AreaLight {
     vec3 ey;
     vec3 n;
     float area;
-    vec3 color;
+    Spectrum color;
 };
 
 struct MeshLight {

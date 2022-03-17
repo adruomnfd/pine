@@ -9,10 +9,10 @@ PathIntegrator::PathIntegrator(const Parameters& parameters) : SinglePassIntegra
     maxDepth = parameters.GetInt("maxDepth", 4);
     clamp = parameters.GetFloat("clamp", FloatMax);
 }
-vec3 PathIntegrator::Li(Ray ray, Sampler& sampler) {
+Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::EstimateLi);
-    vec3 L(0.0f);
-    vec3 beta(1.0f);
+    Spectrum L(0.0f);
+    Spectrum beta(1.0f);
     float bsdfPDF;
 
     for (int depth = 0; depth < maxDepth; depth++) {
@@ -54,8 +54,8 @@ vec3 PathIntegrator::Li(Ray ray, Sampler& sampler) {
         mc.wi = -ray.d;
 
         // Accounting for visible emssive surface
-        vec3 le = it.material.Le(mc);
-        if (le != vec3(0.0f)) {
+        Spectrum le = it.material.Le(mc);
+        if (!le.IsBlack()) {
             if (depth == 0) {
                 L += beta * le;
             } else {
@@ -82,7 +82,7 @@ vec3 PathIntegrator::Li(Ray ray, Sampler& sampler) {
         ray = next;
     }
 
-    return Clamp(L, vec3(0), vec3(clamp));
+    return Clamp(L, 0, clamp);
 }
 
 }  // namespace pine

@@ -6,8 +6,8 @@
 
 namespace pine {
 
-vec3 AOIntegrator::Li(Ray ray, Sampler& sampler) {
-    vec3 color;
+Spectrum AOIntegrator::Li(Ray ray, Sampler& sampler) {
+    Spectrum color;
     Interaction it;
     if (Intersect(ray, it)) {
         ray.o = it.p;
@@ -17,7 +17,7 @@ vec3 AOIntegrator::Li(Ray ray, Sampler& sampler) {
         ray.tmin = 1e-4f * ray.tmax;
         ray.tmax = FloatMax;
         if (!Intersect(ray, it))
-            color = vec3(1.0f);
+            color = Spectrum(1.0f);
     }
     return color;
 }

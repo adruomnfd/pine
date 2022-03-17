@@ -3,6 +3,7 @@
 
 #include <core/vecmath.h>
 #include <core/sampler.h>
+#include <core/spectrum.h>
 #include <util/taggedptr.h>
 #include <util/profiler.h>
 
@@ -20,36 +21,36 @@ struct PhaseFunction {
 };
 
 struct MediumSample {
-    vec3 tr = vec3(1.0f);
+    Spectrum tr = vec3(1.0f);
     vec3 wo;
 };
 
 struct HomogeneousMedium {
     static HomogeneousMedium Create(const Parameters& params);
-    HomogeneousMedium(vec3 sigma_a, vec3 sigma_s, float g)
+    HomogeneousMedium(Spectrum sigma_a, Spectrum sigma_s, float g)
         : sigma_a(sigma_a), sigma_s(sigma_s), sigma_t(sigma_a + sigma_s), g(g){};
 
-    vec3 Tr(const Ray& ray, Sampler& sampler) const;
+    Spectrum Tr(const Ray& ray, Sampler& sampler) const;
     MediumSample Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const;
 
-    vec3 sigma_a;
-    vec3 sigma_s;
-    vec3 sigma_t;
+    Spectrum sigma_a;
+    Spectrum sigma_s;
+    Spectrum sigma_t;
     float g;
 };
 
 struct GridMedium {
     static GridMedium Create(const Parameters& params);
-    GridMedium(vec3 sigma_a, vec3 sigma_s, float g, vec3i size, vec3 lower, vec3 upper,
+    GridMedium(Spectrum sigma_a, Spectrum sigma_s, float g, vec3i size, vec3 lower, vec3 upper,
                float* density);
 
-    vec3 Tr(const Ray& ray, Sampler& sampler) const;
+    Spectrum Tr(const Ray& ray, Sampler& sampler) const;
     MediumSample Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const;
     float Density(vec3 p) const;
     float D(vec3i pi) const;
 
-    vec3 sigma_a;
-    vec3 sigma_s;
+    Spectrum sigma_a;
+    Spectrum sigma_s;
     float sigma_t;
     float g;
     vec3i size;
@@ -66,7 +67,7 @@ struct Medium : TaggedPointer<HomogeneousMedium, GridMedium> {
         medium.Delete();
     }
 
-    vec3 Tr(const Ray& ray, Sampler& sampler) const {
+    Spectrum Tr(const Ray& ray, Sampler& sampler) const {
         SampledProfiler _(ProfilePhase::MediumTr);
         return Dispatch([&](auto ptr) { return ptr->Tr(ray, sampler); });
     }

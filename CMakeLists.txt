@@ -18,6 +18,7 @@ add_library(pinelib
 src/core/vecmath.cpp
 src/core/geometry.cpp
 src/core/medium.cpp
+src/core/spectrum.cpp
 src/core/light.cpp
 src/core/camera.cpp
 src/core/scene.cpp

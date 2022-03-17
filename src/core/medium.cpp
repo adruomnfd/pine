@@ -30,7 +30,7 @@ float PhaseFunction::Sample(vec3 wi, vec3& wo, vec2 u2) const {
     return PhaseHG(cosTheta, g);
 }
 
-vec3 HomogeneousMedium::Tr(const Ray& ray, Sampler&) const {
+Spectrum HomogeneousMedium::Tr(const Ray& ray, Sampler&) const {
     return Exp(-ray.tmax * sigma_t);
 }
 MediumSample HomogeneousMedium::Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const {
@@ -51,19 +51,19 @@ MediumSample HomogeneousMedium::Sample(const Ray& ray, Interaction& mi, Sampler&
         pf.Sample(-ray.d, ms.wo, u2);
     }
 
-    vec3 tr = Exp(-sigma_t * t);
-    vec3 density = sampledMedium ? (sigma_t * tr) : tr;
+    Spectrum tr = Exp(-sigma_t * t);
+    Spectrum density = sampledMedium ? (sigma_t * tr) : tr;
     float pdf = (density[0] + density[1] + density[2]) / 3.0f;
     ms.tr = sampledMedium ? (tr * sigma_s / pdf) : (tr / pdf);
     return ms;
 }
 
-vec3 GridMedium::Tr(const Ray& ray, Sampler& sampler) const {
+Spectrum GridMedium::Tr(const Ray& ray, Sampler& sampler) const {
     vec3 tr = vec3(1.0f);
     float tmin, tmax;
     AABB bound(lower, upper);
     if (!bound.Hit(ray, tmin, tmax))
-        return vec3(1.0f);
+        return Spectrum(1.0f);
 
     float t = tmin;
     while (true) {
@@ -73,7 +73,7 @@ vec3 GridMedium::Tr(const Ray& ray, Sampler& sampler) const {
         float density = Density(ray(t));
         tr *= 1.0f - std::max(0.0f, density * invMaxDensity);
     }
-    return tr;
+    return (Spectrum)tr;
 }
 MediumSample GridMedium::Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const {
     MediumSample ms;
@@ -112,8 +112,8 @@ float GridMedium::D(vec3i p) const {
     return d;
 }
 
-GridMedium::GridMedium(vec3 sigma_a, vec3 sigma_s, float g, vec3i size, vec3 lower, vec3 upper,
-                       float* density)
+GridMedium::GridMedium(Spectrum sigma_a, Spectrum sigma_s, float g, vec3i size, vec3 lower,
+                       vec3 upper, float* density)
     : sigma_a(sigma_a),
       sigma_s(sigma_s),
       sigma_t((sigma_a + sigma_s)[0]),

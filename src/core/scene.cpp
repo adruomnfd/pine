@@ -14,7 +14,7 @@ void Scene::Initialize() {
             std::string materialName = "areaLightMaterial" + ToString(lightId++);
             materialParams.Set("type", "Emissive");
             materialParams["color"].Set("type", "Constant");
-            materialParams["color"].Set("vec3", areaLight->color);
+            materialParams["color"].Set("vec3", areaLight->color.ToRGB());
             materials[materialName] = Material::Create(materialParams);
 
             Parameters shapeParams;

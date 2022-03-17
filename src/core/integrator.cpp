@@ -76,12 +76,12 @@ bool RayIntegrator::Intersect(Ray& ray, Interaction& it) {
 
     return hit;
 }
-bool RayIntegrator::IntersectTr(Ray ray, vec3& tr, Sampler& sampler) {
+bool RayIntegrator::IntersectTr(Ray ray, Spectrum& tr, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::IntersectTr);
 
     vec3 p2 = ray(ray.tmax);
     Interaction it;
-    tr = vec3(1.0f);
+    tr = Spectrum(1.0f);
 
     while (true) {
         bool hitSurface = Intersect(ray, it);
@@ -94,7 +94,7 @@ bool RayIntegrator::IntersectTr(Ray ray, vec3& tr, Sampler& sampler) {
         ray = it.SpawnRayTo(p2);
     }
 }
-vec3 RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler) {
+Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::EstimateDirect);
 
     LightSample ls;
@@ -102,13 +102,13 @@ vec3 RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler) {
     ls = scene->lights[lightIndex].Sample(it.p, sampler.Get1D(), sampler.Get2D());
     ls.pdf = ls.pdf;
 
-    vec3 tr = vec3(1.0f);
+    Spectrum tr = Spectrum(1.0f);
     if (IntersectTr(it.SpawnRayTo(ls.p), tr, sampler))
-        return vec3(0.0f);
+        return Spectrum(0.0f);
 
     if (it.IsSurfaceInteraction()) {
         MaterialEvalContext mc(it.p, it.n, it.uv, -ray.d, ls.wo);
-        vec3 f = it.material.F(mc);
+        Spectrum f = it.material.F(mc);
         float pdf = it.material.PDF(mc);
         return tr * f * AbsDot(ls.wo, it.n) * ls.Le * BalanceHeuristic(1, ls.pdf, 1, pdf) / ls.pdf;
     } else {

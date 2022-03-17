@@ -2,13 +2,14 @@
 #define PINE_CORE_BXDF_H
 
 #include <core/node.h>
+#include <core/spectrum.h>
 #include <util/taggedptr.h>
 
 namespace pine {
 
 struct BSDFSample {
     vec3 wo;
-    vec3 f = vec3(0.5f);
+    Spectrum f = Spectrum(0.5f);
     float pdf = 1.0f;
 };
 

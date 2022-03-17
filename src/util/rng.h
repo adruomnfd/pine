@@ -31,9 +31,7 @@ template <typename... Ts>
 inline float Hashf(Ts... vals) {
     uint64_t h = Hash(vals...);
     uint32_t h32 = h ^ (h >> 32);
-    if (h32 == -1u)
-        h32 = -2u;
-    return h32 / float(-1u);
+    return std::min(h32 / float(-1u), OneMinusEpsilon);
 }
 
 inline uint64_t SplitMix64(uint64_t& s) {
