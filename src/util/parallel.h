@@ -62,17 +62,23 @@ void ThreadIdParallelFor(vec2i size, F&& f) {
     });
 }
 
-template <typename F>
-void For(int64_t nItems, F f) {
-    for (int64_t i = 0; i < nItems; i++)
-        f(i);
-}
-template <typename F>
-void For(vec2i size, F f) {
-    for (int y = 0; y < size.y; y++)
-        for (int x = 0; x < size.x; x++)
-            f({x, y});
-}
+struct AtomicFloat {
+    explicit AtomicFloat(float v = 0) {
+        bits = Reinterpret<uint32_t>(v);
+    };
+    operator float() const {
+        return Reinterpret<float>(bits);
+    }
+    void Add(float v) {
+        uint32_t oldBits = bits, newBits;
+        do {
+            newBits = Reinterpret<uint32_t>(Reinterpret<float>(oldBits) + v);
+        } while (!bits.compare_exchange_weak(oldBits, newBits));
+    }
+
+  private:
+    std::atomic<uint32_t> bits;
+};
 
 }  // namespace pine
 

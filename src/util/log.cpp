@@ -17,7 +17,7 @@ double Timer::Reset() {
     return elapsed;
 }
 
-void ProgressReporter::Report(int current) {
+void ProgressReporter::Report(int64_t current) {
     int nDigit = std::max((int)log10(total) + 1, 1);
     if (current == 0) {
         ETA.Reset();
@@ -28,11 +28,12 @@ void ProgressReporter::Report(int current) {
         LOG_SAMELINE("[&]&[&/&]  Progress[&2.1%]  ETA[&.0s] &3.3M &/s", tag, desc, Format(nDigit),
                      current, Format(nDigit), total, 100.0 * current / total,
                      std::ceil((total - current) * ETA.ElapsedMs() / (1000.0 * current)),
-                     workCount / (interval.Reset() * 1000.0f), performance);
+                     (current - previous) * multiplier / (interval.Reset() * 1000.0f), performance);
     }
     if (current == total)
-        LOG_SAMELINE("[&]Average:&4.4 M &/s\n", tag,
-                     workCount * total / (ETA.ElapsedMs() * 1000.0f), performance);
+        LOG_SAMELINE("[&]Average:&4.4M &/s\n", tag,
+                     total * multiplier / (ETA.ElapsedMs() * 1000.0), performance);
+    previous = current;
 }
 
 }  // namespace pine

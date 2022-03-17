@@ -4,7 +4,7 @@
 #include <core/geometry.h>
 #include <core/sampler.h>
 #include <core/accel.h>
-#include <core/image.h>
+#include <core/film.h>
 #include <util/parameters.h>
 
 #include <memory>
@@ -29,9 +29,8 @@ class Integrator {
   protected:
     const Scene* scene;
 
-    Image film;
+    Film film;
     vec2i filmSize;
-    std::string outputFileName;
 
     std::vector<Sampler> samplers;
     int samplesPerPixel;

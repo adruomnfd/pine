@@ -109,34 +109,35 @@ struct Timer {
 
 struct ProgressReporter {
     ProgressReporter() = default;
-    ProgressReporter(std::string tag, std::string desc, std::string performance, int total,
-                     int workCount)
-        : tag(tag), desc(desc), performance(performance), workCount(workCount), total(total) {
+    ProgressReporter(std::string tag, std::string desc, std::string performance, int64_t total,
+                     int64_t multiplier = 1)
+        : tag(tag), desc(desc), performance(performance), multiplier(multiplier), total(total) {
     }
 
-    void Report(int current);
+    void Report(int64_t current);
 
   private:
     std::string tag, desc, performance;
     Timer ETA, interval;
-    int workCount;
+    int64_t multiplier, previous;
 
   public:
-    int total;
+    int64_t total;
 };
 
 struct ScopedPR {
-    ScopedPR(ProgressReporter& pr, int current) : pr(pr), current(current) {
+    ScopedPR(ProgressReporter& pr, int64_t current, bool lastIter = false)
+        : pr(pr), lastIter(lastIter) {
         pr.Report(current);
     }
     ~ScopedPR() {
-        if (current + 1 == pr.total)
-            pr.Report(current + 1);
+        if (lastIter)
+            pr.Report(pr.total);
     }
     PINE_DELETE_COPY_MOVE(ScopedPR)
 
     ProgressReporter& pr;
-    int current;
+    bool lastIter;
 };
 
 }  // namespace pine

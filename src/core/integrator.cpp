@@ -24,9 +24,8 @@ std::shared_ptr<Integrator> Integrator::Create(const Parameters& parameters) {
     }
 }
 Integrator::Integrator(const Parameters& parameters) {
-    filmSize = parameters.GetVec2i("filmSize", vec2i(1280, 720));
-
-    film = Image(filmSize);
+    film = Film::Create(parameters["film"]);
+    filmSize = film.Size();
 
     Parameters samplerParams = parameters["sampler"];
     samplerParams.Set("filmSize", filmSize);
@@ -38,7 +37,6 @@ Integrator::Integrator(const Parameters& parameters) {
 void Integrator::Initialize(const Scene* scene) {
     Profiler _("IntegratorInit");
     this->scene = scene;
-    outputFileName = scene->parameters.GetString("outputFileName", "result.bmp");
 }
 
 RayIntegrator::RayIntegrator(const Parameters& parameters)
@@ -100,21 +98,9 @@ vec3 RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::EstimateDirect);
 
     LightSample ls;
-
-    // float lightChoiceProb = scene->lights.size() ? (sunIntensity == 0.0f ? 1.0f : 0.5f) : 0.0f;
-
-    // if (sampler.Get1D() < lightChoiceProb) {
     uint64_t lightIndex = sampler.Get1D() * scene->lights.size();
     ls = scene->lights[lightIndex].Sample(it.p, sampler.Get1D(), sampler.Get2D());
-    ls.pdf = ls.pdf;  // / lightChoiceProb;
-    // } else {
-    //     ls.Le = AtmosphereColor(sunDirection, sunDirection, sunIntensity);
-    //     ls.wo = sunDirection;
-    //     ls.distance = 1e+10f;
-    //     ls.p = ls.wo * ls.distance;
-    //     ls.isDelta = true;
-    //     ls.pdf = 1.0f / (1.0f - lightChoiceProb);
-    // }
+    ls.pdf = ls.pdf;
 
     vec3 tr = vec3(1.0f);
     if (IntersectTr(it.SpawnRayTo(ls.p), tr, sampler))
@@ -137,24 +123,21 @@ void PixelSampleIntegrator::Render() {
                         filmSize.x * filmSize.y);
 
     for (int sampleIndex = 0; sampleIndex < samplesPerPixel; sampleIndex++) {
-        ScopedPR(pr, sampleIndex);
+        ScopedPR(pr, sampleIndex, sampleIndex + 1 == samplesPerPixel);
 
         ThreadIdParallelFor(filmSize, [&](int id, vec2i p) {
             Sampler& sampler = samplers[id];
             sampler.StartPixel(p, sampleIndex);
-            Ray ray = scene->camera.GenRay(
-                (p - filmSize / 2 + sampler.Get2D() - vec2(0.5f)) / filmSize.y, sampler.Get2D());
 
-            vec3 color = Li(ray, sampler);
-            film[p] =
-                vec4(color, 1.0f) / (sampleIndex + 1) + film[p] * sampleIndex / (sampleIndex + 1);
+            vec2 pFilm = p + sampler.Get2D();
+            Ray ray = scene->camera.GenRay((pFilm - filmSize / 2) / filmSize.y, sampler.Get2D());
+
+            film.AddSample(pFilm, Li(ray, sampler));
         });
     }
 
-    ParallelFor(filmSize, [&](vec2i p) {
-        film[p] = vec4(Pow(Uncharted2Flimic(film[p]), 1.0f / 2.2f), 1.0f);
-    });
-    SaveBMPImage(outputFileName, film.Size(), 4, (float*)film.Data());
+    film.Finalize();
+    film.WriteToDisk(scene->parameters.GetString("outputFileName"));
 }
 
 void SinglePassIntegrator::Render() {
@@ -164,10 +147,10 @@ void SinglePassIntegrator::Render() {
     int groupSize = max(total / 100, 1);
     int nGroups = (total + groupSize - 1) / groupSize;
 
-    ProgressReporter pr("Rendering", "Pixels", "Pixels", total, total);
+    ProgressReporter pr("Rendering", "Pixels", "Samples", total, samplesPerPixel);
 
     for (int i = 0; i < nGroups; i++) {
-        ScopedPR(pr, i * groupSize);
+        ScopedPR(pr, i * groupSize, i + 1 == nGroups);
 
         ThreadIdParallelFor(groupSize, [&](int id, int index) {
             index += i * groupSize;
@@ -178,22 +161,18 @@ void SinglePassIntegrator::Render() {
             Sampler& sampler = samplers[id];
             sampler.StartPixel(p, 0);
 
-            vec3 color;
             for (int sampleIndex = 0; sampleIndex < samplesPerPixel; sampleIndex++) {
-                Ray ray = scene->camera.GenRay(
-                    (p - filmSize / 2 + sampler.Get2D() - vec2(0.5f)) / filmSize.y,
-                    sampler.Get2D());
-                color += Li(ray, sampler);
+                vec2 pFilm = p + sampler.Get2D();
+                Ray ray =
+                    scene->camera.GenRay((pFilm - filmSize / 2) / filmSize.y, sampler.Get2D());
+                film.AddSample(pFilm, Li(ray, sampler));
                 sampler.StartNextSample();
             }
-
-            color /= samplesPerPixel;
-            color = Pow(Uncharted2Flimic(color), 1.0f / 2.2f);
-            film[p] = vec4(color, 1.0f);
         });
     }
 
-    SaveBMPImage(outputFileName, film.Size(), 4, (float*)film.Data());
+    film.Finalize();
+    film.WriteToDisk(scene->parameters.GetString("outputFileName"));
 }
 
 }  // namespace pine

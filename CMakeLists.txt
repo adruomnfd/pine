@@ -24,6 +24,8 @@ src/core/scene.cpp
 src/core/accel.cpp
 src/core/color.cpp
 src/core/noise.cpp
+src/core/film.cpp
+src/core/filter.cpp
 src/core/node.cpp
 src/core/bxdf.cpp
 src/core/lowdiscrepancy.cpp
