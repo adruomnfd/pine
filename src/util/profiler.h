@@ -51,8 +51,7 @@ static const char* profilePhaseName[] __attribute__((unused)) = {
     "GenerateRay",     "ShapeIntersect", "BoundingBoxIntersect", "IntersectClosest",
     "IntersectShadow", "IntersectTr",    "MaterialSample",       "EstimateDirect",
     "EstimateLi",      "MediumTr",       "MediumSample",         "SearchNeighbors",
-    "GenerateSamples"
-};
+    "GenerateSamples"};
 
 struct SampledProfiler {
     static void Initialize();

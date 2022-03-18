@@ -303,7 +303,7 @@ struct TaggedPointer {
     }
 
     TaggedPointer Clone() const {
-        Dispatch([](auto ptr) {
+        Dispatch([&](auto ptr) {
             using T = std::decay_t<decltype(*ptr)>;
             return new T(*ptr);
         });

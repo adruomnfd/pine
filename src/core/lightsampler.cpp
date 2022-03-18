@@ -18,10 +18,10 @@ UniformLightSampler UniformLightSampler::Create(const Parameters&,
 LightSampler LightSampler::Create(const Parameters& params, const std::vector<Light>& lights) {
     std::string type = params.GetString("type");
     SWITCH(type) {
-        CASE("Uniform") return new UniformLightSampler(UniformLightSampler::Create(params, lights));
+        CASE("Uniform") return UniformLightSampler(UniformLightSampler::Create(params, lights));
         DEFAULT {
             LOG("[LightSampler][Create]Unknown type &", type);
-            return new UniformLightSampler(UniformLightSampler::Create(params, lights));
+            return UniformLightSampler(UniformLightSampler::Create(params, lights));
         }
     }
 }

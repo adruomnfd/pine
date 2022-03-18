@@ -2,7 +2,7 @@
 #define PINE_CORE_FLITER_H
 
 #include <core/vecmath.h>
-#include <util/taggedptr.h>
+#include <util/taggedvariant.h>
 
 namespace pine {
 
@@ -93,16 +93,16 @@ struct LanczosSincFilter : FilterBase {
 };
 
 struct Filter
-    : TaggedPointer<BoxFilter, TriangleFilter, GaussianFilter, MitchellFilter, LanczosSincFilter> {
+    : TaggedVariant<BoxFilter, TriangleFilter, GaussianFilter, MitchellFilter, LanczosSincFilter> {
   public:
-    using TaggedPointer::TaggedPointer;
+    using TaggedVariant::TaggedVariant;
     static Filter Create(const Parameters& params);
 
     float Evaluate(vec2 p) const {
-        return Dispatch([&](auto ptr) { return ptr->Evaluate(p); });
+        return Dispatch([&](auto&& x) { return x.Evaluate(p); });
     }
     vec2 Radius() const {
-        return Dispatch([](auto ptr) { return ptr->radius; });
+        return Dispatch([&](auto&& x) { return x.radius; });
     }
 };
 

@@ -300,26 +300,6 @@ AABB Line::GetAABB() const {
     return aabb;
 }
 
-bool Shape::Hit(Ray ray) const {
-    SampledProfiler _(ProfilePhase::ShapeIntersect);
-    return Dispatch([&](auto ptr) { return ptr->Hit(ray); });
-}
-bool Shape::Intersect(Ray& ray, Interaction& it) const {
-    SampledProfiler _(ProfilePhase::ShapeIntersect);
-    return Dispatch([&](auto ptr) {
-        bool hit = ptr->Intersect(ray, it);
-        if (hit) {
-            it.material = material;
-            it.mediumInterface = mediumInterface.IsMediumTransition() ? mediumInterface
-                                                                      : MediumInterface(ray.medium);
-        }
-        return hit;
-    });
-}
-AABB Shape::GetAABB() const {
-    return Dispatch([&](auto ptr) { return ptr->GetAABB(); });
-}
-
 Sphere Sphere::Create(const Parameters& params) {
     return Sphere(params.GetVec3("position"), params.GetFloat("radius"));
 }
@@ -355,16 +335,16 @@ Shape Shape::Create(const Parameters& params, Scene* scene) {
     Shape shape;
 
     SWITCH(type) {
-        CASE("Sphere") shape = new Sphere(Sphere::Create(params));
-        CASE("Plane") shape = new Plane(Plane::Create(params));
-        CASE("Triangle") shape = new Triangle(Triangle::Create(params));
-        CASE("Rect") shape = new Rect(Rect::Create(params));
-        CASE("Cylinder") shape = new Cylinder(Cylinder::Create(params));
-        CASE("Disk") shape = new Disk(Disk::Create(params));
-        CASE("Line") shape = new Line(Line::Create(params));
+        CASE("Sphere") shape = Sphere(Sphere::Create(params));
+        CASE("Plane") shape = Plane(Plane::Create(params));
+        CASE("Triangle") shape = Triangle(Triangle::Create(params));
+        CASE("Rect") shape = Rect(Rect::Create(params));
+        CASE("Cylinder") shape = Cylinder(Cylinder::Create(params));
+        CASE("Disk") shape = Disk(Disk::Create(params));
+        CASE("Line") shape = Line(Line::Create(params));
         DEFAULT {
             LOG_WARNING("[Shape][Create]Unknown type \"&\"", type);
-            shape = new Sphere(Sphere::Create(params));
+            shape = Sphere(Sphere::Create(params));
         }
     }
 

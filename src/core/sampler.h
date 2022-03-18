@@ -3,7 +3,7 @@
 
 #include <core/vecmath.h>
 #include <util/rng.h>
-#include <util/taggedptr.h>
+#include <util/taggedvariant.h>
 
 #include <vector>
 
@@ -160,32 +160,28 @@ struct SobolSampler {
     int64_t sobolIndex = 0;
 };
 
-struct Sampler : TaggedPointer<UniformSampler, StratifiedSampler, HaltonSampler,
+struct Sampler : TaggedVariant<UniformSampler, StratifiedSampler, HaltonSampler,
                                ZeroTwoSequenceSampler, SobolSampler> {
-    using TaggedPointer::TaggedPointer;
-
+    using TaggedVariant::TaggedVariant;
     static Sampler Create(const Parameters& params);
 
     int SamplesPerPixel() const {
-        return Dispatch([](auto ptr) { return ptr->SamplesPerPixel(); });
+        return Dispatch([&](auto&& x) { return x.SamplesPerPixel(); });
     }
     void StartPixel(vec2i p, int sampleIndex) {
-        return Dispatch([&](auto ptr) { return ptr->StartPixel(p, sampleIndex); });
+        return Dispatch([&](auto&& x) { return x.StartPixel(p, sampleIndex); });
     }
     void StartNextSample() {
-        return Dispatch([](auto ptr) { return ptr->StartNextSample(); });
+        return Dispatch([&](auto&& x) { return x.StartNextSample(); });
     }
     float Get1D() {
-        return Dispatch([](auto ptr) { return ptr->Get1D(); });
+        return Dispatch([&](auto&& x) { return x.Get1D(); });
     }
     vec2 Get2D() {
-        return Dispatch([](auto ptr) { return ptr->Get2D(); });
+        return Dispatch([&](auto&& x) { return x.Get2D(); });
     }
     Sampler Clone() const {
-        return Dispatch([](auto ptr) {
-            using T = std::decay_t<decltype(*ptr)>;
-            return Sampler(new T(*ptr));
-        });
+        return Dispatch([&](auto&& x) { return Sampler(x); });
     }
 };
 

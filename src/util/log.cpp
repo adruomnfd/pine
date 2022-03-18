@@ -31,8 +31,8 @@ void ProgressReporter::Report(int64_t current) {
                      (current - previous) * multiplier / (interval.Reset() * 1000.0f), performance);
     }
     if (current == total)
-        LOG_SAMELINE("[&]Average:&4.4M &/s\n", tag,
-                     total * multiplier / (ETA.ElapsedMs() * 1000.0), performance);
+        LOG_SAMELINE("[&]Average:&4.4M &/s\n", tag, total * multiplier / (ETA.ElapsedMs() * 1000.0),
+                     performance);
     previous = current;
 }
 

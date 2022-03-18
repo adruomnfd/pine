@@ -3,7 +3,7 @@
 
 #include <core/geometry.h>
 #include <core/medium.h>
-#include <util/taggedptr.h>
+#include <util/taggedvariant.h>
 #include <util/profiler.h>
 
 namespace pine {
@@ -42,13 +42,13 @@ struct ThinLenCamera {
     float focusDistance;
 };
 
-struct Camera : public TaggedPointer<PinHoleCamera, ThinLenCamera> {
-    using TaggedPointer::TaggedPointer;
+struct Camera : public TaggedVariant<PinHoleCamera, ThinLenCamera> {
+    using TaggedVariant::TaggedVariant;
     static Camera Create(const Parameters& params, Scene* scene);
 
     Ray GenRay(vec2 co, vec2 u2) const {
         SampledProfiler _(ProfilePhase::GenerateRay);
-        Ray ray = Dispatch([&](auto ptr) { return ptr->GenRay(co, u2); });
+        Ray ray = Dispatch([&](auto&& x) { return x.GenRay(co, u2); });
         ray.medium = medium;
         return ray;
     }

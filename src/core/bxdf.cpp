@@ -1,4 +1,5 @@
 #include <core/bxdf.h>
+#include <util/log.h>
 #include <util/parameters.h>
 
 namespace pine {
@@ -165,31 +166,14 @@ float DielectricBSDF::PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const {
 BSDF BSDF::Create(const Parameters& params) {
     std::string type = params.GetString("type");
     SWITCH(type) {
-        CASE("Diffuse") return new DiffuseBSDF(params);
-        CASE("Dielectric") return new DielectricBSDF(params);
-        CASE("Conductor") return new ConductorBSDF(params);
+        CASE("Diffuse") return DiffuseBSDF(params);
+        CASE("Dielectric") return DielectricBSDF(params);
+        CASE("Conductor") return ConductorBSDF(params);
         DEFAULT {
             LOG_WARNING("[BSDF][Create]Unknown type \"&\"", type);
-            return new DiffuseBSDF(params);
+            return DiffuseBSDF(params);
         }
     }
-}
-
-BSDFSample BSDF::Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const {
-    if (!Ptr())
-        return {};
-    return Dispatch([=](auto ptr) { return ptr->Sample(wi, u1, u2, nc); });
-}
-
-vec3 BSDF::F(vec3 wi, vec3 wo, NodeEvalContext nc) const {
-    if (!Ptr())
-        return {};
-    return Dispatch([=](auto ptr) { return ptr->F(wi, wo, nc); });
-}
-float BSDF::PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const {
-    if (!Ptr())
-        return {};
-    return Dispatch([=](auto ptr) { return ptr->PDF(wi, wo, nc); });
 }
 
 }  // namespace pine

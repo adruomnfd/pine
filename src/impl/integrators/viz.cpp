@@ -11,6 +11,10 @@ VizIntegrator::VizIntegrator(const Parameters& parameters, const Scene* scene)
         CASE("Position") type = Type::Position;
         CASE("Normal") type = Type::Normal;
         CASE("Texcoord") type = Type::Texcoord;
+        DEFAULT {
+            LOG_WARNING("Unknown viztype &", viztype);
+            type = Type::Normal;
+        }
     }
 };
 

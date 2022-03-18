@@ -3,7 +3,7 @@
 
 #include <core/node.h>
 #include <core/bxdf.h>
-#include <util/taggedptr.h>
+#include <util/taggedvariant.h>
 
 #include <vector>
 
@@ -22,11 +22,6 @@ struct MaterialEvalContext : NodeEvalContext {
 
 struct LayeredMaterial {
     LayeredMaterial(const Parameters& params);
-    ~LayeredMaterial() {
-        for (auto bsdf : bsdfs)
-            BSDF::Destory(bsdf);
-    }
-    PINE_DELETE_COPY_MOVE(LayeredMaterial)
 
     BSDFSample Sample(MaterialEvalContext c) const;
     vec3 F(MaterialEvalContext c) const;
@@ -57,9 +52,9 @@ struct EmissiveMaterial {
     NodeInput color;
 };
 
-struct Material : public TaggedPointer<LayeredMaterial, EmissiveMaterial> {
+struct Material : public TaggedVariant<LayeredMaterial, EmissiveMaterial> {
   public:
-    using TaggedPointer::TaggedPointer;
+    using TaggedVariant::TaggedVariant;
     static Material Create(const Parameters& params);
 
     BSDFSample Sample(MaterialEvalContext c) const;

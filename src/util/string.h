@@ -92,7 +92,7 @@ class FormattedString {
     }
 
     template <typename T, typename... Ts>
-    FormattedString(const char *format, const T &first, const Ts &...rest) {
+    FormattedString(const char *format, const T &first, const Ts &... rest) {
         static_assert(!std::is_same<T, Format>::value, "Error");
 
         *this = Formatting(format, first);
@@ -104,7 +104,7 @@ class FormattedString {
     }
 
     template <typename T, typename... Ts>
-    FormattedString(const char *format, Format fmt, const T &first, const Ts &...rest) {
+    FormattedString(const char *format, Format fmt, const T &first, const Ts &... rest) {
         static_assert(!std::is_same<T, Format>::value, "Two consecutive _Format_ is not allowed");
 
         *this = Formatting(format, first, fmt);
@@ -116,7 +116,7 @@ class FormattedString {
     }
 
     template <typename T, typename... Ts>
-    FormattedString(Format fmt, const char *format, const T &first, const Ts &...rest) {
+    FormattedString(Format fmt, const char *format, const T &first, const Ts &... rest) {
         static_assert(!std::is_same<T, Format>::value,
                       "local _Format_ cannot be applied when global _Format_ is specified");
 

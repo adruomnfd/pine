@@ -4,7 +4,7 @@
 #include <core/vecmath.h>
 #include <core/material.h>
 #include <core/medium.h>
-#include <util/taggedptr.h>
+#include <util/taggedvariant.h>
 #include <util/profiler.h>
 
 #include <vector>
@@ -81,7 +81,7 @@ struct Interaction {
     vec3 p;
     vec3 n;
     vec2 uv;
-    Material material;
+    const Material* material = nullptr;
     MediumInterface mediumInterface;
     PhaseFunction phaseFunction;
     bool isMediumInteraction = false;
@@ -420,13 +420,21 @@ struct TriangleMesh {
     MediumInterface mediumInterface;
 };
 
-struct Shape : TaggedPointer<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line> {
-    using TaggedPointer::TaggedPointer;
+struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line> {
+    using TaggedVariant::TaggedVariant;
     static Shape Create(const Parameters& params, Scene* scene);
 
-    bool Hit(Ray ray) const;
-    bool Intersect(Ray& ray, Interaction& it) const;
-    AABB GetAABB() const;
+    bool Hit(Ray ray) const {
+        SampledProfiler _(ProfilePhase::ShapeIntersect);
+        return Dispatch([&](auto&& x) { return x.Hit(ray); });
+    }
+    bool Intersect(Ray& ray, Interaction& it) const {
+        SampledProfiler _(ProfilePhase::ShapeIntersect);
+        return Dispatch([&](auto&& x) { return x.Intersect(ray, it); });
+    }
+    AABB GetAABB() const {
+        return Dispatch([&](auto&& x) { return x.GetAABB(); });
+    }
 
     std::string materialName;
     Material material;

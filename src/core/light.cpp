@@ -66,10 +66,10 @@ EnvironmentLight EnvironmentLight::Create(const Parameters& lightParams) {
     Parameters params = lightParams["environment"];
     std::string type = params.GetString("type");
     SWITCH(type) {
-        CASE("Atmosphere") return new Atmosphere(Atmosphere::Create(params));
+        CASE("Atmosphere") return Atmosphere(Atmosphere::Create(params));
         DEFAULT {
             LOG_WARNING("[EnvironmentLight][Create]Unknown type \"&\"", type);
-            return new Atmosphere(Atmosphere::Create(params));
+            return Atmosphere(Atmosphere::Create(params));
         }
     }
 }
@@ -77,13 +77,13 @@ EnvironmentLight EnvironmentLight::Create(const Parameters& lightParams) {
 Light Light::Create(const Parameters& params) {
     std::string type = params.GetString("type");
     SWITCH(type) {
-        CASE("Point") return new PointLight(PointLight::Create(params));
-        CASE("Directional") return new DirectionalLight(DirectionalLight::Create(params));
-        CASE("Area") return new AreaLight(AreaLight::Create(params));
-        CASE("Environment") return new EnvironmentLight(EnvironmentLight::Create(params));
+        CASE("Point") return PointLight(PointLight::Create(params));
+        CASE("Directional") return DirectionalLight(DirectionalLight::Create(params));
+        CASE("Area") return AreaLight(AreaLight::Create(params));
+        CASE("Environment") return EnvironmentLight(EnvironmentLight::Create(params));
         DEFAULT {
             LOG_WARNING("[Light][Create]Unknown type \"&\"", type);
-            return new PointLight(PointLight::Create(params));
+            return PointLight(PointLight::Create(params));
         }
     }
 }

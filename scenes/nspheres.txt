@@ -3,6 +3,7 @@ Scene{
 
 Integrator{
     type: Path
+    viztype: Normal
     maxDepth: 3
     film{
         size: 1280 360

@@ -54,16 +54,14 @@ EmissiveMaterial::EmissiveMaterial(const Parameters& params) {
 
 BSDFSample Material::Sample(MaterialEvalContext c) const {
     SampledProfiler _(ProfilePhase::MaterialSample);
-    if (Ptr() == nullptr)
-        return {};
-    return Dispatch([&](auto ptr) {
+    return Dispatch([&](auto&& x) {
         mat3 m2w = CoordinateSystem(c.n);
         mat3 w2m = Inverse(m2w);
         c.wi = w2m * c.wi;
         c.wo = w2m * c.wo;
         c.n = vec3(0, 0, 1);
 
-        BSDFSample bs = ptr->Sample(c);
+        BSDFSample bs = x.Sample(c);
 
         bs.wo = m2w * bs.wo;
         return bs;
@@ -72,50 +70,44 @@ BSDFSample Material::Sample(MaterialEvalContext c) const {
 
 vec3 Material::F(MaterialEvalContext c) const {
     SampledProfiler _(ProfilePhase::MaterialSample);
-    if (Ptr() == nullptr)
-        return {};
-    return Dispatch([&](auto ptr) {
+    return Dispatch([&](auto&& x) {
         mat3 w2m = Inverse(CoordinateSystem(c.n));
         c.wi = w2m * c.wi;
         c.wo = w2m * c.wo;
         c.n = vec3(0, 0, 1);
-        return ptr->F(c);
+        return x.F(c);
     });
 }
 float Material::PDF(MaterialEvalContext c) const {
     SampledProfiler _(ProfilePhase::MaterialSample);
-    if (Ptr() == nullptr)
-        return {};
-    return Dispatch([&](auto ptr) {
+    return Dispatch([&](auto&& x) {
         mat3 w2m = Inverse(CoordinateSystem(c.n));
         c.wi = w2m * c.wi;
         c.wo = w2m * c.wo;
         c.n = vec3(0, 0, 1);
-        return ptr->PDF(c);
+        return x.PDF(c);
     });
 }
 
 vec3 Material::Le(MaterialEvalContext c) const {
     SampledProfiler _(ProfilePhase::MaterialSample);
-    if (Ptr() == nullptr)
-        return {};
-    return Dispatch([&](auto ptr) {
+    return Dispatch([&](auto&& x) {
         mat3 w2m = Inverse(CoordinateSystem(c.n));
         c.wi = w2m * c.wi;
         c.wo = w2m * c.wo;
         c.n = vec3(0, 0, 1);
-        return ptr->Le(c);
+        return x.Le(c);
     });
 }
 
 Material Material::Create(const Parameters& params) {
     std::string type = params.GetString("type");
     SWITCH(type) {
-        CASE("Layered") return new LayeredMaterial(params);
-        CASE("Emissive") return new EmissiveMaterial(params);
+        CASE("Layered") return LayeredMaterial(params);
+        CASE("Emissive") return EmissiveMaterial(params);
         DEFAULT {
             LOG_WARNING("[Material][Create]Unknown type \"&\"", type);
-            return new LayeredMaterial(params);
+            return LayeredMaterial(params);
         }
     }
 }

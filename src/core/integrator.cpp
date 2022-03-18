@@ -60,13 +60,19 @@ bool RayIntegrator::Intersect(Ray& ray, Interaction& it) {
     for (int i = 0; i < (int)accels.size(); i++)
         if (accels[i]->Intersect(ray, it)) {
             hit = true;
-            it.material = scene->meshes[i].material;
+            it.material = &scene->meshes[i].material;
+            it.mediumInterface = scene->meshes[i].mediumInterface.IsMediumTransition()
+                                     ? scene->meshes[i].mediumInterface
+                                     : MediumInterface(ray.medium);
         }
 
     for (const auto& shape : scene->shapes)
         if (shape.Intersect(ray, it)) {
             hit = true;
-            it.material = shape.material;
+            it.material = &shape.material;
+            it.mediumInterface = shape.mediumInterface.IsMediumTransition()
+                                     ? shape.mediumInterface
+                                     : MediumInterface(ray.medium);
         }
 
     return hit;
@@ -100,8 +106,8 @@ Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler
 
     if (it.IsSurfaceInteraction()) {
         MaterialEvalContext mc(it.p, it.n, it.uv, -ray.d, ls.wo);
-        Spectrum f = it.material.F(mc);
-        float pdf = it.material.PDF(mc);
+        Spectrum f = it.material->F(mc);
+        float pdf = it.material->PDF(mc);
         return tr * f * AbsDot(ls.wo, it.n) * ls.Le * BalanceHeuristic(1, ls.pdf, 1, pdf) / ls.pdf;
     } else {
         return tr * it.phaseFunction.F(-ray.d, ls.wo) * ls.Le / ls.pdf;
@@ -119,6 +125,8 @@ void PixelSampleIntegrator::Render() {
         ScopedPR(pr, sampleIndex, sampleIndex + 1 == samplesPerPixel);
 
         ThreadIdParallelFor(filmSize, [&](int id, vec2i p) {
+            film.AddSample(p, Spectrum(vec3(0.2f, 0.3f, 0.5f)));
+
             Sampler& sampler = samplers[id];
             sampler.StartPixel(p, sampleIndex);
 

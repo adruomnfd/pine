@@ -58,7 +58,7 @@ std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
         mc.wi = -ray.d;
 
         // Accounting for visible emssive surface
-        Spectrum le = it.material.Le(mc);
+        Spectrum le = it.material->Le(mc);
         if (!le.IsBlack()) {
             if (depth == 0) {
                 L += beta * le;
@@ -75,7 +75,7 @@ std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
         // Sample next path
         mc.u1 = sampler.Get1D();
         mc.u2 = sampler.Get2D();
-        BSDFSample bs = it.material.Sample(mc);
+        BSDFSample bs = it.material->Sample(mc);
         // Break if fail to generate next path
         if (bs.wo == vec3(0.0f))
             break;

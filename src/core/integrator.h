@@ -16,14 +16,8 @@ namespace pine {
 class Integrator {
   public:
     static std::shared_ptr<Integrator> Create(const Parameters& parameters, const Scene* scene);
-
     Integrator(const Parameters& parameters, const Scene* scene);
-    virtual ~Integrator() {
-        for (auto& sampler : samplers)
-            Sampler::Destory(sampler);
-        LightSampler::Destory(lightSampler);
-    }
-    PINE_DELETE_COPY_MOVE(Integrator)
+    virtual ~Integrator() = default;
 
     virtual void Render() = 0;
 

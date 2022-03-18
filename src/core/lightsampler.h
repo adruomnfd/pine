@@ -2,7 +2,7 @@
 #define PINE_CORE_LIGHTSAMPLER
 
 #include <core/light.h>
-#include <util/taggedptr.h>
+#include <util/taggedvariant.h>
 
 #include <vector>
 
@@ -18,12 +18,12 @@ struct UniformLightSampler {
     std::vector<Light> lights;
 };
 
-struct LightSampler : TaggedPointer<UniformLightSampler> {
-    using TaggedPointer::TaggedPointer;
+struct LightSampler : TaggedVariant<UniformLightSampler> {
+    using TaggedVariant::TaggedVariant;
     static LightSampler Create(const Parameters& params, const std::vector<Light>& lights);
 
     LightSample Sample(vec3 p, float ul, vec2 ud) {
-        return Dispatch([&](auto ptr) { return ptr->Sample(p, ul, ud); });
+        return Dispatch([&](auto&& x) { return x.Sample(p, ul, ud); });
     }
 };
 

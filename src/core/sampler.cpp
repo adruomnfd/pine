@@ -258,15 +258,15 @@ SobolSampler SobolSampler::Create(const Parameters& params) {
 Sampler Sampler::Create(const Parameters& params) {
     std::string type = params.GetString("type");
     SWITCH(type) {
-        CASE("Uniform") return new UniformSampler(UniformSampler::Create(params));
-        CASE("Stratified") return new StratifiedSampler(StratifiedSampler::Create(params));
-        CASE("Halton") return new HaltonSampler(HaltonSampler::Create(params));
+        CASE("Uniform") return UniformSampler(UniformSampler::Create(params));
+        CASE("Stratified") return StratifiedSampler(StratifiedSampler::Create(params));
+        CASE("Halton") return HaltonSampler(HaltonSampler::Create(params));
         CASE("ZeroTwoSequence")
-        return new ZeroTwoSequenceSampler(ZeroTwoSequenceSampler::Create(params));
-        CASE("Sobol") return new SobolSampler(SobolSampler::Create(params));
+        return ZeroTwoSequenceSampler(ZeroTwoSequenceSampler::Create(params));
+        CASE("Sobol") return SobolSampler(SobolSampler::Create(params));
         DEFAULT {
             LOG_WARNING("[Sampler][Create]Unknown type \"&\"", type);
-            return new UniformSampler(UniformSampler::Create(params));
+            return UniformSampler(UniformSampler::Create(params));
         }
     }
 }

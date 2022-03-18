@@ -35,11 +35,11 @@ Camera Camera::Create(const Parameters& params, Scene* scene) {
     std::string type = params.GetString("type");
 
     SWITCH(type) {
-        CASE("PinHole") camera = new PinHoleCamera(PinHoleCamera::Create(params));
-        CASE("ThinLen") camera = new ThinLenCamera(ThinLenCamera::Create(params));
+        CASE("PinHole") camera = PinHoleCamera(PinHoleCamera::Create(params));
+        CASE("ThinLen") camera = ThinLenCamera(ThinLenCamera::Create(params));
         DEFAULT {
             LOG_WARNING("[Camera][Create]Unknown type \"&\"", type);
-            camera = new PinHoleCamera(PinHoleCamera::Create(params));
+            camera = PinHoleCamera(PinHoleCamera::Create(params));
         }
     }
 

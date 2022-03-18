@@ -906,8 +906,7 @@ bool CWBVH::Intersect(Ray& ray, Interaction& it) const {
         float tmax1 = node.qlohi[1][octh[1]][nodeIndex] * dir[1] + org[1];
         float tmin2 = node.qlohi[2][octl[2]][nodeIndex] * dir[2] + org[2];
         float tmax2 = node.qlohi[2][octh[2]][nodeIndex] * dir[2] + org[2];
-        return max(max(max(tmin, tmin0), tmin1), tmin2) <=
-               min(min(min(tmax, tmax0), tmax1), tmax2);
+        return max(max(max(tmin, tmin0), tmin1), tmin2) <= min(min(min(tmax, tmax0), tmax1), tmax2);
     };
     auto GetClosestNode = [&](uint64_t& G) {
         int bit_index = highest_set_bit(G & 0xff000000);

@@ -43,6 +43,11 @@ struct GridMedium {
     static GridMedium Create(const Parameters& params);
     GridMedium(Spectrum sigma_a, Spectrum sigma_s, float g, vec3i size, vec3 lower, vec3 upper,
                float* density);
+    ~GridMedium() {
+        if (density)
+            delete[] density;
+    }
+    PINE_DELETE_COPY_MOVE(GridMedium)
 
     Spectrum Tr(const Ray& ray, Sampler& sampler) const;
     MediumSample Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const;
@@ -57,7 +62,7 @@ struct GridMedium {
     float invMaxDensity;
     vec3 lower;
     vec3 upper;
-    float* density;
+    float* density = nullptr;
 };
 
 struct Medium : TaggedPointer<HomogeneousMedium, GridMedium> {

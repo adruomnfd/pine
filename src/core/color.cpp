@@ -92,7 +92,8 @@ Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
 Spectrum SkyColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
     if (sunDirection == direction)
         return vec3(10.0f * sunColor);
-    return sunColor * Sqr(Lerp(direction.y * 0.5f + 0.5f, vec3(0.4f, 0.6f, 0.8f), vec3(0.01f, 0.03f, 0.3f)));
+    return sunColor *
+           Sqr(Lerp(direction.y * 0.5f + 0.5f, vec3(0.4f, 0.6f, 0.8f), vec3(0.01f, 0.03f, 0.3f)));
 }
 
 }  // namespace pine

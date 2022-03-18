@@ -3,7 +3,7 @@
 
 #include <core/vecmath.h>
 #include <core/spectrum.h>
-#include <util/taggedptr.h>
+#include <util/taggedvariant.h>
 
 namespace pine {
 
@@ -68,24 +68,24 @@ struct Atmosphere {
     vec3 sunColor;
 };
 
-struct EnvironmentLight : TaggedPointer<Atmosphere> {
-    using TaggedPointer::TaggedPointer;
+struct EnvironmentLight : TaggedVariant<Atmosphere> {
+    using TaggedVariant::TaggedVariant;
     static EnvironmentLight Create(const Parameters& params);
 
     LightSample Sample(vec3 p, vec2 u2) const {
-        return Dispatch([&](auto ptr) { return ptr->Sample(p, u2); });
+        return Dispatch([&](auto&& x) { return x.Sample(p, u2); });
     }
     Spectrum Color(vec3 wo) const {
-        return Dispatch([&](auto ptr) { return ptr->Color(wo); });
+        return Dispatch([&](auto&& x) { return x.Color(wo); });
     }
 };
 
-struct Light : TaggedPointer<PointLight, DirectionalLight, AreaLight, EnvironmentLight> {
-    using TaggedPointer::TaggedPointer;
+struct Light : TaggedVariant<PointLight, DirectionalLight, AreaLight, EnvironmentLight> {
+    using TaggedVariant::TaggedVariant;
     static Light Create(const Parameters& params);
 
     LightSample Sample(vec3 p, vec2 u2) const {
-        return Dispatch([=](auto ptr) { return ptr->Sample(p, u2); });
+        return Dispatch([&](auto&& x) { return x.Sample(p, u2); });
     }
 };
 
