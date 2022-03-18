@@ -98,9 +98,21 @@ Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler
     SampledProfiler _(ProfilePhase::EstimateDirect);
 
     LightSample ls;
-    uint64_t lightIndex = sampler.Get1D() * scene->lights.size();
-    ls = scene->lights[lightIndex].Sample(it.p, sampler.Get1D(), sampler.Get2D());
-    ls.pdf = ls.pdf;
+    float lightChoiceProb =
+        scene->lights.size() ? (scene->sunIntensity == 0.0f ? 1.0f : 0.5f) : 0.0f;
+
+    if (sampler.Get1D() < lightChoiceProb) {
+        uint64_t lightIndex = sampler.Get1D() * scene->lights.size();
+        ls = scene->lights[lightIndex].Sample(it.p, sampler.Get1D(), sampler.Get2D());
+        ls.pdf = ls.pdf / lightChoiceProb;
+    } else {
+        ls.Le = AtmosphereColor(scene->sunDirection, scene->sunDirection, scene->sunIntensity);
+        ls.wo = scene->sunDirection;
+        ls.distance = 1e+10f;
+        ls.p = ls.wo * ls.distance;
+        ls.isDelta = true;
+        ls.pdf = 1.0f / (1.0f - lightChoiceProb);
+    }
 
     Spectrum tr = Spectrum(1.0f);
     if (IntersectTr(it.SpawnRayTo(ls.p), tr, sampler))

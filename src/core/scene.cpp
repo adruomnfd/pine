@@ -6,6 +6,9 @@ namespace pine {
 void Scene::Initialize() {
     CHECK(integrator != nullptr);
 
+    sunDirection = Normalize(parameters["atmosphere"].GetVec3("sunDirection"));
+    sunIntensity = parameters["atmosphere"].GetFloat("sunIntensity");
+
     int lightId = 0;
     for (Light light : lights) {
         if (light.Tag() == Light::types::Index<AreaLight>()) {

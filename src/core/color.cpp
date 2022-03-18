@@ -34,7 +34,7 @@ vec3 ColorMap(float v) {
     }
 }
 
-vec3 AtmosphereColor(vec3 direction, vec3 sunDirection, float sunIntensity) {
+Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, float sunIntensity) {
     if (sunDirection == vec3(0.0f) || sunIntensity == 0.0f)
         return vec3(0.0f);
     if (direction != sunDirection)
@@ -94,7 +94,7 @@ vec3 AtmosphereColor(vec3 direction, vec3 sunDirection, float sunIntensity) {
     return (sumR * betaR * phaseR + sumM * betaM * phaseM) * 20.0f * sunIntensity;
 }
 
-vec3 SkyColor(vec3 direction, vec3 sunDirection, float sunIntensity) {
+Spectrum SkyColor(vec3 direction, vec3 sunDirection, float sunIntensity) {
     if (sunDirection == direction)
         return vec3(10.0f * sunIntensity);
     return sunIntensity * Sqr(Lerp(direction.y * 0.5f + 0.5f, vec3(0.4f, 0.6f, 0.8f), vec3(0.01f, 0.03f, 0.3f)));

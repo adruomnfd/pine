@@ -27,6 +27,9 @@ struct Scene {
     std::vector<TriangleMesh> meshes;
     std::vector<Light> lights;
 
+    vec3 sunDirection;
+    float sunIntensity;
+
     Camera camera;
     Parameters parameters;
 };

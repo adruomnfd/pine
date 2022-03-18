@@ -2,6 +2,7 @@
 #define PINE_CORE_COLOR_H
 
 #include <core/vecmath.h>
+#include <core/spectrum.h>
 
 namespace pine {
 
@@ -19,8 +20,8 @@ vec3 ACES(vec3 v);
 
 vec3 ColorMap(float v);
 
-vec3 AtmosphereColor(vec3 direction, vec3 sunDirection, float sunIntensity);
-vec3 SkyColor(vec3 direction, vec3 sunDirection, float sunIntensity);
+Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, float sunIntensity);
+Spectrum SkyColor(vec3 direction, vec3 sunDirection, float sunIntensity);
 
 }  // namespace pine
 

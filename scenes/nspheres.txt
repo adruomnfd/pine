@@ -1,7 +1,7 @@
 Scene{
     atmosphere{
-        sunDirection: -1 12 2
-        sunIntensity: 0
+        sunDirection: -6 12 4
+        sunIntensity: 0.0
     }
 }
 

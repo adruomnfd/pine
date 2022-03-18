@@ -38,7 +38,7 @@ std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
         if (!mi.IsMediumInteraction() && !foundIntersection) {
             if (depth == 0)
                 return std::nullopt;
-            // L += beta * AtmosphereColor(ray.d, sunDirection, sunIntensity);
+            L += beta * AtmosphereColor(ray.d, scene->sunDirection, scene->sunIntensity);
             break;
         }
 
