@@ -7,7 +7,7 @@ namespace pine {
 
 struct PathIntegrator : SinglePassIntegrator {
     PathIntegrator(const Parameters& parameters);
-    Spectrum Li(Ray ray, Sampler& sampler) override;
+    std::optional<Spectrum> Li(Ray ray, Sampler& sampler) override;
 
     int maxDepth;
     float clamp;

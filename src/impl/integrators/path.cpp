@@ -9,7 +9,7 @@ PathIntegrator::PathIntegrator(const Parameters& parameters) : SinglePassIntegra
     maxDepth = parameters.GetInt("maxDepth", 4);
     clamp = parameters.GetFloat("clamp", FloatMax);
 }
-Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
+std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::EstimateLi);
     Spectrum L(0.0f);
     Spectrum beta(1.0f);
@@ -36,6 +36,8 @@ Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
 
         // If no medium scatter event happens and ray does not intersect with surface
         if (!mi.IsMediumInteraction() && !foundIntersection) {
+            if (depth == 0)
+                return std::nullopt;
             // L += beta * AtmosphereColor(ray.d, sunDirection, sunIntensity);
             break;
         }

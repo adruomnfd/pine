@@ -2,9 +2,6 @@
 #include <util/fileio.h>
 #include <util/parameters.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <ext/stb_image.h>
-
 namespace pine {
 
 float NodeInput::EvalFloat(NodeEvalContext c) const {
@@ -23,12 +20,8 @@ vec3 NodeInput::EvalVec3(NodeEvalContext c) const {
 nodes::Texture::Texture(NodeInput texcoord, std::string filename) : texcoord(texcoord) {
     filename = sceneDirectory + filename;
     LOG_VERBOSE("[Texture]Loading \"&\"", filename);
-    int nchannel;
-    stbi_uc* data = stbi_load(filename.c_str(), &size.x, &size.y, &nchannel, 3);
-    if (data == nullptr)
-        LOG_WARNING("[Texture][Ctor]Fail to load \"&\"", filename);
-    texels.resize((size_t)size.x * size.y);
-    memcpy(texels.data(), data, (size_t)size.x * size.y * 3);
+    std::unique_ptr<vec3u8[]> ptr(ReadLDRImage(filename, size));
+    texels.assign(ptr.get(), ptr.get() + size.x * size.y);
 }
 
 vec3 nodes::Texture::EvalVec3(NodeEvalContext c) const {

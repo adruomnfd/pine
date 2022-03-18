@@ -118,6 +118,7 @@ Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler
 
 void PixelSampleIntegrator::Render() {
     Profiler _("Render");
+    film.Clear();
 
     ProgressReporter pr("Rendering", "Samples", "Samples", samplesPerPixel,
                         filmSize.x * filmSize.y);
@@ -130,9 +131,11 @@ void PixelSampleIntegrator::Render() {
             sampler.StartPixel(p, sampleIndex);
 
             vec2 pFilm = p + sampler.Get2D();
-            Ray ray = scene->camera.GenRay((pFilm - filmSize / 2) / filmSize.y, sampler.Get2D());
+            vec2 npFilm = (pFilm - filmSize / 2) / filmSize.y;
+            Ray ray = scene->camera.GenRay(npFilm, sampler.Get2D());
 
-            film.AddSample(pFilm, Li(ray, sampler));
+            if (auto L = Li(ray, sampler))
+                film.AddSample(pFilm, *L);
         });
     }
 
@@ -142,6 +145,7 @@ void PixelSampleIntegrator::Render() {
 
 void SinglePassIntegrator::Render() {
     Profiler _("Render");
+    film.Clear();
 
     int total = filmSize.x * filmSize.y;
     int groupSize = max(total / 100, 1);
@@ -163,9 +167,10 @@ void SinglePassIntegrator::Render() {
 
             for (int sampleIndex = 0; sampleIndex < samplesPerPixel; sampleIndex++) {
                 vec2 pFilm = p + sampler.Get2D();
-                Ray ray =
-                    scene->camera.GenRay((pFilm - filmSize / 2) / filmSize.y, sampler.Get2D());
-                film.AddSample(pFilm, Li(ray, sampler));
+                vec2 npFilm = (pFilm - filmSize / 2) / filmSize.y;
+                Ray ray = scene->camera.GenRay(npFilm, sampler.Get2D());
+                if (auto L = Li(ray, sampler))
+                    film.AddSample(pFilm, *L);
                 sampler.StartNextSample();
             }
         });

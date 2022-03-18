@@ -6,8 +6,7 @@
 
 namespace pine {
 
-Spectrum AOIntegrator::Li(Ray ray, Sampler& sampler) {
-    Spectrum color;
+std::optional<Spectrum> AOIntegrator::Li(Ray ray, Sampler& sampler) {
     Interaction it;
     if (Intersect(ray, it)) {
         ray.o = it.p;
@@ -16,10 +15,9 @@ Spectrum AOIntegrator::Li(Ray ray, Sampler& sampler) {
         ray.d = CoordinateSystem(it.n) * UniformHemisphereSampling(sampler.Get2D());
         ray.tmin = 1e-4f * ray.tmax;
         ray.tmax = FloatMax;
-        if (!Intersect(ray, it))
-            color = Spectrum(1.0f);
+        return Intersect(ray, it) ? Spectrum(0.0f) : Spectrum(1.0f);
     }
-    return color;
+    return std::nullopt;
 }
 
 }  // namespace pine

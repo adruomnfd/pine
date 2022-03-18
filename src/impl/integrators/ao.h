@@ -9,7 +9,7 @@ class AOIntegrator : public SinglePassIntegrator {
   public:
     AOIntegrator(const Parameters& parameters) : SinglePassIntegrator(parameters){};
 
-    Spectrum Li(Ray ray, Sampler& sampler) override;
+    std::optional<Spectrum> Li(Ray ray, Sampler& sampler) override;
 };
 
 }  // namespace pine

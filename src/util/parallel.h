@@ -69,6 +69,10 @@ struct AtomicFloat {
     operator float() const {
         return Reinterpret<float>(bits);
     }
+    AtomicFloat& operator=(float v) {
+        bits = Reinterpret<uint32_t>(v);
+        return *this;
+    }
     void Add(float v) {
         uint32_t oldBits = bits, newBits;
         do {

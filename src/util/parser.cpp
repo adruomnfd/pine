@@ -97,7 +97,7 @@ Parameters Parse(std::string_view raw) {
 
         std::string type = (std::string)raw.substr(typeBegin, blockStart - typeBegin);
         Parameters subParams = ParseBlock(raw.substr(blockStart + 1), blockEnd);
-        parameters[type][subParams.GetString("name")] = subParams;
+        parameters[type][subParams.GetString("name", "singleton")] = subParams;
 
         raw = raw.substr(blockEnd);
     }

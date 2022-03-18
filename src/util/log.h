@@ -44,11 +44,10 @@ inline void LOG_FATAL(const Args&... args) {
 
 template <typename... Args>
 inline void print(const Args&... args) {
-    auto fmt = Format(-1, 4, true, false, false, true);
     std::string format;
     for (size_t i = 0; i < sizeof...(args); i++)
         format += "& ";
-    LOG(fmt, format.c_str(), args...);
+    LOG(format.c_str(), args...);
 }
 
 #define CHECK(x)                                                                          \

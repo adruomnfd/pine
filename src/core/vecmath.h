@@ -131,7 +131,7 @@ struct Vector2 {
         return FormattedString(fmt, "[&, &]", x, y);
     }
     std::string ToString() const {
-        return pine::ToString('[', x, ' ', y, ']');
+        return pine::ToString('[', x, ", ", y, ']');
     }
 
     PINE_ARCHIVE(x, y)
@@ -263,7 +263,7 @@ struct Vector3 {
         return FormattedString(fmt, "[&, &, &]", x, y, z);
     }
     std::string ToString() const {
-        return pine::ToString('[', x, ' ', y, ' ', z, ']');
+        return pine::ToString('[', x, ", ", y, ", ", z, ']');
     }
 
     PINE_ARCHIVE(x, y, z)
@@ -408,7 +408,7 @@ struct Vector4 {
         return FormattedString(fmt, "[&, &, &, &]", x, y, z, w);
     }
     std::string ToString() const {
-        return pine::ToString('[', x, ' ', y, ' ', z, ' ', w, ']');
+        return pine::ToString('[', x, ", ", y, ", ", z, ", ", w, ']');
     }
 
     PINE_ARCHIVE(x, y, z, w)
@@ -508,10 +508,10 @@ struct Matrix2 {
     }
 
     FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "\n[&\n &\n]", x, y);
+        return FormattedString(fmt, "\n[&,\n &,\n]", x, y);
     }
     std::string ToString() const {
-        return pine::ToString("\n[", x, "\n ", y, ']');
+        return pine::ToString("\n[", x, ",\n ", y, ']');
     }
 
     PINE_ARCHIVE(x, y)
@@ -613,10 +613,10 @@ struct Matrix3 {
     }
 
     FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "\n[&\n &\n &]", x, y, z);
+        return FormattedString(fmt, "\n[&,\n &,\n &]", x, y, z);
     }
     std::string ToString() const {
-        return pine::ToString("\n[", x, "\n ", y, "\n ", z, ']');
+        return pine::ToString("\n[", x, ",\n ", y, ",\n ", z, ']');
     }
 
     PINE_ARCHIVE(x, y, z)
@@ -722,10 +722,10 @@ struct Matrix4 {
     }
 
     FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "\n[&\n &\n &\n &]", x, y, z, w);
+        return FormattedString(fmt, "\n[&,\n &,\n &,\n &]", x, y, z, w);
     }
     std::string ToString() const {
-        return pine::ToString("\n[", x, "\n ", y, "\n ", z, "\n ", w, ']');
+        return pine::ToString("\n[", x, ",\n ", y, ",\n ", z, ",\n ", w, ']');
     }
 
     PINE_ARCHIVE(x, y, z, w)

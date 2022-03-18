@@ -9,6 +9,9 @@
 #include <sstream>
 #include <vector>
 
+#include <ext/stb_image_write.h>
+#include <ext/stb_image.h>
+
 namespace pine {
 
 std::string sceneDirectory = "";
@@ -81,7 +84,7 @@ std::string ReadStringFile(std::string filename) {
     return str;
 }
 
-void SaveBMPImage(std::string filename, vec2i size, int nchannel, float *data) {
+void SaveBMPImage(std::string filename, vec2i size, int nchannel, uint8_t *data) {
     LOG_VERBOSE("[FileIO]Saving image \"&\"", filename);
     ScopedFile file(filename, std::ios::out);
 
@@ -89,10 +92,10 @@ void SaveBMPImage(std::string filename, vec2i size, int nchannel, float *data) {
     for (int x = 0; x < size.x; x++)
         for (int y = 0; y < size.y; y++) {
             vec3u8 c;
-            c.z = (uint8_t)Clamp(data[(x + y * size.x) * nchannel + 0] * 256.0f, 0.0f, 255.0f);
-            c.y = (uint8_t)Clamp(data[(x + y * size.x) * nchannel + 1] * 256.0f, 0.0f, 255.0f);
-            c.x = (uint8_t)Clamp(data[(x + y * size.x) * nchannel + 2] * 256.0f, 0.0f, 255.0f);
-            colors[x + y * size.x] = c;
+            c.z = data[(x + y * size.x) * nchannel + 0];
+            c.y = data[(x + y * size.x) * nchannel + 1];
+            c.x = data[(x + y * size.x) * nchannel + 2];
+            colors[x + (size.y - 1 - y) * size.x] = c;
         }
 
     int filesize = 54 + 3 * size.x * size.y;
@@ -162,6 +165,38 @@ void SaveBMPImage(std::string filename, vec2i size, int nchannel, float *data) {
             file.Write(padding, paddingSize);
         }
     }
+}
+void SaveImage(std::string filename, vec2i size, int nchannel, float *data) {
+    std::vector<uint8_t> pixels(size.x * size.y * nchannel);
+    for (int x = 0; x < size.x; x++)
+        for (int y = 0; y < size.y; y++)
+            for (int c = 0; c < nchannel; c++)
+                pixels[y * size.x * nchannel + x * nchannel + c] =
+                    Clamp(data[y * size.x * nchannel + x * nchannel + c] * 256.0f, 0.0f, 255.0f);
+
+    if (filename.size() > 3 && filename.substr(filename.size() - 3) == "bmp")
+        SaveBMPImage(filename, size, nchannel, (uint8_t *)pixels.data());
+    else if (filename.size() > 3 && filename.substr(filename.size() - 3) == "png")
+        stbi_write_png(filename.c_str(), size.x, size.y, nchannel, pixels.data(),
+                       size.x * nchannel);
+    else
+        LOG_WARNING("& has unsupported image file extension", filename);
+}
+void SaveImage(std::string filename, vec2i size, int nchannel, uint8_t *data) {
+    if (filename.size() > 3 && filename.substr(filename.size() - 3) == "bmp")
+        SaveBMPImage(filename, size, nchannel, data);
+    else if (filename.size() > 3 && filename.substr(filename.size() - 3) == "png")
+        stbi_write_png(filename.c_str(), size.x, size.y, nchannel, data, size.x * nchannel);
+    else
+        LOG_WARNING("& has unsupported image file extension", filename);
+}
+vec3u8 *ReadLDRImage(std::string filename, vec2i &size) {
+    int nchannel = 0;
+    vec3u8 *ptr = (vec3u8 *)stbi_load(filename.c_str(), &size.x, &size.y, &nchannel, 3);
+    if (!ptr)
+        LOG_WARNING("[FileIO]Failed to load \"&\"", filename);
+    CHECK_EQ(nchannel, 3);
+    return ptr;
 }
 
 std::vector<TriangleMesh> LoadObj(std::string filename, Scene *) {
@@ -255,24 +290,16 @@ std::vector<TriangleMesh> LoadObj(std::string filename, Scene *) {
     return meshes;
 }
 
-void LoadScene(std::string filename, Scene *scene) {
+Parameters LoadScene(std::string filename, Scene *scene) {
     Parameters params = Parse(ReadStringFile(filename));
     LOG_VERBOSE("[FileIO]Creating scene from parameters");
     sceneDirectory = GetFileDirectory(filename);
 
     Timer timer;
 
-    for (const auto &block : params.subset) {
-        if (block.first == "Scene") {
-            scene->parameters = block.second.subset.begin()->second;
-        }
-    }
-
-    for (const auto &block : params.subset) {
-        if (block.first == "Integrator") {
-            scene->integrator = Integrator::Create(block.second.subset.begin()->second);
-        }
-    }
+    scene->parameters = params["Scene"]["singleton"];
+    scene->integrator = Integrator::Create(params["Integrator"]["singleton"]);
+    scene->camera = Camera::Create(params["Camera"]["singleton"], scene);
 
     for (const auto &block : params.subset) {
         if (block.first == "Material") {
@@ -322,13 +349,9 @@ void LoadScene(std::string filename, Scene *scene) {
         }
     }
 
-    for (const auto &block : params.subset) {
-        if (block.first == "Camera") {
-            scene->camera = Camera::Create(block.second.subset.begin()->second, scene);
-        }
-    }
-
     LOG_VERBOSE("[FileIO]Scene created in & ms", timer.ElapsedMs());
+
+    return params;
 }
 
 // void Serialize(std::string filename, const Scene *) {
