@@ -61,9 +61,6 @@ struct Material : public TaggedPointer<LayeredMaterial, EmissiveMaterial> {
   public:
     using TaggedPointer::TaggedPointer;
     static Material Create(const Parameters& params);
-    static void Destory(Material material) {
-        material.Delete();
-    }
 
     BSDFSample Sample(MaterialEvalContext c) const;
     vec3 F(MaterialEvalContext c) const;

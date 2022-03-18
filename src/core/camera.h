@@ -45,9 +45,6 @@ struct ThinLenCamera {
 struct Camera : public TaggedPointer<PinHoleCamera, ThinLenCamera> {
     using TaggedPointer::TaggedPointer;
     static Camera Create(const Parameters& params, Scene* scene);
-    static void Destory(Camera& camera) {
-        camera.Delete();
-    }
 
     Ray GenRay(vec2 co, vec2 u2) const {
         SampledProfiler _(ProfilePhase::GenerateRay);

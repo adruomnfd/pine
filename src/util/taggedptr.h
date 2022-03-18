@@ -222,8 +222,11 @@ template <typename... Ts>
 struct TaggedPointer {
     using types = TypePack<Ts...>;
 
-    TaggedPointer() = default;
+    static void Destory(TaggedPointer ptr) {
+        ptr.Delete();
+    }
 
+    TaggedPointer() = default;
     template <typename T>
     TaggedPointer(T* ptr) {
         CHECK(bits == 0);

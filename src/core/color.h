@@ -20,8 +20,8 @@ vec3 ACES(vec3 v);
 
 vec3 ColorMap(float v);
 
-Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, float sunIntensity);
-Spectrum SkyColor(vec3 direction, vec3 sunDirection, float sunIntensity);
+Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor);
+Spectrum SkyColor(vec3 direction, vec3 sunDirection, vec3 sunColor);
 
 }  // namespace pine
 

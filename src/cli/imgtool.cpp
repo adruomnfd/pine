@@ -31,20 +31,22 @@ int main(int argc, char* argv[]) {
         }
     };
 
+    // clang-format off
+
     SWITCH(next()) {
-        CASE("convert") {
+        CASE("convert")
             SWITCH(next()) {
                 CASE("--inplace" && argc > 2)
-                auto fmt = next();
-                convertFormat(std::vector<std::string>(argv, argv + argc), fmt, true);
+                    auto fmt = next();
+                    convertFormat(std::vector<std::string>(argv, argv + argc), fmt, true);
                 DEFAULT
-                LOG("convert [--inplace] [format] [filename]...");
+                    LOG("convert [--inplace] [format] [filename]...");
             }
-        }
-        DEFAULT {
+        DEFAULT
             LOG("Usage: imgtool [convert] [filename]...");
-        }
     }
+
+    // clang-format on
 
     return 0;
 }

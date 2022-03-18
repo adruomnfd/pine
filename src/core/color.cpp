@@ -34,12 +34,7 @@ vec3 ColorMap(float v) {
     }
 }
 
-Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, float sunIntensity) {
-    if (sunDirection == vec3(0.0f) || sunIntensity == 0.0f)
-        return vec3(0.0f);
-    if (direction != sunDirection)
-        sunIntensity = sunIntensity > 1.0f ? log2f(sunIntensity + 1.0f) : sunIntensity;
-
+Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
     const vec3 betaR = vec3(3.8e-6f, 13.5e-6f, 33.1e-6f), betaM = vec3(21e-6f);
     const float atmosphereRadius = 6420e3f, earthRadius = 6360e3f;
     const float Hr = 1.0f / 7995.0f,
@@ -91,13 +86,13 @@ Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, float sunIntensity) 
         }
         tCurrent += segmentLength;
     }
-    return (sumR * betaR * phaseR + sumM * betaM * phaseM) * 20.0f * sunIntensity;
+    return (sumR * betaR * phaseR + sumM * betaM * phaseM) * 10.0f * sunColor;
 }
 
-Spectrum SkyColor(vec3 direction, vec3 sunDirection, float sunIntensity) {
+Spectrum SkyColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
     if (sunDirection == direction)
-        return vec3(10.0f * sunIntensity);
-    return sunIntensity * Sqr(Lerp(direction.y * 0.5f + 0.5f, vec3(0.4f, 0.6f, 0.8f), vec3(0.01f, 0.03f, 0.3f)));
+        return vec3(10.0f * sunColor);
+    return sunColor * Sqr(Lerp(direction.y * 0.5f + 0.5f, vec3(0.4f, 0.6f, 0.8f), vec3(0.01f, 0.03f, 0.3f)));
 }
 
 }  // namespace pine

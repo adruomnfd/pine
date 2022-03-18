@@ -46,9 +46,6 @@ class BSDF : public TaggedPointer<DiffuseBSDF, ConductorBSDF, DielectricBSDF> {
   public:
     using TaggedPointer::TaggedPointer;
     static BSDF Create(const Parameters& params);
-    static void Destory(BSDF bsdf) {
-        bsdf.Delete();
-    }
 
     BSDFSample Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const;
     vec3 F(vec3 wi, vec3 wo, NodeEvalContext nc) const;

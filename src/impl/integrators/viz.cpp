@@ -3,7 +3,8 @@
 
 namespace pine {
 
-VizIntegrator::VizIntegrator(const Parameters& parameters) : PixelSampleIntegrator(parameters) {
+VizIntegrator::VizIntegrator(const Parameters& parameters, const Scene* scene)
+    : PixelSampleIntegrator(parameters, scene) {
     std::string viztype = parameters.GetString("viztype");
     SWITCH(viztype) {
         CASE("Bvh") type = Type::Bvh;

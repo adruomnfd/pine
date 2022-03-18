@@ -7,7 +7,7 @@ namespace pine {
 
 class AOIntegrator : public SinglePassIntegrator {
   public:
-    AOIntegrator(const Parameters& parameters) : SinglePassIntegrator(parameters){};
+    using SinglePassIntegrator::SinglePassIntegrator;
 
     std::optional<Spectrum> Li(Ray ray, Sampler& sampler) override;
 };

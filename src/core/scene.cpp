@@ -6,9 +6,6 @@ namespace pine {
 void Scene::Initialize() {
     CHECK(integrator != nullptr);
 
-    sunDirection = Normalize(parameters["atmosphere"].GetVec3("sunDirection"));
-    sunIntensity = parameters["atmosphere"].GetFloat("sunIntensity");
-
     int lightId = 0;
     for (Light light : lights) {
         if (light.Tag() == Light::types::Index<AreaLight>()) {
@@ -28,9 +25,10 @@ void Scene::Initialize() {
             shapeParams.Set("material", materialName);
             shapes.push_back(Shape::Create(shapeParams, this));
         }
+        if (light.Tag() == Light::types::Index<EnvironmentLight>()) {
+            envLight = *light.Cast<EnvironmentLight>();
+        }
     }
-
-    integrator->Initialize(this);
 }
 void Scene::Cleanup() {
     Camera::Destory(camera);
@@ -42,6 +40,8 @@ void Scene::Cleanup() {
         Medium::Destory(medium.second);
     for (auto& material : materials)
         Material::Destory(material.second);
+    if (envLight)
+        EnvironmentLight::Destory(*envLight);
 }
 
 }  // namespace pine

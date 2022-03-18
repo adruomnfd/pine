@@ -11,21 +11,23 @@
 
 namespace pine {
 
-std::shared_ptr<Integrator> Integrator::Create(const Parameters& parameters) {
+std::shared_ptr<Integrator> Integrator::Create(const Parameters& parameters, const Scene* scene) {
     std::string type = parameters.GetString("type");
     SWITCH(type) {
-        CASE("AO") return std::make_shared<AOIntegrator>(parameters);
-        CASE("Path") return std::make_shared<PathIntegrator>(parameters);
-        CASE("Viz") return std::make_shared<VizIntegrator>(parameters);
+        CASE("AO") return std::make_shared<AOIntegrator>(parameters, scene);
+        CASE("Path") return std::make_shared<PathIntegrator>(parameters, scene);
+        CASE("Viz") return std::make_shared<VizIntegrator>(parameters, scene);
         DEFAULT {
             LOG_WARNING("[Integrator][Create]Unknown type \"&\"", type);
-            return std::make_shared<AOIntegrator>(parameters);
+            return std::make_shared<AOIntegrator>(parameters, scene);
         }
     }
 }
-Integrator::Integrator(const Parameters& parameters) {
+Integrator::Integrator(const Parameters& parameters, const Scene* scene) : scene(scene) {
     film = Film::Create(parameters["film"]);
     filmSize = film.Size();
+
+    lightSampler = LightSampler::Create(parameters["lightSampler"], scene->lights);
 
     Parameters samplerParams = parameters["sampler"];
     samplerParams.Set("filmSize", filmSize);
@@ -34,16 +36,9 @@ Integrator::Integrator(const Parameters& parameters) {
         samplers.push_back(samplers[0].Clone());
     samplesPerPixel = samplers[0].SamplesPerPixel();
 }
-void Integrator::Initialize(const Scene* scene) {
-    Profiler _("IntegratorInit");
-    this->scene = scene;
-}
 
-RayIntegrator::RayIntegrator(const Parameters& parameters)
-    : Integrator(parameters), parameters(parameters) {
-}
-void RayIntegrator::Initialize(const Scene* scene) {
-    Integrator::Initialize(scene);
+RayIntegrator::RayIntegrator(const Parameters& parameters, const Scene* scene)
+    : Integrator(parameters, scene) {
     for (const auto& mesh : scene->meshes) {
         std::shared_ptr<Accel> accel = Accel::Create(parameters["accel"]);
         accel->Initialize(&mesh);
@@ -97,25 +92,10 @@ bool RayIntegrator::IntersectTr(Ray ray, Spectrum& tr, Sampler& sampler) {
 Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::EstimateDirect);
 
-    LightSample ls;
-    float lightChoiceProb =
-        scene->lights.size() ? (scene->sunIntensity == 0.0f ? 1.0f : 0.5f) : 0.0f;
-
-    if (sampler.Get1D() < lightChoiceProb) {
-        uint64_t lightIndex = sampler.Get1D() * scene->lights.size();
-        ls = scene->lights[lightIndex].Sample(it.p, sampler.Get1D(), sampler.Get2D());
-        ls.pdf = ls.pdf / lightChoiceProb;
-    } else {
-        ls.Le = AtmosphereColor(scene->sunDirection, scene->sunDirection, scene->sunIntensity);
-        ls.wo = scene->sunDirection;
-        ls.distance = 1e+10f;
-        ls.p = ls.wo * ls.distance;
-        ls.isDelta = true;
-        ls.pdf = 1.0f / (1.0f - lightChoiceProb);
-    }
+    LightSample ls = lightSampler.Sample(it.p, sampler.Get1D(), sampler.Get2D());
 
     Spectrum tr = Spectrum(1.0f);
-    if (IntersectTr(it.SpawnRayTo(ls.p), tr, sampler))
+    if (IntersectTr(it.SpawnRayTo(ls.wo, ls.distance), tr, sampler))
         return Spectrum(0.0f);
 
     if (it.IsSurfaceInteraction()) {

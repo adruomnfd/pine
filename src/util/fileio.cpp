@@ -298,7 +298,6 @@ Parameters LoadScene(std::string filename, Scene *scene) {
     Timer timer;
 
     scene->parameters = params["Scene"]["singleton"];
-    scene->integrator = Integrator::Create(params["Integrator"]["singleton"]);
     scene->camera = Camera::Create(params["Camera"]["singleton"], scene);
 
     for (const auto &block : params.subset) {
@@ -345,9 +344,11 @@ Parameters LoadScene(std::string filename, Scene *scene) {
     for (const auto &block : params.subset) {
         if (block.first == "Light") {
             for (const auto &subset : block.second.subset)
-                scene->lights.push_back(Light::Create(subset.second, scene));
+                scene->lights.push_back(Light::Create(subset.second));
         }
     }
+
+    scene->integrator = Integrator::Create(params["Integrator"]["singleton"], scene);
 
     LOG_VERBOSE("[FileIO]Scene created in & ms", timer.ElapsedMs());
 

@@ -48,8 +48,17 @@ struct Interaction {
         Ray ray;
         ray.o = p;
         ray.d = Normalize(p2 - p, ray.tmax);
-        ray.tmin = min(ray.tmax * 1e-2f, 1e-2f);
+        ray.tmin = 1e-2f;
         ray.tmax *= 1.0f - 1e-3f;
+        ray.medium = GetMedium(ray.d);
+        return ray;
+    }
+    Ray SpawnRayTo(vec3 wo, float distance) {
+        Ray ray;
+        ray.d = wo;
+        ray.o = p;
+        ray.tmin = 1e-2f;
+        ray.tmax = distance * 0.995f;
         ray.medium = GetMedium(ray.d);
         return ray;
     }
@@ -414,9 +423,6 @@ struct TriangleMesh {
 struct Shape : TaggedPointer<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line> {
     using TaggedPointer::TaggedPointer;
     static Shape Create(const Parameters& params, Scene* scene);
-    static void Destory(Shape shape) {
-        shape.Delete();
-    }
 
     bool Hit(Ray ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;

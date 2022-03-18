@@ -8,17 +8,10 @@
 namespace pine {
 
 struct LightSample {
-    vec3 p;
-    vec3 wo;
     Spectrum Le;
+    vec3 wo;
     float distance = 1.0f;
     float pdf = 1.0f;
-    bool isDelta = false;
-};
-struct LightEmissionSample {
-    vec3 p;
-    vec3 wo;
-    Spectrum Le;
 };
 
 struct PointLight {
@@ -26,8 +19,7 @@ struct PointLight {
     PointLight(vec3 position, vec3 color)
         : position(position), color(Spectrum(color, SpectrumType::Illuminant)){};
 
-    LightSample Sample(vec3 p, float u1, vec2 u2) const;
-    LightEmissionSample SampleEmission(float u1, vec2 up, vec2 ud) const;
+    LightSample Sample(vec3 p, vec2 u2) const;
 
     vec3 position;
     Spectrum color;
@@ -38,8 +30,7 @@ struct DirectionalLight {
     DirectionalLight(vec3 direction, vec3 color)
         : direction(Normalize(direction)), color(Spectrum(color, SpectrumType::Illuminant)){};
 
-    LightSample Sample(vec3 p, float u1, vec2 u2) const;
-    LightEmissionSample SampleEmission(float u1, vec2 up, vec2 ud) const;
+    LightSample Sample(vec3 p, vec2 u2) const;
 
     vec3 direction;
     Spectrum color;
@@ -55,8 +46,7 @@ struct AreaLight {
           area(Length(Cross(ex, ey))),
           color(Spectrum(color, SpectrumType::Illuminant)){};
 
-    LightSample Sample(vec3 p, float u1, vec2 u2) const;
-    LightEmissionSample SampleEmission(float u1, vec2 up, vec2 ud) const;
+    LightSample Sample(vec3 p, vec2 u2) const;
 
     vec3 position;
     vec3 ex;
@@ -66,28 +56,36 @@ struct AreaLight {
     Spectrum color;
 };
 
-struct MeshLight {
-    static MeshLight Create(const Parameters& params, const Scene* scene);
-    MeshLight(const TriangleMesh* mesh) : mesh(mesh){};
+struct Atmosphere {
+    static Atmosphere Create(const Parameters& params);
+    Atmosphere(vec3 sunDirection, vec3 sunColor)
+        : sunDirection(Normalize(sunDirection)), sunColor(sunColor){};
 
-    LightSample Sample(vec3 p, float u1, vec2 u2) const;
-    LightEmissionSample SampleEmission(float u1, vec2 up, vec2 ud) const;
+    LightSample Sample(vec3 p, vec2 u2) const;
+    Spectrum Color(vec3 wo) const;
 
-    const TriangleMesh* mesh;
+    vec3 sunDirection;
+    vec3 sunColor;
 };
 
-struct Light : TaggedPointer<PointLight, DirectionalLight, AreaLight, MeshLight> {
+struct EnvironmentLight : TaggedPointer<Atmosphere> {
     using TaggedPointer::TaggedPointer;
-    static Light Create(const Parameters& params, const Scene* scene);
-    static void Destory(Light light) {
-        light.Delete();
-    }
+    static EnvironmentLight Create(const Parameters& params);
 
-    LightSample Sample(vec3 p, float u1, vec2 u2) const {
-        return Dispatch([=](auto ptr) { return ptr->Sample(p, u1, u2); });
+    LightSample Sample(vec3 p, vec2 u2) const {
+        return Dispatch([&](auto ptr) { return ptr->Sample(p, u2); });
     }
-    LightEmissionSample SampleEmission(float u1, vec2 up, vec2 ud) const {
-        return Dispatch([=](auto ptr) { return ptr->SampleEmission(u1, up, ud); });
+    Spectrum Color(vec3 wo) const {
+        return Dispatch([&](auto ptr) { return ptr->Color(wo); });
+    }
+};
+
+struct Light : TaggedPointer<PointLight, DirectionalLight, AreaLight, EnvironmentLight> {
+    using TaggedPointer::TaggedPointer;
+    static Light Create(const Parameters& params);
+
+    LightSample Sample(vec3 p, vec2 u2) const {
+        return Dispatch([=](auto ptr) { return ptr->Sample(p, u2); });
     }
 };
 

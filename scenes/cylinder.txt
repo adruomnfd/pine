@@ -16,6 +16,9 @@ Integrator{
         type: Uniform
         samplesPerPixel: 8
     }
+    lightSampler{
+        type: Uniform
+    }
 }
 
 Camera{

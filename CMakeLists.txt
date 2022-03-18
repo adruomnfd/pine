@@ -30,6 +30,7 @@ src/core/filter.cpp
 src/core/node.cpp
 src/core/bxdf.cpp
 src/core/lowdiscrepancy.cpp
+src/core/lightsampler.cpp
 src/core/sampler.cpp
 src/core/material.cpp
 src/core/integrator.cpp

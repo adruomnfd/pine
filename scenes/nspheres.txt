@@ -1,8 +1,4 @@
 Scene{
-    atmosphere{
-        sunDirection: -6 12 4
-        sunIntensity: 0.0
-    }
 }
 
 Integrator{
@@ -27,6 +23,9 @@ Integrator{
         randomizeStrategy: permutateDigits
         nSampledDimensions: 16
     }
+    lightSampler{
+        type: Uniform
+    }
 }
 
 Camera{
@@ -45,6 +44,15 @@ Light{
     color: 160
 }
 
+LightX{
+    name: light1
+    type: Environment
+    environment{
+        type: Atmosphere
+        sunDirection: -6 12 4
+        sunColor: 1.0
+    }
+}
 
 Shape{
     name: plane

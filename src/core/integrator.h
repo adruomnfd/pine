@@ -1,6 +1,7 @@
 #ifndef PINE_CORE_INTEGRATOR_H
 #define PINE_CORE_INTEGRATOR_H
 
+#include <core/lightsampler.h>
 #include <core/geometry.h>
 #include <core/sampler.h>
 #include <core/accel.h>
@@ -14,16 +15,16 @@ namespace pine {
 
 class Integrator {
   public:
-    static std::shared_ptr<Integrator> Create(const Parameters& parameters);
+    static std::shared_ptr<Integrator> Create(const Parameters& parameters, const Scene* scene);
 
-    Integrator(const Parameters& parameters);
+    Integrator(const Parameters& parameters, const Scene* scene);
     virtual ~Integrator() {
         for (auto& sampler : samplers)
             Sampler::Destory(sampler);
+        LightSampler::Destory(lightSampler);
     }
     PINE_DELETE_COPY_MOVE(Integrator)
 
-    virtual void Initialize(const Scene* scene);
     virtual void Render() = 0;
 
   protected:
@@ -34,12 +35,12 @@ class Integrator {
 
     std::vector<Sampler> samplers;
     int samplesPerPixel;
+    LightSampler lightSampler;
 };
 
 class RayIntegrator : public Integrator {
   public:
-    RayIntegrator(const Parameters& parameters);
-    virtual void Initialize(const Scene* scene) override;
+    RayIntegrator(const Parameters& parameters, const Scene* scene);
 
     bool Hit(Ray ray);
     bool Intersect(Ray& ray, Interaction& it);
@@ -47,12 +48,11 @@ class RayIntegrator : public Integrator {
     Spectrum EstimateDirect(Ray ray, Interaction it, Sampler& sampler);
 
     std::vector<std::shared_ptr<Accel>> accels;
-    Parameters parameters;
 };
 
 class PixelSampleIntegrator : public RayIntegrator {
   public:
-    PixelSampleIntegrator(const Parameters& parameters) : RayIntegrator(parameters){};
+    using RayIntegrator::RayIntegrator;
 
     virtual void Render();
     virtual std::optional<Spectrum> Li(Ray ray, Sampler& sampler) = 0;
@@ -60,7 +60,7 @@ class PixelSampleIntegrator : public RayIntegrator {
 
 class SinglePassIntegrator : public RayIntegrator {
   public:
-    SinglePassIntegrator(const Parameters& parameters) : RayIntegrator(parameters){};
+    using RayIntegrator::RayIntegrator;
 
     virtual void Render();
     virtual std::optional<Spectrum> Li(Ray ray, Sampler& sampler) = 0;

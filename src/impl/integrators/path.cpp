@@ -5,7 +5,8 @@
 
 namespace pine {
 
-PathIntegrator::PathIntegrator(const Parameters& parameters) : SinglePassIntegrator(parameters) {
+PathIntegrator::PathIntegrator(const Parameters& parameters, const Scene* scene)
+    : SinglePassIntegrator(parameters, scene) {
     maxDepth = parameters.GetInt("maxDepth", 4);
     clamp = parameters.GetFloat("clamp", FloatMax);
 }
@@ -36,9 +37,10 @@ std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
 
         // If no medium scatter event happens and ray does not intersect with surface
         if (!mi.IsMediumInteraction() && !foundIntersection) {
-            if (depth == 0)
+            if (depth == 0 && !scene->envLight)
                 return std::nullopt;
-            L += beta * AtmosphereColor(ray.d, scene->sunDirection, scene->sunIntensity);
+            if (scene->envLight)
+                L += beta * scene->envLight->Color(ray.d);
             break;
         }
 

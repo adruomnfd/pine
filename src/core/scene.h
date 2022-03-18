@@ -22,13 +22,10 @@ struct Scene {
 
     std::map<std::string, Material> materials;
     std::map<std::string, Medium> mediums;
-    std::map<std::string, uint32_t> nameToMeshIndex;
     std::vector<Shape> shapes;
     std::vector<TriangleMesh> meshes;
     std::vector<Light> lights;
-
-    vec3 sunDirection;
-    float sunIntensity;
+    std::optional<EnvironmentLight> envLight;
 
     Camera camera;
     Parameters parameters;

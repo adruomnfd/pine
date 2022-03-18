@@ -165,9 +165,6 @@ struct Sampler : TaggedPointer<UniformSampler, StratifiedSampler, HaltonSampler,
     using TaggedPointer::TaggedPointer;
 
     static Sampler Create(const Parameters& params);
-    static void Destory(Sampler sampler) {
-        sampler.Delete();
-    }
 
     int SamplesPerPixel() const {
         return Dispatch([](auto ptr) { return ptr->SamplesPerPixel(); });

@@ -63,9 +63,6 @@ struct GridMedium {
 struct Medium : TaggedPointer<HomogeneousMedium, GridMedium> {
     using TaggedPointer::TaggedPointer;
     static Medium Create(const Parameters& params);
-    static void Destory(Medium medium) {
-        medium.Delete();
-    }
 
     Spectrum Tr(const Ray& ray, Sampler& sampler) const {
         SampledProfiler _(ProfilePhase::MediumTr);
