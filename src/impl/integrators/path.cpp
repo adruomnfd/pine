@@ -63,8 +63,8 @@ std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
             if (depth == 0) {
                 L += beta * le;
             } else {
-                // float lightPdf = it.pdf / scene->lights.size();
-                // L += beta * le * PowerHeuristic(1, bsdfPDF, 1, lightPdf);
+                // float lightPdf = it.pdf;
+                // L += beta * le * BalanceHeuristic(1, bsdfPDF, 1, lightPdf);
             }
             break;
         }

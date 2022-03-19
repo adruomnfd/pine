@@ -1,10 +1,3 @@
-Scene{
-    atmosphere{
-        sunDirection: -1 12 2
-        sunIntensity: 0
-    }
-}
-
 Integrator{
     type: Path
     maxDepth: 1

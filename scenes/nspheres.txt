@@ -1,13 +1,10 @@
-Scene{
-}
-
 Integrator{
     type: Path
     viztype: Normal
     maxDepth: 3
     
     film{
-        outputFileName: result3.png
+        outputFileName: result.png
         size: 1280 360
         filter{
             type: LanczosSinc
@@ -41,10 +38,10 @@ Camera{
 Light{
     name: light0
     type: Area
-    position: -2 6 -1
-    ex: 0.5 0 0
-    ey: 0 0 0.5
-    color: 160
+    position: -2 6 -2
+    ex: 1 0 0
+    ey: 0 0 1
+    color: 40
 }
 
 LightX{
