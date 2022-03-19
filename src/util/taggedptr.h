@@ -321,21 +321,6 @@ struct TaggedPointer {
         Dispatch([&](auto ptr) { *ptr = {std::forward<Args>(args)...}; });
     }
 
-    template <typename ArchiveT>
-    void Archive(ArchiveT& archive) {
-        archive(bits);
-        Dispatch([&](auto ptr) {
-            archive(ptr);
-            *this = ptr;
-        });
-    }
-    template <typename ArchiveT>
-    void Archive(ArchiveT& archive) const {
-        archive(bits);
-        Dispatch([&](auto ptr) { archive(ptr); });
-    }
-    static constexpr bool Archivable = true;
-
   protected:
     static_assert(sizeof(uintptr_t) == 8, "Expect sizeof(uint64_t) to be 64 bits");
     static constexpr int tagShift = 57;

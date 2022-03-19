@@ -274,6 +274,8 @@ struct TaggedVariant {
         return value.template Be<T>();
     }
 
+    PINE_ARCHIVE(value, tag)
+
   private:
     Aggregate value;
     uint8_t tag = (uint8_t)-1;

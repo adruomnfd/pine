@@ -127,8 +127,8 @@ struct Vector2 {
         return (&x)[i];
     }
 
-    FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "[&, &]", x, y);
+    Fstring Formatting(Format fmt) const {
+        return Fstring(fmt, "[&, &]", x, y);
     }
     std::string ToString() const {
         return pine::ToString('[', x, ", ", y, ']');
@@ -259,8 +259,8 @@ struct Vector3 {
         return (&x)[i];
     }
 
-    FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "[&, &, &]", x, y, z);
+    Fstring Formatting(Format fmt) const {
+        return Fstring(fmt, "[&, &, &]", x, y, z);
     }
     std::string ToString() const {
         return pine::ToString('[', x, ", ", y, ", ", z, ']');
@@ -404,8 +404,8 @@ struct Vector4 {
         return (&x)[i];
     }
 
-    FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "[&, &, &, &]", x, y, z, w);
+    Fstring Formatting(Format fmt) const {
+        return Fstring(fmt, "[&, &, &, &]", x, y, z, w);
     }
     std::string ToString() const {
         return pine::ToString('[', x, ", ", y, ", ", z, ", ", w, ']');
@@ -507,8 +507,8 @@ struct Matrix2 {
         return m0.x != m1.x || m0.y != m1.y;
     }
 
-    FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "\n[&,\n &,\n]", x, y);
+    Fstring Formatting(Format fmt) const {
+        return Fstring(fmt, "\n[&,\n &,\n]", x, y);
     }
     std::string ToString() const {
         return pine::ToString("\n[", x, ",\n ", y, ']');
@@ -612,8 +612,8 @@ struct Matrix3 {
         return m0.x != m1.x || m0.y != m1.y || m0.z != m1.z;
     }
 
-    FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "\n[&,\n &,\n &]", x, y, z);
+    Fstring Formatting(Format fmt) const {
+        return Fstring(fmt, "\n[&,\n &,\n &]", x, y, z);
     }
     std::string ToString() const {
         return pine::ToString("\n[", x, ",\n ", y, ",\n ", z, ']');
@@ -721,8 +721,8 @@ struct Matrix4 {
         return m0.x != m1.x || m0.y != m1.y || m0.z != m1.z || m0.w != m1.w;
     }
 
-    FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "\n[&,\n &,\n &,\n &]", x, y, z, w);
+    Fstring Formatting(Format fmt) const {
+        return Fstring(fmt, "\n[&,\n &,\n &,\n &]", x, y, z, w);
     }
     std::string ToString() const {
         return pine::ToString("\n[", x, ",\n ", y, ",\n ", z, ",\n ", w, ']');

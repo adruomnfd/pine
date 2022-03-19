@@ -86,7 +86,7 @@ void StrToFloats(std::string_view str, float* ptr, int N) {
         ptr[i] = ptr[dim - 1];
 }
 
-FormattedString& FormattedString::operator+=(const FormattedString& rhs) {
+Fstring& Fstring::operator+=(const Fstring& rhs) {
     int newSize = size_ + rhs.size_;
     char* newPtr = new char[newSize + 1];
 
@@ -102,9 +102,9 @@ FormattedString& FormattedString::operator+=(const FormattedString& rhs) {
     return *this;
 }
 
-FormattedString FormattedString::FormattingCharArray(const char* str, int minWidth,
+Fstring Fstring::FormattingCharArray(const char* str, int minWidth,
                                                      bool leftAlign) {
-    FormattedString formatted;
+    Fstring formatted;
     for (int i = 0;;) {
         if (str[i] == '\0')
             break;

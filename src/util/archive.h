@@ -64,18 +64,30 @@ class ArchiverBase {
 
         } else if constexpr (IsMap<T>::value) {
             strategy.Add(object);
-            if constexpr (RenewPtr)
-                new (&object) T(object.size());
-
-            for (const auto& item : object) {
-                ArchiveImpl(item.first);
-                ArchiveImpl(item.second);
+            if constexpr (RenewPtr) {
+                size_t size = object.size();
+                new (&object) T;
+                for (size_t i = 0; i < size; i++) {
+                    typename T::key_type key;
+                    typename T::mapped_type value;
+                    ArchiveImpl(key);
+                    ArchiveImpl(value);
+                    object[key] = value;
+                }
+            } else {
+                for (const auto& item : object) {
+                    ArchiveImpl(item.first);
+                    ArchiveImpl(item.second);
+                }
             }
 
         } else if constexpr (IsVector<T>::value) {
             strategy.Add(object);
-            if constexpr (RenewPtr)
-                new (&object) T(object.size());
+            if constexpr (RenewPtr) {
+                size_t size = object.size();
+                new (&object) T;
+                object.resize(size);
+            }
 
             for (size_t i = 0; i < object.size(); i++)
                 ArchiveImpl(object[i]);

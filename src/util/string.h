@@ -68,18 +68,56 @@ struct Format {
     bool emptySpaceIfNoSign;
 };
 
-class FormattedString {
+class Fstring {
   public:
-    FormattedString() = default;
-    inline ~FormattedString();
-    inline FormattedString(const FormattedString &rhs);
-    inline FormattedString(FormattedString &&rhs);
-    inline FormattedString &operator=(FormattedString rhs);
-    inline void swap(FormattedString &rhs);
-    inline friend void swap(FormattedString &lhs, FormattedString &rhs);
-    FormattedString &operator+=(const FormattedString &rhs);
-    inline friend FormattedString operator+(FormattedString lhs, const FormattedString &rhs);
-    inline friend bool operator==(FormattedString lhs, const FormattedString &rhs);
+    Fstring() = default;
+    ~Fstring() {
+        if (ptr_ != nullptr)
+            delete[] ptr_;
+    }
+    Fstring(const Fstring &rhs) {
+        size_ = rhs.size_;
+        ptr_ = new char[size_];
+        for (int i = 0; i < size_; i++)
+            ptr_[i] = rhs.ptr_[i];
+    }
+    Fstring(Fstring &&rhs) {
+        ptr_ = std::exchange(rhs.ptr_, nullptr);
+        size_ = std::exchange(rhs.size_, 0);
+    }
+    Fstring(const char *str) {
+        *this = FormattingCharArray(str);
+    }
+    Fstring(const std::string &str) {
+        *this = FormattingCharArray(str.c_str());
+    }
+
+    Fstring &operator=(Fstring rhs) {
+        swap(rhs);
+        return *this;
+    }
+    void swap(Fstring &rhs) {
+        std::swap(ptr_, rhs.ptr_);
+        std::swap(size_, rhs.size_);
+    }
+    friend void swap(Fstring &lhs, Fstring &rhs) {
+        lhs.swap(rhs);
+    }
+
+    friend Fstring operator+(Fstring lhs, const Fstring &rhs) {
+        return lhs += rhs;
+    }
+
+    friend bool operator==(Fstring lhs, const Fstring &rhs) {
+        if (lhs.size_ != rhs.size_)
+            return false;
+        for (int i = 0; i < lhs.size_; i++)
+            if (lhs.ptr_[i] != rhs.ptr_[i])
+                return false;
+
+        return true;
+    }
+    Fstring &operator+=(const Fstring &rhs);
 
     size_t size() const {
         return (size_t)size_;
@@ -91,104 +129,54 @@ class FormattedString {
         return c_str();
     }
 
-    FormattedString(const char *format) {
-        *this = FormattingCharArray(format);
-    }
-
     template <typename T, typename... Ts>
-    FormattedString(const char *format, const T &first, const Ts &...rest) {
+    Fstring(const char *format, const T &first, const Ts &...rest) {
         static_assert(!std::is_same<T, Format>::value, "Error");
 
         *this = Formatting(format, first);
 
         if constexpr (sizeof...(rest) != 0)
-            *this += FormattedString(format, rest...);
+            *this += Fstring(format, rest...);
         else
             *this += FormattingCharArray(format);
     }
 
     template <typename T, typename... Ts>
-    FormattedString(const char *format, Format fmt, const T &first, const Ts &...rest) {
+    Fstring(const char *format, Format fmt, const T &first, const Ts &...rest) {
         static_assert(!std::is_same<T, Format>::value, "Two consecutive _Format_ is not allowed");
 
         *this = Formatting(format, first, fmt);
 
         if constexpr (sizeof...(rest) != 0)
-            *this += FormattedString(format, rest...);
+            *this += Fstring(format, rest...);
         else
             *this += FormattingCharArray(format);
     }
 
     template <typename T, typename... Ts>
-    FormattedString(Format fmt, const char *format, const T &first, const Ts &...rest) {
+    Fstring(Format fmt, const char *format, const T &first, const Ts &...rest) {
         static_assert(!std::is_same<T, Format>::value,
                       "local _Format_ cannot be applied when global _Format_ is specified");
 
         *this = Formatting(format, first, fmt);
 
         if constexpr (sizeof...(rest) != 0)
-            *this += FormattedString(fmt, format, rest...);
+            *this += Fstring(fmt, format, rest...);
         else
             *this += FormattingCharArray(format);
     }
 
   private:
-    static FormattedString FormattingCharArray(const char *str, int minWidth = -1,
-                                               bool leftAlign = false);
+    static Fstring FormattingCharArray(const char *str, int minWidth = -1, bool leftAlign = false);
     template <typename Ty>
-    inline static FormattedString FormattingImpl(const Ty &value, Format fmt = {});
+    inline static Fstring FormattingImpl(const Ty &value, Format fmt = {});
 
     template <typename T>
-    inline static FormattedString Formatting(const char *&format, const T &first, Format fmt = {});
+    inline static Fstring Formatting(const char *&format, const T &first, Format fmt = {});
 
     char *ptr_ = nullptr;
     int size_ = 0;
 };
-
-FormattedString::~FormattedString() {
-    if (ptr_ != nullptr)
-        delete[] ptr_;
-}
-
-FormattedString::FormattedString(const FormattedString &rhs) {
-    size_ = rhs.size_;
-    ptr_ = new char[size_];
-    for (int i = 0; i < size_; i++)
-        ptr_[i] = rhs.ptr_[i];
-}
-
-FormattedString::FormattedString(FormattedString &&rhs) {
-    ptr_ = std::exchange(rhs.ptr_, nullptr);
-    size_ = std::exchange(rhs.size_, 0);
-}
-
-FormattedString &FormattedString::operator=(FormattedString rhs) {
-    swap(rhs);
-    return *this;
-}
-
-void FormattedString::swap(FormattedString &rhs) {
-    std::swap(ptr_, rhs.ptr_);
-    std::swap(size_, rhs.size_);
-}
-
-void swap(FormattedString &lhs, FormattedString &rhs) {
-    lhs.swap(rhs);
-}
-
-FormattedString operator+(FormattedString lhs, const FormattedString &rhs) {
-    return lhs += rhs;
-}
-
-bool operator==(FormattedString lhs, const FormattedString &rhs) {
-    if (lhs.size_ != rhs.size_)
-        return false;
-    for (int i = 0; i < lhs.size_; i++)
-        if (lhs.ptr_[i] != rhs.ptr_[i])
-            return false;
-
-    return true;
-}
 
 template <typename T>
 struct HasMemberMethodFormatting {
@@ -201,9 +189,9 @@ struct HasMemberMethodFormatting {
 };
 
 template <typename Ty>
-FormattedString FormattedString::FormattingImpl(const Ty &value, Format fmt) {
-    using T = typename std::decay<Ty>::type;
-    FormattedString formatted;
+Fstring Fstring::FormattingImpl(const Ty &value, Format fmt) {
+    using T = std::decay_t<Ty>;
+    Fstring formatted;
 
     if (fmt.minWidth == 0) {
     }
@@ -320,6 +308,17 @@ FormattedString FormattedString::FormattingImpl(const Ty &value, Format fmt) {
     } else if constexpr (IsPointer<T>::value) {
         formatted += "*";
         formatted += FormattingImpl(*value, fmt);
+    } else if constexpr (IsDecomposable<T>::value) {
+        formatted += "{";
+        int i = 0;
+        ForEachField(value, [&](auto &&field) {
+            formatted += FormattingImpl(field, fmt) + ", ";
+            i++;
+        });
+        if (i != 0) {
+            formatted.size_ -= 2;
+        }
+        formatted += "}";
     } else if constexpr (IsIterable<T>::value) {
         formatted += "[";
         int i = 0;
@@ -332,24 +331,15 @@ FormattedString FormattedString::FormattingImpl(const Ty &value, Format fmt) {
         }
         formatted += "]";
     } else {
-        formatted += "{";
-        int i = 0;
-        ForEachField(value, [&](auto&& field) {
-            formatted += FormattingImpl(field, fmt) + ", ";
-            i++;
-        });
-        if (i != 0) {
-            formatted.size_ -= 2;
-        }
-        formatted += "}";
+        static_assert(DeferredBool<T, false>::value, "Unsupported type");
     }
 
     return formatted;
 }
 
 template <typename T>
-FormattedString FormattedString::Formatting(const char *&format, const T &first, Format fmt) {
-    FormattedString formatted;
+Fstring Fstring::Formatting(const char *&format, const T &first, Format fmt) {
+    Fstring formatted;
 
     int before = 0;
     while (true) {

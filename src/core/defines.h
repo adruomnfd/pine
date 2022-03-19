@@ -5,16 +5,25 @@
 #define NOMINMAX
 #endif
 
-#define PINE_ARCHIVE(...)                   \
-    template <typename ArchiveT>            \
-    void Archive(ArchiveT& archive) {       \
-        archive.Archive(__VA_ARGS__);               \
-    }                                       \
-    template <typename ArchiveT>            \
-    void Archive(ArchiveT& archive) const { \
-        archive.Archive(__VA_ARGS__);               \
-    }                                       \
-    static constexpr bool Archivable = true;
+#define PINE_ARCHIVE(...)                    \
+    template <typename ArchiveT>             \
+    void Archive(ArchiveT&& archive) {       \
+        archive(__VA_ARGS__);                \
+    }                                        \
+    template <typename ArchiveT>             \
+    void Archive(ArchiveT&& archive) const { \
+        archive(__VA_ARGS__);                \
+    }
+
+#define PINE_ARCHIVE_(code)                  \
+    template <typename ArchiveT>             \
+    void Archive(ArchiveT&& archive) {       \
+        code                                 \
+    }                                        \
+    template <typename ArchiveT>             \
+    void Archive(ArchiveT&& archive) const { \
+        code                                 \
+    }
 
 #define PINE_DELETE_COPY_MOVE(ClassName)             \
     ClassName(const ClassName&) = delete;            \

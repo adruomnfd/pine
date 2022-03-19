@@ -11,34 +11,34 @@ extern bool verbose;
 
 template <typename... Args>
 inline void LOG(const Args&... args) {
-    printf("%s\n", FormattedString(args...).c_str());
+    printf("%s\n", Fstring(args...).c_str());
 }
 template <typename... Args>
 inline void LOG_SAMELINE(const Args&... args) {
-    printf("\33[2K\r%s\r", FormattedString(args...).c_str());
+    printf("\33[2K\r%s\r", Fstring(args...).c_str());
     fflush(stdout);
 }
 template <typename... Args>
 inline void LOG_VERBOSE(const Args&... args) {
     if (!verbose)
         return;
-    printf("%s\n", FormattedString(args...).c_str());
+    printf("%s\n", Fstring(args...).c_str());
 }
 template <typename... Args>
 inline void LOG_VERBOSE_SAMELINE(const Args&... args) {
     if (!verbose)
         return;
-    printf("\r\33[2K%s\r", FormattedString(args...).c_str());
+    printf("\r\33[2K%s\r", Fstring(args...).c_str());
     fflush(stdout);
 }
 template <typename... Args>
 inline void LOG_WARNING(const Args&... args) {
-    printf("\033[1;33m%s\033[0m\n", FormattedString(args...).c_str());
+    printf("\033[1;33m%s\033[0m\n", Fstring(args...).c_str());
 }
 
 template <typename... Args>
 inline void LOG_FATAL(const Args&... args) {
-    printf("\033[1;31m%s\033[0m\n", FormattedString(args...).c_str());
+    printf("\033[1;31m%s\033[0m\n", Fstring(args...).c_str());
     abort();
 }
 

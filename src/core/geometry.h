@@ -26,8 +26,8 @@ struct Ray {
         return o + t * d;
     }
 
-    FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "[Ray]origin & direction & tmin & tmax &", o, d, tmin, tmax);
+    Fstring Formatting(Format fmt) const {
+        return Fstring(fmt, "[Ray]origin & direction & tmin & tmax &", o, d, tmin, tmax);
     }
 
     vec3 o;
@@ -74,8 +74,8 @@ struct Interaction {
         return Dot(w, n) > 0 ? mediumInterface.outside : mediumInterface.inside;
     }
 
-    FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "[Interaction]p & n & uv &", p, n, uv);
+    Fstring Formatting(Format fmt) const {
+        return Fstring(fmt, "[Interaction]p & n & uv &", p, n, uv);
     }
 
     vec3 p;
@@ -141,8 +141,8 @@ struct AABB {
         CHECK_LE(it.upper[1], upper[1]);
         CHECK_LE(it.upper[2], upper[2]);
     }
-    FormattedString Formatting(Format fmt) const {
-        return FormattedString(fmt, "lower:& upper:&", lower, upper);
+    Fstring Formatting(Format fmt) const {
+        return Fstring(fmt, "lower:& upper:&", lower, upper);
     }
 
     bool Hit(Ray ray) const;

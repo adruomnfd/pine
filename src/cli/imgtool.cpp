@@ -27,7 +27,7 @@ static void ConvertFormat(const std::vector<std::string>& filenames, std::string
 static void Scaling(const std::vector<std::string>& filenames, float scale, bool inplace) {
     size_t maxLen = MaxLength(filenames);
     for (auto& from : filenames) {
-        std::string to = inplace ? from : AppendFileName(from, FormattedString("_x&", scale));
+        std::string to = inplace ? from : AppendFileName(from, Fstring("_x&", scale));
         LOG("&      ===x&==>      &", Format(maxLen), from, scale, to);
         vec2i size;
         std::unique_ptr<vec3u8[]> data(ReadLDRImage(from, size));

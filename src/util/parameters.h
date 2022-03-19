@@ -52,8 +52,6 @@ struct Parameters {
         return subset.end();
     }
 
-    PINE_ARCHIVE(values, subset)
-
     std::map<std::string, std::string> values;
     mutable std::map<std::string, Parameters> subset;
 };
