@@ -57,23 +57,24 @@ bool RayIntegrator::Hit(Ray ray) {
 bool RayIntegrator::Intersect(Ray& ray, Interaction& it) {
     bool hit = false;
 
-    for (int i = 0; i < (int)accels.size(); i++)
-        if (accels[i]->Intersect(ray, it)) {
-            hit = true;
-            it.material = &scene->meshes[i].material;
-            it.mediumInterface = scene->meshes[i].mediumInterface.IsMediumTransition()
-                                     ? scene->meshes[i].mediumInterface
-                                     : MediumInterface(ray.medium);
+    auto setupIt = [&](auto& shape) {
+        hit = true;
+        it.material = shape.material;
+        if (shape.mediumInterface.IsMediumTransition()) {
+            it.mediumInterface.inside = shape.mediumInterface.inside.get();
+            it.mediumInterface.outside = shape.mediumInterface.outside.get();
+        } else {
+            it.mediumInterface = MediumInterface<const Medium*>(ray.medium);
         }
+    };
+
+    for (int i = 0; i < (int)accels.size(); i++)
+        if (accels[i]->Intersect(ray, it))
+            setupIt(scene->meshes[i]);
 
     for (const auto& shape : scene->shapes)
-        if (shape.Intersect(ray, it)) {
-            hit = true;
-            it.material = &shape.material;
-            it.mediumInterface = shape.mediumInterface.IsMediumTransition()
-                                     ? shape.mediumInterface
-                                     : MediumInterface(ray.medium);
-        }
+        if (shape.Intersect(ray, it))
+            setupIt(shape);
 
     return hit;
 }
@@ -87,7 +88,7 @@ bool RayIntegrator::IntersectTr(Ray ray, Spectrum& tr, Sampler& sampler) {
     while (true) {
         bool hitSurface = Intersect(ray, it);
         if (ray.medium)
-            tr *= ray.medium.Tr(ray, sampler);
+            tr *= ray.medium->Tr(ray, sampler);
         if (!hitSurface)
             return false;
         if (it.material)

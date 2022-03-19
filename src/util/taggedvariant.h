@@ -125,7 +125,6 @@ template <typename T, typename U>
 struct CopyQualifier<const T&, U> {
     using type = const U&;
 };
-
 template <typename T, typename U>
 using CopyQualifier_t = typename CopyQualifier<T, U>::type;
 

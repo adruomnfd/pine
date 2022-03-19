@@ -4,7 +4,7 @@
 #include <core/vecmath.h>
 #include <core/sampler.h>
 #include <core/spectrum.h>
-#include <util/taggedptr.h>
+#include <util/taggedvariant.h>
 #include <util/profiler.h>
 
 namespace pine {
@@ -43,11 +43,6 @@ struct GridMedium {
     static GridMedium Create(const Parameters& params);
     GridMedium(Spectrum sigma_a, Spectrum sigma_s, float g, vec3i size, vec3 lower, vec3 upper,
                float* density);
-    ~GridMedium() {
-        if (density)
-            delete[] density;
-    }
-    PINE_DELETE_COPY_MOVE(GridMedium)
 
     Spectrum Tr(const Ray& ray, Sampler& sampler) const;
     MediumSample Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const;
@@ -62,33 +57,33 @@ struct GridMedium {
     float invMaxDensity;
     vec3 lower;
     vec3 upper;
-    float* density = nullptr;
+    std::vector<float> density;
 };
 
-struct Medium : TaggedPointer<HomogeneousMedium, GridMedium> {
-    using TaggedPointer::TaggedPointer;
+struct Medium : TaggedVariant<HomogeneousMedium, GridMedium> {
+    using TaggedVariant::TaggedVariant;
     static Medium Create(const Parameters& params);
 
     Spectrum Tr(const Ray& ray, Sampler& sampler) const {
         SampledProfiler _(ProfilePhase::MediumTr);
-        return Dispatch([&](auto ptr) { return ptr->Tr(ray, sampler); });
+        return Dispatch([&](auto&& x) { return x.Tr(ray, sampler); });
     }
     MediumSample Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const {
         SampledProfiler _(ProfilePhase::MediumSample);
-        return Dispatch([&](auto ptr) { return ptr->Sample(ray, mi, sampler); });
+        return Dispatch([&](auto&& x) { return x.Sample(ray, mi, sampler); });
     }
 };
 
+template <typename T>
 struct MediumInterface {
     MediumInterface() = default;
-    MediumInterface(Medium medium) : inside(medium), outside(medium){};
-    MediumInterface(Medium inside, Medium outside) : inside(inside), outside(outside){};
+    MediumInterface(const T& medium) : inside(medium), outside(medium){};
+    MediumInterface(const T& inside, const T& outside) : inside(inside), outside(outside){};
     bool IsMediumTransition() const {
         return inside != outside;
     }
 
-    Medium inside;
-    Medium outside;
+    T inside= {}, outside = {};
 };
 
 }  // namespace pine

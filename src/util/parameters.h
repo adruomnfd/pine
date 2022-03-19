@@ -39,6 +39,18 @@ struct Parameters {
     Parameters& operator[](std::string name) {
         return subset[name];
     }
+    auto begin() {
+        return subset.begin();
+    }
+    auto begin() const {
+        return subset.begin();
+    }
+    auto end() {
+        return subset.end();
+    }
+    auto end() const {
+        return subset.end();
+    }
 
     PINE_ARCHIVE(values, subset)
 

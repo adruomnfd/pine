@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
         Profiler _("Main");
         SampledProfiler::Initialize();
 
-        SampledSpectrum::Init();
+        SampledSpectrum::Initialize();
         std::shared_ptr<Scene> scene = std::make_shared<Scene>();
 
         Parameters params = LoadScene(argv[1], scene.get());
@@ -28,9 +28,7 @@ int main(int argc, char* argv[]) {
         if (argc > 2)
             scene->parameters.Set("outputFileName", argv[2]);
 
-        scene->Initialize();
         scene->integrator->Render();
-        scene->Cleanup();
     }
 
     SampledProfiler::ReportStat();

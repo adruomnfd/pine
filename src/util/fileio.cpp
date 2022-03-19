@@ -4,6 +4,7 @@
 #include <util/profiler.h>
 #include <util/serializer.h>
 #include <util/log.h>
+#include <util/misc.h>
 
 #include <algorithm>
 #include <sstream>
@@ -72,6 +73,14 @@ std::string RemoveFileExtension(std::string filename) {
         return "";
 
     return filename.substr(0, p);
+}
+
+std::string ChangeFileExtension(std::string filename, std::string ext) {
+    return RemoveFileExtension(filename) + "." + ext;
+}
+
+std::string AppendFileName(std::string filename, std::string content) {
+    return RemoveFileExtension(filename) + content + "." + GetFileExtension(filename);
 }
 
 std::string ReadStringFile(std::string filename) {
@@ -174,29 +183,30 @@ void SaveImage(std::string filename, vec2i size, int nchannel, float *data) {
                 pixels[y * size.x * nchannel + x * nchannel + c] =
                     Clamp(data[y * size.x * nchannel + x * nchannel + c] * 256.0f, 0.0f, 255.0f);
 
-    if (filename.size() > 3 && filename.substr(filename.size() - 3) == "bmp")
-        SaveBMPImage(filename, size, nchannel, (uint8_t *)pixels.data());
-    else if (filename.size() > 3 && filename.substr(filename.size() - 3) == "png")
+    SWITCH(GetFileExtension(filename)) {
+        CASE("bmp") SaveBMPImage(filename, size, nchannel, (uint8_t *)pixels.data());
+        CASE("png")
         stbi_write_png(filename.c_str(), size.x, size.y, nchannel, pixels.data(),
                        size.x * nchannel);
-    else
+        DEFAULT
         LOG_WARNING("& has unsupported image file extension", filename);
+    }
 }
 void SaveImage(std::string filename, vec2i size, int nchannel, uint8_t *data) {
-    if (filename.size() > 3 && filename.substr(filename.size() - 3) == "bmp")
-        SaveBMPImage(filename, size, nchannel, data);
-    else if (filename.size() > 3 && filename.substr(filename.size() - 3) == "png")
+    SWITCH(GetFileExtension(filename)) {
+        CASE("bmp") SaveBMPImage(filename, size, nchannel, data);
+        CASE("png")
         stbi_write_png(filename.c_str(), size.x, size.y, nchannel, data, size.x * nchannel);
-    else
+        DEFAULT
         LOG_WARNING("& has unsupported image file extension", filename);
+    }
 }
 vec3u8 *ReadLDRImage(std::string filename, vec2i &size) {
     int nchannel = 0;
-    vec3u8 *ptr = (vec3u8 *)stbi_load(filename.c_str(), &size.x, &size.y, &nchannel, 3);
-    if (!ptr)
+    uint8_t *data = (uint8_t *)stbi_load(filename.c_str(), &size.x, &size.y, &nchannel, 3);
+    if (!data)
         LOG_WARNING("[FileIO]Failed to load \"&\"", filename);
-    CHECK_EQ(nchannel, 3);
-    return ptr;
+    return (vec3u8 *)data;
 }
 
 std::vector<TriangleMesh> LoadObj(std::string filename, Scene *) {
@@ -300,51 +310,54 @@ Parameters LoadScene(std::string filename, Scene *scene) {
     scene->parameters = params["Scene"]["singleton"];
     scene->camera = Camera::Create(params["Camera"]["singleton"], scene);
 
-    for (const auto &block : params.subset) {
-        if (block.first == "Material") {
-            for (const auto &subset : block.second.subset)
-                scene->materials[subset.first] = Material::Create(subset.second);
-        }
-    }
+    for (auto &[name, param] : params["Material"])
+        scene->materials[name] = std::make_shared<Material>(Material::Create(param));
+    for (auto &[name, param] : params["Medium"])
+        scene->mediums[name] = std::make_shared<Medium>(Medium::Create(param));
+    for (auto &[name, param] : params["Light"])
+        scene->lights.push_back(Light::Create(param));
 
-    for (const auto &block : params.subset) {
-        if (block.first == "Medium") {
-            for (auto &subset : block.second.subset) {
-                scene->mediums[subset.first] = Medium::Create(subset.second);
+    for (const auto &[name, param] : params["Shape"]) {
+        if (param.GetString("type") == "TriangleMesh") {
+            std::vector<TriangleMesh> meshes =
+                LoadObj(GetFileDirectory(filename) + param.GetString("file"), scene);
+            for (auto &mesh : meshes) {
+                if (auto material = Find(scene->materials, param.GetString("material")))
+                    mesh.material = *material;
+                if (auto mediumInside = Find(scene->mediums, param.GetString("mediumInside")))
+                    mesh.mediumInterface.inside = *mediumInside;
+                if (auto mediumOutside = Find(scene->mediums, param.GetString("mediumOutside")))
+                    mesh.mediumInterface.outside = *mediumOutside;
+                mesh.o2w = Translate(param.GetVec3("translate", vec3(0.0f))) *
+                           Scale(param.GetVec3("scale", vec3(1.0f)));
+                scene->meshes.push_back(mesh);
             }
+        } else {
+            scene->shapes.push_back(Shape::Create(param, scene));
         }
     }
 
-    for (const auto &block : params.subset) {
-        if (block.first == "Shape") {
-            for (const auto &subset : block.second.subset) {
-                if (subset.second.GetString("type") == "TriangleMesh") {
-                    std::vector<TriangleMesh> meshes = LoadObj(
-                        GetFileDirectory(filename) + subset.second.GetString("file"), scene);
-                    for (auto &mesh : meshes) {
-                        if (mesh.materialName == "")
-                            mesh.material = scene->materials[subset.second.GetString("material")];
-                        else
-                            mesh.material = scene->materials[mesh.materialName];
-                        mesh.mediumInterface.inside =
-                            scene->mediums[subset.second.GetString("mediumInside")];
-                        mesh.mediumInterface.outside =
-                            scene->mediums[subset.second.GetString("mediumOutside")];
-                        mesh.o2w = Translate(subset.second.GetVec3("translate", vec3(0.0f))) *
-                                   Scale(subset.second.GetVec3("scale", vec3(1.0f)));
-                        scene->meshes.push_back(mesh);
-                    }
-                } else {
-                    scene->shapes.push_back(Shape::Create(subset.second, scene));
-                }
-            }
-        }
-    }
+    int lightId = 0;
+    for (const Light &light : scene->lights) {
+        if (light.Tag() == Light::Index<AreaLight>()) {
+            const AreaLight &areaLight = light.Be<AreaLight>();
+            Parameters materialParams;
+            std::string materialName = "areaLightMaterial" + ToString(lightId++);
+            materialParams.Set("type", "Emissive");
+            materialParams["color"].Set("type", "Constant");
+            materialParams["color"].Set("vec3", areaLight.color.ToRGB());
+            scene->materials[materialName] = std::make_shared<Material>(Material::Create(materialParams));
 
-    for (const auto &block : params.subset) {
-        if (block.first == "Light") {
-            for (const auto &subset : block.second.subset)
-                scene->lights.push_back(Light::Create(subset.second));
+            Parameters shapeParams;
+            shapeParams.Set("type", "Rect");
+            shapeParams.Set("position", areaLight.position);
+            shapeParams.Set("ex", areaLight.ex);
+            shapeParams.Set("ey", areaLight.ey);
+            shapeParams.Set("material", materialName);
+            scene->shapes.push_back(Shape::Create(shapeParams, scene));
+        }
+        if (light.Tag() == Light::Index<EnvironmentLight>()) {
+            scene->envLight = light.Be<EnvironmentLight>();
         }
     }
 

@@ -2,6 +2,7 @@
 #include <core/scene.h>
 #include <util/parameters.h>
 #include <util/fileio.h>
+#include <util/misc.h>
 
 namespace pine {
 
@@ -330,7 +331,7 @@ Rect Rect::Create(const Parameters& params) {
     return Rect(params.GetVec3("position"), params.GetVec3("ex"), params.GetVec3("ey"));
 }
 
-Shape Shape::Create(const Parameters& params, Scene* scene) {
+Shape Shape::Create(const Parameters& params, const Scene* scene) {
     std::string type = params.GetString("type");
     Shape shape;
 
@@ -347,10 +348,12 @@ Shape Shape::Create(const Parameters& params, Scene* scene) {
             shape = Sphere(Sphere::Create(params));
         }
     }
-
-    shape.material = scene->materials[params.GetString("material")];
-    shape.mediumInterface.inside = scene->mediums[params.GetString("mediumInside")];
-    shape.mediumInterface.outside = scene->mediums[params.GetString("mediumOutside")];
+    if (auto material = Find(scene->materials, params.GetString("material")))
+        shape.material = *material;
+    if (auto mediumInside = Find(scene->mediums, params.GetString("mediumInside")))
+        shape.mediumInterface.inside = *mediumInside;
+    if (auto mediumOutside = Find(scene->mediums, params.GetString("mediumOutside")))
+        shape.mediumInterface.outside = *mediumOutside;
     return shape;
 }
 }  // namespace pine

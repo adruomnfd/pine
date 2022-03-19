@@ -29,6 +29,8 @@ bool IsFileExist(std::string filename);
 std::string GetFileDirectory(std::string filename);
 std::string GetFileExtension(std::string filename);
 std::string RemoveFileExtension(std::string filename);
+std::string ChangeFileExtension(std::string filename,std::string ext);
+std::string AppendFileName(std::string filename,std::string content);
 std::string ReadStringFile(std::string filename);
 
 void SaveImage(std::string filename, vec2i size, int nchannel, float* data);

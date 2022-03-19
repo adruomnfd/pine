@@ -45,7 +45,7 @@ MediumSample HomogeneousMedium::Sample(const Ray& ray, Interaction& mi, Sampler&
     if (sampledMedium) {
         mi.p = ray(t);
         mi.isMediumInteraction = true;
-        mi.mediumInterface = MediumInterface(Medium(const_cast<HomogeneousMedium*>(this)));
+        mi.mediumInterface = MediumInterface<const Medium*>((const Medium*)this);
         mi.phaseFunction = PhaseFunction(g);
         PhaseFunction pf(0.0f);
         pf.Sample(-ray.d, ms.wo, u2);
@@ -90,7 +90,7 @@ MediumSample GridMedium::Sample(const Ray& ray, Interaction& mi, Sampler& sample
         if (Density(ray(t)) * invMaxDensity > sampler.Get1D()) {
             mi.p = ray(t);
             mi.isMediumInteraction = true;
-            mi.mediumInterface = MediumInterface(Medium(const_cast<GridMedium*>(this)));
+            mi.mediumInterface = MediumInterface<const Medium*>((const Medium*)this);
             mi.phaseFunction = PhaseFunction(g);
             PhaseFunction pf(0.0f);
             pf.Sample(-ray.d, ms.wo, sampler.Get2D());
@@ -121,7 +121,7 @@ GridMedium::GridMedium(Spectrum sigma_a, Spectrum sigma_s, float g, vec3i size, 
       size(size),
       lower(lower),
       upper(upper),
-      density(density) {
+      density(density, density + size.x * size.y * size.z) {
     float maxDensity = 0.0f;
     for (int x = 0; x < size.x; x++)
         for (int y = 0; y < size.y; y++)
@@ -155,11 +155,11 @@ GridMedium GridMedium::Create(const Parameters& params) {
 Medium Medium::Create(const Parameters& params) {
     std::string type = params.GetString("type");
     SWITCH(params.GetString("type")) {
-        CASE("Homogeneous") return new HomogeneousMedium(HomogeneousMedium::Create(params));
-        CASE("Grid") return new GridMedium(GridMedium::Create(params));
+        CASE("Homogeneous") return HomogeneousMedium(HomogeneousMedium::Create(params));
+        CASE("Grid") return GridMedium(GridMedium::Create(params));
         DEFAULT {
             LOG_WARNING("[Medium][Create]Unknown type \"&\"", type);
-            return new HomogeneousMedium(HomogeneousMedium::Create(params));
+            return HomogeneousMedium(HomogeneousMedium::Create(params));
         }
     }
 }

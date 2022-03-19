@@ -15,7 +15,7 @@ void Scene::Initialize() {
             materialParams.Set("type", "Emissive");
             materialParams["color"].Set("type", "Constant");
             materialParams["color"].Set("vec3", areaLight.color.ToRGB());
-            materials[materialName] = Material::Create(materialParams);
+            materials[materialName] = std::make_shared<Material>(Material::Create(materialParams));
 
             Parameters shapeParams;
             shapeParams.Set("type", "Rect");
@@ -29,10 +29,6 @@ void Scene::Initialize() {
             envLight = light.Be<EnvironmentLight>();
         }
     }
-}
-void Scene::Cleanup() {
-    for (auto& medium : mediums)
-        Medium::Destory(medium.second);
 }
 
 }  // namespace pine

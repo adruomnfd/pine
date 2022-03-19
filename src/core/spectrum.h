@@ -156,7 +156,7 @@ class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
         *this = FromRGB(&rgb[0], type);
     }
 
-    static void Init();
+    static void Initialize();
 
     static SampledSpectrum FromSampled(const float* lambda, const float* v, int n);
     static SampledSpectrum FromRGB(const float rgb[3],

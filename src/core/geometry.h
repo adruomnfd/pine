@@ -34,7 +34,7 @@ struct Ray {
     vec3 d;
     float tmin = 0.0f;
     float tmax = FloatMax;
-    Medium medium;
+    const Medium* medium = nullptr;
 };
 
 struct Interaction {
@@ -70,7 +70,7 @@ struct Interaction {
         ray.medium = GetMedium(ray.d);
         return ray;
     }
-    Medium GetMedium(vec3 w) const {
+    const Medium* GetMedium(vec3 w) const {
         return Dot(w, n) > 0 ? mediumInterface.outside : mediumInterface.inside;
     }
 
@@ -81,8 +81,8 @@ struct Interaction {
     vec3 p;
     vec3 n;
     vec2 uv;
-    const Material* material = nullptr;
-    MediumInterface mediumInterface;
+    std::shared_ptr<Material> material;
+    MediumInterface<const Medium*> mediumInterface;
     PhaseFunction phaseFunction;
     bool isMediumInteraction = false;
     float pdf = 0.0f;
@@ -415,14 +415,13 @@ struct TriangleMesh {
     std::vector<uint32_t> indices;
     mat4 o2w;
 
-    std::string materialName;
-    Material material;
-    MediumInterface mediumInterface;
+    std::shared_ptr<Material> material;
+    MediumInterface<std::shared_ptr<Medium>> mediumInterface;
 };
 
 struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line> {
     using TaggedVariant::TaggedVariant;
-    static Shape Create(const Parameters& params, Scene* scene);
+    static Shape Create(const Parameters& params, const Scene* scene);
 
     bool Hit(Ray ray) const {
         SampledProfiler _(ProfilePhase::ShapeIntersect);
@@ -437,8 +436,8 @@ struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line
     }
 
     std::string materialName;
-    Material material;
-    MediumInterface mediumInterface;
+    std::shared_ptr<Material> material;
+    MediumInterface<std::shared_ptr<Medium>> mediumInterface;
 };
 
 }  // namespace pine

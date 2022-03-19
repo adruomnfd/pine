@@ -15,13 +15,10 @@
 namespace pine {
 
 struct Scene {
-    void Initialize();
-    void Cleanup();
-
     std::shared_ptr<Integrator> integrator;
 
-    std::map<std::string, Material> materials;
-    std::map<std::string, Medium> mediums;
+    std::map<std::string, std::shared_ptr<Material>> materials;
+    std::map<std::string, std::shared_ptr<Medium>> mediums;
     std::vector<Shape> shapes;
     std::vector<TriangleMesh> meshes;
     std::vector<Light> lights;

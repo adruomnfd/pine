@@ -1,6 +1,7 @@
 #include <core/camera.h>
 #include <core/scene.h>
 #include <util/parameters.h>
+#include <util/misc.h>
 
 namespace pine {
 
@@ -30,7 +31,7 @@ Ray ThinLenCamera::GenRay(vec2 co, vec2 u2) const {
     return ray;
 }
 
-Camera Camera::Create(const Parameters& params, Scene* scene) {
+Camera Camera::Create(const Parameters& params, const Scene* scene) {
     Camera camera;
     std::string type = params.GetString("type");
 
@@ -43,7 +44,8 @@ Camera Camera::Create(const Parameters& params, Scene* scene) {
         }
     }
 
-    camera.medium = scene->mediums[params.GetString("medium")];
+    if (auto medium = Find(scene->mediums, params.GetString("medium")))
+        camera.medium = *medium;
     if (camera.medium)
         LOG_VERBOSE("[Camera]In medium");
     return camera;

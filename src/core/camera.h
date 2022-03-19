@@ -44,16 +44,16 @@ struct ThinLenCamera {
 
 struct Camera : public TaggedVariant<PinHoleCamera, ThinLenCamera> {
     using TaggedVariant::TaggedVariant;
-    static Camera Create(const Parameters& params, Scene* scene);
+    static Camera Create(const Parameters& params, const Scene* scene);
 
     Ray GenRay(vec2 co, vec2 u2) const {
         SampledProfiler _(ProfilePhase::GenerateRay);
         Ray ray = Dispatch([&](auto&& x) { return x.GenRay(co, u2); });
-        ray.medium = medium;
+        ray.medium = medium.get();
         return ray;
     }
 
-    Medium medium;
+    std::shared_ptr<Medium> medium;
 };
 
 }  // namespace pine

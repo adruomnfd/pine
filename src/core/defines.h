@@ -31,9 +31,22 @@
 #define SWITCH(x)                    \
     const auto& _switchVariable = x; \
     if (false)
+
 #define CASE(x) \
     }           \
     else if (_switchVariable == x) {
+#define DEFAULT \
+    }           \
+    else {
+#define CASE_F(f) \
+    }             \
+    else if (f(_switchVariable)) {
+#define DEFAULT \
+    }           \
+    else {
+#define CASE_BEGINWITH(s) \
+    }                     \
+    else if (_switchVariable.rfind(s, 0) == 0) {
 #define DEFAULT \
     }           \
     else {

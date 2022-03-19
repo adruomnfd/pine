@@ -53,7 +53,7 @@ static void SortSpectrumSamples(float* lambda, float* v, int n) {
     }
 }
 
-void SampledSpectrum::Init() {
+void SampledSpectrum::Initialize() {
     for (int i = 0; i < nSpectralSamples; i++) {
         float wl0 = Lerp(float(i) / nSpectralSamples, sampledLambdaStart, sampledLambdaEnd);
         float wl1 = Lerp(float(i + 1) / nSpectralSamples, sampledLambdaStart, sampledLambdaEnd);

@@ -24,7 +24,7 @@ std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
         Interaction mi;
         MediumSample ms;
         if (ray.medium) {
-            ms = ray.medium.Sample(ray, mi, sampler);
+            ms = ray.medium->Sample(ray, mi, sampler);
             beta *= ms.tr;
         }
 
