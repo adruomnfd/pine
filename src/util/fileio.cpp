@@ -1,8 +1,8 @@
 #include <core/scene.h>
 #include <util/fileio.h>
 #include <util/parser.h>
+#include <util/archive.h>
 #include <util/profiler.h>
-#include <util/serializer.h>
 #include <util/log.h>
 #include <util/misc.h>
 
@@ -36,9 +36,12 @@ void ScopedFile::Read(void *data, size_t size) {
         file.read((char *)data, size);
 }
 size_t ScopedFile::Size() const {
+    if (size != (size_t)-1)
+        return size;
+
     size_t pos = file.tellg();
     file.seekg(0, file.end);
-    size_t size = file.tellg();
+    size = file.tellg();
     file.seekg(pos);
     return size;
 }
@@ -48,7 +51,6 @@ bool IsFileExist(std::string filename) {
     std::ifstream file(filename);
     return file.good();
 }
-
 std::string GetFileDirectory(std::string filename) {
     std::replace(filename.begin(), filename.end(), '\\', '/');
 
@@ -58,7 +60,6 @@ std::string GetFileDirectory(std::string filename) {
 
     return filename + '/';
 }
-
 std::string GetFileExtension(std::string filename) {
     size_t p = filename.find_last_of('.');
     if (p == filename.npos)
@@ -66,7 +67,6 @@ std::string GetFileExtension(std::string filename) {
 
     return filename.substr(p + 1, filename.size() - p - 1);
 }
-
 std::string RemoveFileExtension(std::string filename) {
     size_t p = filename.find_last_of('.');
     if (p == filename.npos)
@@ -74,23 +74,30 @@ std::string RemoveFileExtension(std::string filename) {
 
     return filename.substr(0, p);
 }
-
 std::string ChangeFileExtension(std::string filename, std::string ext) {
     return RemoveFileExtension(filename) + "." + ext;
 }
-
 std::string AppendFileName(std::string filename, std::string content) {
     return RemoveFileExtension(filename) + content + "." + GetFileExtension(filename);
 }
 
 std::string ReadStringFile(std::string filename) {
-    std::replace(filename.begin(), filename.end(), '\\', '/');
     ScopedFile file(filename, std::ios::in | std::ios::binary);
     size_t size = file.Size();
     std::string str;
     str.resize(size);
     file.Read(str.data(), size);
     return str;
+}
+void WriteBinaryData(std::string filename, const char *ptr, size_t size) {
+    ScopedFile file(filename, std::ios::binary | std::ios::out);
+    file.Write(ptr, size);
+}
+std::vector<char> ReadBinaryData(std::string filename) {
+    ScopedFile file(filename, std::ios::binary | std::ios::in);
+    std::vector<char> data(file.Size());
+    file.Read(&data[0], file.Size());
+    return data;
 }
 
 void SaveBMPImage(std::string filename, vec2i size, int nchannel, uint8_t *data) {
@@ -346,7 +353,8 @@ Parameters LoadScene(std::string filename, Scene *scene) {
             materialParams.Set("type", "Emissive");
             materialParams["color"].Set("type", "Constant");
             materialParams["color"].Set("vec3", areaLight.color.ToRGB());
-            scene->materials[materialName] = std::make_shared<Material>(Material::Create(materialParams));
+            scene->materials[materialName] =
+                std::make_shared<Material>(Material::Create(materialParams));
 
             Parameters shapeParams;
             shapeParams.Set("type", "Rect");
@@ -367,29 +375,5 @@ Parameters LoadScene(std::string filename, Scene *scene) {
 
     return params;
 }
-
-// void Serialize(std::string filename, const Scene *) {
-//     Profiler _("Serialize");
-
-//     LOG_VERBOSE("[FileIO]Serializing \"&\"", filename.c_str());
-//     Serializer serializer;
-//     scene->Archive(serializer);
-
-//     ScopedFile file(filename, std::ios::out | std::ios::binary);
-//     file.Write(serializer.data.data(), serializer.data.size());
-// }
-
-// void Deserialize(std::string filename, Scene *) {
-//     Profiler _("Deserialize");
-
-//     LOG_VERBOSE("[FileIO]Deserializing \"&\"", filename.c_str());
-
-//     ScopedFile file(filename, std::ios::in | std::ios::binary);
-//     std::vector<char> data(file.Size());
-//     file.Read(data.data(), data.size());
-
-//     Deserializer deserializer(std::move(data));
-//     scene->Archive(deserializer);
-// }
 
 }  // namespace pine

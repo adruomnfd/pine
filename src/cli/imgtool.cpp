@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
         ++argc;
         --argv;
     };
-#define ARGFILES std::vector<std::string>(argv, argv + argc)
+    auto files = [&]() { return std::vector<std::string>(argv, argv + argc); };
 
     // clang-format off
 
@@ -68,23 +68,23 @@ int main(int argc, char* argv[]) {
             auto fmt = next();
             SWITCH(next()) {
                 CASE("--inplace" && argc)
-                    ConvertFormat(ARGFILES, fmt, true);
+                    ConvertFormat(files(), fmt, true);
                 CASE_BEGINWITH("--")
                     LOG("convert [bmp | png] [--inplace] [filename]...");
                 DEFAULT
                     putback();
-                    ConvertFormat(ARGFILES, fmt, false);
+                    ConvertFormat(files(), fmt, false);
             }
         CASE("scaling")
             float scale = std::stof(next());
             SWITCH(next()){
                 CASE("--inplace") 
-                    Scaling(ARGFILES, scale, true);
+                    Scaling(files(), scale, true);
                 CASE_BEGINWITH("--")
                     LOG("scaling [scale] [--inplace] [filename]...");
                 DEFAULT 
                     putback();
-                    Scaling(ARGFILES, scale, false);
+                    Scaling(files(), scale, false);
             }           
         DEFAULT
             LOG("Usage: imgtool [convert | scaling] [filename]...");

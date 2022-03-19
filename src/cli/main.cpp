@@ -3,8 +3,6 @@
 #include <util/fileio.h>
 #include <util/profiler.h>
 
-#include <memory>
-
 int main(int argc, char* argv[]) {
     using namespace pine;
     if (argc < 2) {
@@ -21,10 +19,9 @@ int main(int argc, char* argv[]) {
         SampledProfiler::Initialize();
 
         SampledSpectrum::Initialize();
+
         std::shared_ptr<Scene> scene = std::make_shared<Scene>();
-
-        Parameters params = LoadScene(argv[1], scene.get());
-
+        LoadScene(argv[1], scene.get());
         if (argc > 2)
             scene->parameters.Set("outputFileName", argv[2]);
 

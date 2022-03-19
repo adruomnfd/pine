@@ -11,7 +11,6 @@ namespace pine {
 struct PinHoleCamera {
     static PinHoleCamera Create(const Parameters& params);
 
-    PinHoleCamera() = default;
     PinHoleCamera(vec3 from, vec3 to, float fov)
         : origin(from), lookat(LookAt(from, to)), fovT(1 / std::tan(fov / 2)){};
 
@@ -25,7 +24,6 @@ struct PinHoleCamera {
 struct ThinLenCamera {
     static ThinLenCamera Create(const Parameters& params);
 
-    ThinLenCamera() = default;
     ThinLenCamera(vec3 from, vec3 to, float fov, float lenRadius, float focusDistance)
         : origin(from),
           lookat(LookAt(from, to)),

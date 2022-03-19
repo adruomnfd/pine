@@ -2,6 +2,7 @@
 #define PINE_UTIL_STRING_H
 
 #include <core/defines.h>
+#include <util/reflect.h>
 
 #include <utility>
 #include <string>
@@ -204,21 +205,13 @@ FormattedString FormattedString::FormattingImpl(const Ty &value, Format fmt) {
     using T = typename std::decay<Ty>::type;
     FormattedString formatted;
 
-    static_assert(HasMemberMethodFormatting<T>::value || std::is_same<T, char>::value ||
-                      std::is_same<T, char *>::value || std::is_same<T, const char *>::value ||
-                      std::is_pointer<T>::value || std::is_null_pointer<T>::value ||
-                      std::is_integral<T>::value || std::is_floating_point<T>::value ||
-                      std::is_same<T, std::string>::value,
-                  "Unsupported type");
-
     if (fmt.minWidth == 0) {
     }
 
-    if constexpr (std::is_same<T, std::string>::value)
-        formatted = FormattingCharArray(value.c_str(), fmt.minWidth, fmt.leftAlign);
-
     if constexpr (HasMemberMethodFormatting<T>::value) {
         formatted = value.Formatting(fmt);
+    } else if constexpr (std::is_same<T, std::string>::value) {
+        formatted = FormattingCharArray(value.c_str(), fmt.minWidth, fmt.leftAlign);
     } else if constexpr (std::is_same<T, char>::value) {
         formatted.size_ = std::max(1, fmt.minWidth);
         formatted.ptr_ = new char[formatted.size_ + 1];
@@ -324,6 +317,31 @@ FormattedString FormattedString::FormattingImpl(const Ty &value, Format fmt) {
         }
 
         formatted.ptr_[formatted.size_] = '\0';
+    } else if constexpr (IsPointer<T>::value) {
+        formatted += "*";
+        formatted += FormattingImpl(*value, fmt);
+    } else if constexpr (IsIterable<T>::value) {
+        formatted += "[";
+        int i = 0;
+        for (auto &elem : value) {
+            formatted += FormattingImpl(elem, fmt) + ", ";
+            i++;
+        }
+        if (i != 0) {
+            formatted.size_ -= 2;
+        }
+        formatted += "]";
+    } else {
+        formatted += "{";
+        int i = 0;
+        ForEachField(value, [&](auto&& field) {
+            formatted += FormattingImpl(field, fmt) + ", ";
+            i++;
+        });
+        if (i != 0) {
+            formatted.size_ -= 2;
+        }
+        formatted += "}";
     }
 
     return formatted;

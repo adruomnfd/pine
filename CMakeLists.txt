@@ -21,7 +21,6 @@ src/core/medium.cpp
 src/core/spectrum.cpp
 src/core/light.cpp
 src/core/camera.cpp
-src/core/scene.cpp
 src/core/accel.cpp
 src/core/color.cpp
 src/core/noise.cpp

@@ -8,11 +8,11 @@
 #define PINE_ARCHIVE(...)                   \
     template <typename ArchiveT>            \
     void Archive(ArchiveT& archive) {       \
-        archive(__VA_ARGS__);               \
+        archive.Archive(__VA_ARGS__);               \
     }                                       \
     template <typename ArchiveT>            \
     void Archive(ArchiveT& archive) const { \
-        archive(__VA_ARGS__);               \
+        archive.Archive(__VA_ARGS__);               \
     }                                       \
     static constexpr bool Archivable = true;
 
