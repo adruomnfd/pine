@@ -407,9 +407,6 @@ struct Vector4 {
     Fstring Formatting(Format fmt) const {
         return Fstring(fmt, "[&, &, &, &]", x, y, z, w);
     }
-    std::string ToString() const {
-        return pine::ToString('[', x, ", ", y, ", ", z, ", ", w, ']');
-    }
 
     PINE_ARCHIVE(x, y, z, w)
 
@@ -509,9 +506,6 @@ struct Matrix2 {
 
     Fstring Formatting(Format fmt) const {
         return Fstring(fmt, "\n[&,\n &,\n]", x, y);
-    }
-    std::string ToString() const {
-        return pine::ToString("\n[", x, ",\n ", y, ']');
     }
 
     PINE_ARCHIVE(x, y)
@@ -614,9 +608,6 @@ struct Matrix3 {
 
     Fstring Formatting(Format fmt) const {
         return Fstring(fmt, "\n[&,\n &,\n &]", x, y, z);
-    }
-    std::string ToString() const {
-        return pine::ToString("\n[", x, ",\n ", y, ",\n ", z, ']');
     }
 
     PINE_ARCHIVE(x, y, z)
@@ -724,28 +715,12 @@ struct Matrix4 {
     Fstring Formatting(Format fmt) const {
         return Fstring(fmt, "\n[&,\n &,\n &,\n &]", x, y, z, w);
     }
-    std::string ToString() const {
-        return pine::ToString("\n[", x, ",\n ", y, ",\n ", z, ",\n ", w, ']');
-    }
 
     PINE_ARCHIVE(x, y, z, w)
 
     static constexpr int N = 4;
     Vector4<T> x, y, z, w;
 };
-
-extern template struct Vector2<uint8_t>;
-extern template struct Vector3<uint8_t>;
-extern template struct Vector4<uint8_t>;
-extern template struct Vector3<uint32_t>;
-extern template struct Vector2<int>;
-extern template struct Vector3<int>;
-extern template struct Vector4<int>;
-extern template struct Vector2<float>;
-extern template struct Vector3<float>;
-extern template struct Vector4<float>;
-extern template struct Matrix3<float>;
-extern template struct Matrix4<float>;
 
 typedef Vector2<uint8_t> vec2u8;
 typedef Vector3<uint8_t> vec3u8;

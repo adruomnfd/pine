@@ -15,7 +15,6 @@ include_directories(
 
 #Pine Core Library
 add_library(pinelib 
-src/core/vecmath.cpp
 src/core/geometry.cpp
 src/core/medium.cpp
 src/core/spectrum.cpp

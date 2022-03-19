@@ -13,6 +13,12 @@ struct DeferredBool {
     static constexpr bool value = Value;
 };
 
+template <int I>
+struct PriorityTag : PriorityTag<I - 1> {};
+
+template <>
+struct PriorityTag<0> {};
+
 template <typename T>
 struct IsVector {
     template <typename U>

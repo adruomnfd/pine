@@ -11,17 +11,19 @@
 namespace pine {
 
 template <typename T>
-auto ToString(T val) -> std::enable_if_t<std::is_same<T, char>::value, std::string> {
+auto ToStringImpl(T val, PriorityTag<2>)
+    -> std::enable_if_t<std::is_same<T, char>::value, std::string> {
     return std::string(1, val);
 }
 
 template <typename T>
-auto ToString(T val) -> std::enable_if_t<std::is_convertible<T, std::string>::value, std::string> {
+auto ToStringImpl(const T &val, PriorityTag<2>)
+    -> std::enable_if_t<std::is_convertible<T, std::string>::value, std::string> {
     return std::string(val);
 }
 
 template <typename T>
-auto ToString(T val)
+auto ToStringImpl(const T &val, PriorityTag<2>)
     -> std::enable_if_t<std::is_same<decltype(std::to_string(val)), std::string>::value &&
                             !std::is_same<T, char>::value,
                         std::string> {
@@ -29,14 +31,19 @@ auto ToString(T val)
 }
 
 template <typename T>
-auto ToString(T val) -> decltype(val.ToString()) {
+auto ToStringImpl(const T &val, PriorityTag<2>) -> decltype(val.ToString()) {
     return val.ToString();
 }
 
+template <typename T>
+auto ToStringImpl(const T &val, PriorityTag<1>) {
+    return Fstring(val).str();
+}
+
 template <typename... Ts>
-auto ToString(Ts... vals) -> std::enable_if_t<(sizeof...(vals) > 1), std::string> {
+auto ToString(const Ts &...vals) {
     std::string str;
-    int expand[] = {0, (str += pine::ToString(vals), 0)...};
+    int expand[] = {0, (str += pine::ToStringImpl(vals, PriorityTag<2>{}), 0)...};
     (void)expand;
     return str;
 }
@@ -125,8 +132,11 @@ class Fstring {
     const char *c_str() const {
         return ptr_;
     }
+    std::string str() const {
+        return ptr_;
+    }
     operator std::string() const {
-        return c_str();
+        return str();
     }
 
     template <typename T, typename... Ts>
