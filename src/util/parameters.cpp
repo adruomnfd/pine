@@ -1,6 +1,8 @@
 #include <util/parameters.h>
 #include <util/log.h>
 
+#include <sstream>
+
 namespace pine {
 
 void Parameters::Summarize(int indent) const {
@@ -62,11 +64,6 @@ float Parameters::GetFloat(const std::string& name, float fallback) const {
         LOG_WARNING("[Parameters][GetFloat]& do not have a value", name.c_str());
         return fallback;
     }
-
-    if (str == "Pi")
-        return Pi;
-    if (str == "2Pi")
-        return 2 * Pi;
 
     return std::stof(str);
 }

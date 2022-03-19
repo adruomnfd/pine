@@ -17,7 +17,7 @@ static constexpr float FloatMax = std::numeric_limits<float>::max();
 static constexpr float Infinity = std::numeric_limits<float>::infinity();
 
 template <typename Dst, typename Src>
-Dst Reinterpret(const Src& src) {
+Dst Bitcast(const Src& src) {
     Dst dst;
     memcpy(&dst, &src, sizeof(Dst));
     return dst;

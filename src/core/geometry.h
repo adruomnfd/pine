@@ -37,6 +37,19 @@ struct Ray {
     const Medium* medium = nullptr;
 };
 
+inline vec3 OffsetRayOrigin(vec3 p, vec3 n) {
+    float origin = 1.0f / 32.0f;
+    float floatScale = 1.0f / 65536.0f;
+    float intScale = 256.0f;
+    vec3i of_i = intScale * n;
+    vec3 p_i = Bitcast<vec3>(Bitcast<vec3i>(p) + vec3i(p.x < 0 ? -of_i.x : of_i.x,
+                                                       p.y < 0 ? -of_i.y : of_i.y,
+                                                       p.z < 0 ? -of_i.z : of_i.z));
+    return {std::abs(p.x) < origin ? p.x + n.x * floatScale : p_i.x,
+            std::abs(p.y) < origin ? p.y + n.y * floatScale : p_i.y,
+            std::abs(p.z) < origin ? p.z + n.z * floatScale : p_i.z};
+}
+
 struct Interaction {
     bool IsSurfaceInteraction() const {
         return !isMediumInteraction;
@@ -46,9 +59,9 @@ struct Interaction {
     }
     Ray SpawnRayTo(vec3 p2) {
         Ray ray;
-        ray.o = p;
         ray.d = Normalize(p2 - p, ray.tmax);
-        ray.tmin = 1e-2f;
+        ray.o = OffsetRayOrigin(p, Dot(ray.d, n) > 0 ? n : -n);
+        ray.tmin = 0.0f;
         ray.tmax *= 1.0f - 1e-3f;
         ray.medium = GetMedium(ray.d);
         return ray;
@@ -56,17 +69,18 @@ struct Interaction {
     Ray SpawnRayTo(vec3 wo, float distance) {
         Ray ray;
         ray.d = wo;
-        ray.o = p;
-        ray.tmin = 1e-2f;
-        ray.tmax = distance * 0.995f;
+        ray.o = OffsetRayOrigin(p, Dot(ray.d, n) > 0 ? n : -n);
+        ray.tmin = 0.0f;
+        ray.tmax = distance * (1.0f - 1e-3f);
         ray.medium = GetMedium(ray.d);
         return ray;
     }
     Ray SpawnRay(vec3 w) {
         Ray ray;
-        ray.o = p;
         ray.d = w;
-        ray.tmin = 1e-3f;
+        ray.o = OffsetRayOrigin(p, Dot(ray.d, n) > 0 ? n : -n);
+        ray.tmin = 0.0f;
+        ray.tmax = FloatMax;
         ray.medium = GetMedium(ray.d);
         return ray;
     }
@@ -361,9 +375,8 @@ struct Triangle {
     vec3 Normal() const {
         return Normalize(Cross(v0 - v1, v0 - v2));
     }
-    vec3 InterpolatePosition(vec2 barycentric) const {
-        return (1.0f - barycentric.x - barycentric.y) * v0 + barycentric.x * v1 +
-               barycentric.y * v2;
+    vec3 InterpolatePosition(vec2 bc) const {
+        return (1.0f - bc.x - bc.y) * v0 + bc.x * v1 + bc.y * v2;
     }
 
     PINE_ARCHIVE(v0, v1, v2)

@@ -64,19 +64,19 @@ void ThreadIdParallelFor(vec2i size, F&& f) {
 
 struct AtomicFloat {
     explicit AtomicFloat(float v = 0) {
-        bits = Reinterpret<uint32_t>(v);
+        bits = Bitcast<uint32_t>(v);
     };
     operator float() const {
-        return Reinterpret<float>(bits);
+        return Bitcast<float>(bits);
     }
     AtomicFloat& operator=(float v) {
-        bits = Reinterpret<uint32_t>(v);
+        bits = Bitcast<uint32_t>(v);
         return *this;
     }
     void Add(float v) {
         uint32_t oldBits = bits, newBits;
         do {
-            newBits = Reinterpret<uint32_t>(Reinterpret<float>(oldBits) + v);
+            newBits = Bitcast<uint32_t>(Bitcast<float>(oldBits) + v);
         } while (!bits.compare_exchange_weak(oldBits, newBits));
     }
 

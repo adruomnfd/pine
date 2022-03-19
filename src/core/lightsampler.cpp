@@ -20,7 +20,7 @@ LightSampler LightSampler::Create(const Parameters& params, const std::vector<Li
     SWITCH(type) {
         CASE("Uniform") return UniformLightSampler(UniformLightSampler::Create(params, lights));
         DEFAULT {
-            LOG("[LightSampler][Create]Unknown type &", type);
+            LOG_WARNING("[LightSampler][Create]Unknown type \"&\"", type);
             return UniformLightSampler(UniformLightSampler::Create(params, lights));
         }
     }

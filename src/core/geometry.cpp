@@ -101,6 +101,7 @@ bool Plane::Intersect(Ray& ray, Interaction& it) const {
     it.p = ray.o + t * ray.d;
     it.n = n;
     it.uv = vec2(Dot(it.p - position, u), Dot(it.p - position, v));
+    it.p = position + it.uv.x * u + it.uv.y * v;
     return true;
 }
 AABB Plane::GetAABB() const {
@@ -138,8 +139,8 @@ bool Sphere::Intersect(Ray& ray, Interaction& it) const {
     if (t > ray.tmax)
         return false;
     ray.tmax = t;
-    it.p = ray.o + t * ray.d;
-    it.n = (it.p - this->c) / r;
+    it.n = Normalize(ray(t) - this->c);
+    it.p = this->c + it.n * r;
     it.uv = CartesianToSpherical(it.n) / vec2(Pi * 2, Pi);
     return true;
 }
@@ -184,7 +185,7 @@ bool Rect::Intersect(Ray& ray, Interaction& it) const {
     if (v < -0.5f || v > 0.5f)
         return false;
     ray.tmax = t;
-    it.p = p;
+    it.p = position + ex * u + ey * v;
     it.n = n;
     it.uv = vec2(u, v);
     it.pdf = 1.0f / (lx * ly);

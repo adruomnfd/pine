@@ -314,7 +314,6 @@ Parameters LoadScene(std::string filename, Scene *scene) {
 
     Timer timer;
 
-    scene->parameters = params["Scene"]["singleton"];
     scene->camera = Camera::Create(params["Camera"]["singleton"], scene);
 
     for (auto &[name, param] : params["Material"])

@@ -2783,7 +2783,7 @@ static void stbi__idct_simd(stbi_uc *out, int out_stride, short data[64])
 // these three map to a single VTRN.16, VTRN.32, and VSWP, respectively.
 // whether compilers actually get this is another story, sadly.
 #define dct_trn16(x, y) { int16x8x2_t t = vtrnq_s16(x, y); x = t.val[0]; y = t.val[1]; }
-#define dct_trn32(x, y) { int32x4x2_t t = vtrnq_s32(vreinterpretq_s32_s16(x), vreinterpretq_s32_s16(y)); x = vreinterpretq_s16_s32(t.val[0]); y = vreinterpretq_s16_s32(t.val[1]); }
+#define dct_trn32(x, y) { int32x4x2_t t = vtrnq_s32(vBitcastq_s32_s16(x), vBitcastq_s32_s16(y)); x = vBitcastq_s16_s32(t.val[0]); y = vBitcastq_s16_s32(t.val[1]); }
 #define dct_trn64(x, y) { int16x8_t x0 = x; int16x8_t y0 = y; x = vcombine_s16(vget_low_s16(x0), vget_low_s16(y0)); y = vcombine_s16(vget_high_s16(x0), vget_high_s16(y0)); }
 
       // pass 1
@@ -2828,8 +2828,8 @@ static void stbi__idct_simd(stbi_uc *out, int out_stride, short data[64])
 
       // again, these can translate into one instruction, but often don't.
 #define dct_trn8_8(x, y) { uint8x8x2_t t = vtrn_u8(x, y); x = t.val[0]; y = t.val[1]; }
-#define dct_trn8_16(x, y) { uint16x4x2_t t = vtrn_u16(vreinterpret_u16_u8(x), vreinterpret_u16_u8(y)); x = vreinterpret_u8_u16(t.val[0]); y = vreinterpret_u8_u16(t.val[1]); }
-#define dct_trn8_32(x, y) { uint32x2x2_t t = vtrn_u32(vreinterpret_u32_u8(x), vreinterpret_u32_u8(y)); x = vreinterpret_u8_u32(t.val[0]); y = vreinterpret_u8_u32(t.val[1]); }
+#define dct_trn8_16(x, y) { uint16x4x2_t t = vtrn_u16(vBitcast_u16_u8(x), vBitcast_u16_u8(y)); x = vBitcast_u8_u16(t.val[0]); y = vBitcast_u8_u16(t.val[1]); }
+#define dct_trn8_32(x, y) { uint32x2x2_t t = vtrn_u32(vBitcast_u32_u8(x), vBitcast_u32_u8(y)); x = vBitcast_u8_u32(t.val[0]); y = vBitcast_u8_u32(t.val[1]); }
 
       // sadly can't use interleaved stores here since we only write
       // 8 bytes to each scan line!
@@ -3536,8 +3536,8 @@ static stbi_uc *stbi__resample_row_hv_2_simd(stbi_uc *out, stbi_uc *in_near, stb
       // this uses 3*x + y = 4*x + (y - x)
       uint8x8_t farb  = vld1_u8(in_far + i);
       uint8x8_t nearb = vld1_u8(in_near + i);
-      int16x8_t diff  = vreinterpretq_s16_u16(vsubl_u8(farb, nearb));
-      int16x8_t nears = vreinterpretq_s16_u16(vshll_n_u8(nearb, 2));
+      int16x8_t diff  = vBitcastq_s16_u16(vsubl_u8(farb, nearb));
+      int16x8_t nears = vBitcastq_s16_u16(vshll_n_u8(nearb, 2));
       int16x8_t curr  = vaddq_s16(nears, diff); // current row
 
       // horizontal filter works the same based on shifted vers of current
@@ -3709,11 +3709,11 @@ static void stbi__YCbCr_to_RGB_simd(stbi_uc *out, stbi_uc const *y, stbi_uc cons
          uint8x8_t y_bytes  = vld1_u8(y + i);
          uint8x8_t cr_bytes = vld1_u8(pcr + i);
          uint8x8_t cb_bytes = vld1_u8(pcb + i);
-         int8x8_t cr_biased = vreinterpret_s8_u8(vsub_u8(cr_bytes, signflip));
-         int8x8_t cb_biased = vreinterpret_s8_u8(vsub_u8(cb_bytes, signflip));
+         int8x8_t cr_biased = vBitcast_s8_u8(vsub_u8(cr_bytes, signflip));
+         int8x8_t cb_biased = vBitcast_s8_u8(vsub_u8(cb_bytes, signflip));
 
          // expand to s16
-         int16x8_t yws = vreinterpretq_s16_u16(vshll_n_u8(y_bytes, 4));
+         int16x8_t yws = vBitcastq_s16_u16(vshll_n_u8(y_bytes, 4));
          int16x8_t crw = vshll_n_s8(cr_biased, 7);
          int16x8_t cbw = vshll_n_s8(cb_biased, 7);
 

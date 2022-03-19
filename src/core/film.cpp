@@ -6,10 +6,12 @@
 namespace pine {
 
 Film Film::Create(const Parameters& params) {
-    return Film(params.GetVec2i("size", vec2i(720, 480)), Filter::Create(params["filter"]));
+    return Film(params.GetVec2i("size", vec2i(720, 480)), Filter::Create(params["filter"]),
+                params.GetString("outputFileName", "result.png"));
 }
 
-Film::Film(vec2i size, Filter filter) : size(size), filter(filter) {
+Film::Film(vec2i size, Filter filter, std::string outputFileName)
+    : size(size), filter(filter), outputFileName(outputFileName) {
     int offset = 0;
     for (int y = 0; y < filterTableWidth; y++)
         for (int x = 0; x < filterTableWidth; x++) {

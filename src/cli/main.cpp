@@ -6,8 +6,8 @@
 int main(int argc, char* argv[]) {
     using namespace pine;
     if (argc < 2) {
-        LOG_FATAL("No input file");
-        return 1;
+        LOG("pine [filename]");
+        return 0;
     }
 
 #ifndef NDEBUG
@@ -22,8 +22,6 @@ int main(int argc, char* argv[]) {
 
         std::shared_ptr<Scene> scene = std::make_shared<Scene>();
         LoadScene(argv[1], scene.get());
-        if (argc > 2)
-            scene->parameters.Set("outputFileName", argv[2]);
 
         scene->integrator->Render();
     }

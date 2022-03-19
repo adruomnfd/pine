@@ -23,9 +23,7 @@ struct Scene {
     std::vector<TriangleMesh> meshes;
     std::vector<Light> lights;
     std::optional<EnvironmentLight> envLight;
-
     Camera camera;
-    Parameters parameters;
 };
 
 }  // namespace pine

@@ -141,7 +141,6 @@ void PixelSampleIntegrator::Render() {
     }
 
     film.Finalize();
-    film.WriteToDisk(scene->parameters.GetString("outputFileName"));
 }
 
 void SinglePassIntegrator::Render() {
@@ -178,7 +177,6 @@ void SinglePassIntegrator::Render() {
     }
 
     film.Finalize();
-    film.WriteToDisk(scene->parameters.GetString("outputFileName"));
 }
 
 }  // namespace pine

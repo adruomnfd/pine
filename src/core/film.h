@@ -19,7 +19,7 @@ struct Pixel {
 struct Film {
     static Film Create(const Parameters& params);
     Film() = default;
-    Film(vec2i size, Filter filter);
+    Film(vec2i size, Filter filter, std::string outputFileName);
 
     void AddSample(vec2 pFilm, const Spectrum& sL) {
         pFilm -= vec2(0.5f);
@@ -62,6 +62,7 @@ struct Film {
         CopyToRGBArray();
         ApplyToneMapping();
         ApplyGammaCorrection();
+        WriteToDisk(outputFileName);
     }
     void WriteToDisk(std::string filename) const;
 
@@ -81,6 +82,8 @@ struct Film {
 
     static constexpr int filterTableWidth = 16;
     float filterTable[filterTableWidth * filterTableWidth];
+
+    std::string outputFileName;
 };
 
 }  // namespace pine
