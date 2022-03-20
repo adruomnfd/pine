@@ -4,74 +4,92 @@
 #include <util/profiler.h>
 #include <util/log.h>
 
+#include <locale>
+#include <algorithm>
+
 namespace pine {
 
-size_t findFirstLetter(std::string_view str) {
-    size_t pos = str.npos;
-    for (size_t i = 0; str[i] != '\0'; i++) {
-        if (i == str.size())
-            break;
-        if (str[i] >= 'A' && str[i] <= 'z') {
-            pos = i;
-            break;
-        }
-    }
-    return pos;
+template <typename F>
+std::optional<size_t> FirstOfF(std::string_view str, F&& f) {
+    for (size_t i = 0; i < str.size(); i++)
+        if (f(str[i]))
+            return i;
+    return std::nullopt;
 }
 
-Parameters ParseBlock(std::string_view block, size_t& recursiveBlockEnd) {
+bool IsLetter(char s) {
+    return (s >= 'A' && s <= 'z') || (s >= '0' && s <= '9') || s == '_';
+}
+
+std::optional<size_t> FirstLetter(std::string_view str) {
+    return FirstOfF(str, IsLetter);
+}
+
+std::optional<size_t> FirstOf(std::string_view str, const std::vector<char>& chars) {
+    return FirstOfF(str, [&](char s) {
+        for (char c : chars)
+            if (s == c)
+                return true;
+        return false;
+    });
+}
+
+void EscapeSpace(std::string_view& raw) {
+    while (std::isspace(raw[0]))
+        raw = raw.substr(1);
+}
+
+Parameters ParseBlock(std::string_view& block, int depth = 0) {
     Parameters params;
-    std::string_view raw = block;
-    size_t blockEnd = 0;
 
     while (true) {
-        size_t keyBegin = findFirstLetter(block);
-        if (keyBegin == block.npos || keyBegin >= block.find_first_of('}'))
+        EscapeSpace(block);
+        std::optional<size_t> keyBegin = FirstLetter(block);
+        if (!keyBegin)
             break;
 
-        size_t seperator = block.find_first_of(':');
-
-        size_t subBlockStart = block.find_first_of('{');
-        if (subBlockStart < block.find_first_of('}') && subBlockStart < seperator) {
-            size_t subTypeBegin = findFirstLetter(block);
-            if (subTypeBegin == raw.npos) {
-                LOG_WARNING("[Parser]Missing type name after \"&\"", (std::string)block);
+        std::optional<size_t> seperator = FirstOf(block, {':', '=', '{'});
+        CHECK(seperator);
+        if (auto blockEnd = FirstOf(block, {'}'}))
+            if (*seperator > *blockEnd)
                 break;
-            }
 
-            std::string_view subType = block.substr(subTypeBegin, subBlockStart - subTypeBegin);
+        auto keyEnd = FirstOfF(block, [](char s) { return !IsLetter(s); });
+        CHECK(keyEnd);
+        std::string key = (std::string)block.substr(0, *keyEnd);
+        std::string name = (std::string)block.substr(*keyEnd, *seperator - *keyEnd);
+        name.erase(std::remove_if(begin(name), end(name), [](char s) { return !IsLetter(s); }),
+                   end(name));
+        block = block.substr(*seperator);
 
-            size_t subBlockEnd = subBlockStart + 1;
-            params[(std::string)subType] = ParseBlock(block.substr(subBlockStart + 1), subBlockEnd);
+        bool isTyped = false;
+        std::string value;
+        if (block[0] != '{') {
+            isTyped = true;
+            block = block.substr(1);
+            EscapeSpace(block);
+            std::optional<size_t> valueEnd =
+                FirstOfF(block, [](char s) { return s == '\n' || s == '\r' || s == '{'; });
+            CHECK(valueEnd);
 
-            blockEnd += subBlockEnd + 1;
-            block = raw.substr(blockEnd);
-            continue;
+            value = (std::string)block.substr(0, *valueEnd);
+            params.Set(key, value);
+            block = block.substr(*valueEnd);
         }
+        EscapeSpace(block);
 
-        size_t valueBegin = block.substr(seperator + 1).find_first_not_of(' ');
-        if (valueBegin == block.npos) {
-            LOG_WARNING("[Parser]Missing value after \"&\"", (std::string)block);
-            break;
+        if (block[0] == '{') {
+            block = block.substr(1);
+            auto& subset = params.AddSubset(key) = ParseBlock(block, depth + 1);
+            if (isTyped)
+                subset.Set("@", value);
+            if (name != "" && !subset.HasValue("name"))
+                subset.Set("name", name);
         }
-        valueBegin += seperator + 1;
-
-        size_t valueEnd = block.substr(valueBegin + 1).find_first_of('\n');
-        if (valueEnd == block.npos) {
-            LOG_WARNING("[Parser]Missing new line after \"&\"", (std::string)block);
-            break;
-        }
-        valueEnd += valueBegin + 1;
-
-        params.Set((std::string)block.substr(keyBegin, seperator - keyBegin),
-                   (std::string)block.substr(valueBegin, valueEnd - valueBegin));
-
-        blockEnd += valueEnd + 1;
-        block = raw.substr(blockEnd);
     }
 
-    blockEnd += block.find_first_of('}') + 1;
-    recursiveBlockEnd += blockEnd;
+    if (auto blockEnd = FirstOf(block, {'}'}))
+        block = block.substr(*blockEnd + 1);
 
     return params;
 }
@@ -81,26 +99,8 @@ Parameters Parse(std::string_view raw) {
     LOG_VERBOSE("[FileIO]Parsing parameters");
     Timer timer;
 
-    Parameters parameters;
+    Parameters parameters = ParseBlock(raw);
 
-    while (true) {
-        size_t typeBegin = findFirstLetter(raw);
-        if (typeBegin == raw.npos)
-            break;
-
-        size_t blockStart = raw.find_first_of('{');
-        if (blockStart == raw.npos) {
-            LOG_WARNING("[Parser]Missing \"{\" after \"&\"", (std::string)raw.substr(typeBegin));
-            break;
-        }
-        size_t blockEnd = blockStart + 1;
-
-        std::string type = (std::string)raw.substr(typeBegin, blockStart - typeBegin);
-        Parameters subParams = ParseBlock(raw.substr(blockStart + 1), blockEnd);
-        parameters[type][subParams.GetString("name", "singleton")] = subParams;
-
-        raw = raw.substr(blockEnd);
-    }
     LOG_VERBOSE("[Parser]Parameter parsed in & ms", timer.ElapsedMs());
     return parameters;
 }

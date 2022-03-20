@@ -95,11 +95,12 @@ struct Interaction {
     vec3 p;
     vec3 n;
     vec2 uv;
+    vec3 dpdu, dpdv;
+
     const Material* material;
     MediumInterface<const Medium*> mediumInterface;
     PhaseFunction phaseFunction;
     bool isMediumInteraction = false;
-    float pdf = 0.0f;
     float bvh = 0.0f;
 };
 
@@ -387,6 +388,10 @@ struct Triangle {
     }
     vec3 InterpolatePosition(vec2 bc) const {
         return (1.0f - bc.x - bc.y) * v0 + bc.x * v1 + bc.y * v2;
+    }
+    void ComputeDpDuv(vec3& dpdu, vec3& dpdv) const {
+        dpdu = v1 - v0;
+        dpdv = v2 - v0;
     }
 
     PINE_ARCHIVE(v0, v1, v2)

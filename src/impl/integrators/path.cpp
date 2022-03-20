@@ -51,17 +51,15 @@ std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
             continue;
         }
 
-        MaterialEvalContext mc(it.p, it.n, it.uv, -ray.d);
+        it.n = it.material->BumpNormal(MaterialEvalContext(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d));
+
+        MaterialEvalContext mc(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d);
 
         // Accounting for visible emssive surface
         Spectrum le = it.material->Le(mc);
         if (!le.IsBlack()) {
-            if (depth == 0) {
+            if (depth == 0)
                 L += beta * le;
-            } else {
-                // float lightPdf = it.pdf;
-                // L += beta * le * BalanceHeuristic(1, bsdfPDF, 1, lightPdf);
-            }
             break;
         }
 

@@ -11,7 +11,7 @@ class VizIntegrator : public PixelSampleIntegrator {
 
     std::optional<Spectrum> Li(Ray ray, Sampler&) override;
 
-    enum class Type { Bvh, Position, Normal, Texcoord } type;
+    enum class Type { Bvh, Position, Normal, Texcoord, DpDu, DpDv } type;
 };
 
 }  // namespace pine

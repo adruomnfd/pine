@@ -832,6 +832,7 @@ bool BVH::Intersect(Ray& ray, Interaction& it) const {
     if (hit) {
         it.p = closestTriangle->InterpolatePosition(it.uv);
         it.n = closestTriangle->Normal();
+        closestTriangle->ComputeDpDuv(it.dpdu, it.dpdv);
     }
 
     return hit;

@@ -4,13 +4,13 @@
 
 namespace pine {
 
-float NodeInput::EvalFloat(NodeEvalContext c) const {
+float NodeInput::EvalFloat(const NodeEvalContext& c) const {
     if (link)
         return link->EvalFloat(c);
     else
         return defaultFloat;
 }
-vec3 NodeInput::EvalVec3(NodeEvalContext c) const {
+vec3 NodeInput::EvalVec3(const NodeEvalContext& c) const {
     if (link)
         return link->EvalVec3(c);
     else
@@ -18,13 +18,12 @@ vec3 NodeInput::EvalVec3(NodeEvalContext c) const {
 }
 
 nodes::Texture::Texture(NodeInput texcoord, std::string filename) : texcoord(texcoord) {
-    filename = sceneDirectory + filename;
     LOG_VERBOSE("[Texture]Loading \"&\"", filename);
     std::unique_ptr<vec3u8[]> ptr(ReadLDRImage(filename, size));
     texels.assign(ptr.get(), ptr.get() + size.x * size.y);
 }
 
-vec3 nodes::Texture::EvalVec3(NodeEvalContext c) const {
+vec3 nodes::Texture::EvalVec3(const NodeEvalContext& c) const {
     if (size == vec2i(0) || texels.size() == 0)
         return vec3(0.0f, 0.0f, 1.0f);
     vec2i co = size * pine::Fract(texcoord.EvalVec3(c));
@@ -86,6 +85,9 @@ Node* Node::Create(const Parameters& params) {
         return new nodes::Texture(Create(params["texcoord"]), params.GetString("filename"));
         CASE("Invert")
         return new nodes::Invert(Create(params["input"]));
+        CASE("" || params.GetString("@") != "")
+        return new nodes::Constant(params.GetFloat("float", params.GetFloat("@")),
+                                   params.GetVec3("vec3", params.GetVec3("@")));
         DEFAULT {
             LOG_WARNING("[NodeInput][Create]Unknown type \"&\"", type);
             return new nodes::Constant(params.GetFloat("float", 0.5f),

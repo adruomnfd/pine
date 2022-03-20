@@ -6,25 +6,52 @@
 namespace pine {
 
 void Parameters::Summarize(int indent) const {
-    size_t maxWidth = 0;
     for (const auto& v : values)
-        maxWidth = std::max(v.first.size(), maxWidth);
-    for (const auto& v : values)
-        LOG_VERBOSE("[Parameters]& &<: &", Format(indent), " ", Format(maxWidth), v.first.c_str(),
-                    v.second.c_str());
+        LOG_VERBOSE("& &: &", Format(indent), " ", v.first.c_str(), v.second.c_str());
     for (const auto& s : subset) {
-        LOG("[Parameters]&", s.first);
-        s.second.Summarize(indent + 2);
+        for (auto& ss : s.second) {
+            LOG("& &", Format(indent), " ", s.first);
+            ss.Summarize(indent + 2);
+        }
     }
 }
 
-void Parameters::Override(const Parameters& it) {
-    for (const auto& v : it.values)
-        values[v.first] = v.second;
+const std::vector<Parameters>& Parameters::GetAll(std::string name) const {
+    return subset[name];
+}
+Parameters& Parameters::AddSubset(std::string name) {
+    auto& sub = subset[name];
+    sub.resize(sub.size() + 1);
+    return sub.back();
 }
 
-bool Parameters::Has(const std::string& name) const {
+Parameters& Parameters::operator[](std::string name) {
+    static Parameters fallback;
+    auto& ss = subset[name];
+
+    if (HasValue(name) && ss.size() == 0)
+        AddSubset(name).Set("@", GetString(name));
+
+    if (ss.size() == 0) {
+        LOG_WARNING("[Parameters][GetSubset]No subset named \"&\"", name);
+        return fallback;
+    }
+    if (ss.size() != 1) {
+        LOG_WARNING("[Parameters][GetSubset]Find & subset with name \"&\", returns the last one",
+                    subset[name].size(), name);
+    }
+    return subset[name].back();
+}
+const Parameters& Parameters::operator[](std::string name) const {
+    return (*const_cast<Parameters*>(this))[name];
+}
+
+bool Parameters::HasValue(const std::string& name) const {
     return values.find(name) != values.end();
+}
+
+bool Parameters::HasSubset(const std::string& name) const {
+    return subset.find(name) != subset.end();
 }
 
 bool Parameters::GetBool(const std::string& name, bool fallback) const {
@@ -53,7 +80,13 @@ int Parameters::GetInt(const std::string& name, int fallback) const {
         return fallback;
     }
 
-    return std::stoi(str);
+    int val = 0;
+    try {
+        val = std::stoi(str);
+    } catch (const std::exception& e) {
+        LOG_FATAL("[Parameters][GetInt]cannot convert \"&\" to an int", str);
+    }
+    return val;
 }
 float Parameters::GetFloat(const std::string& name, float fallback) const {
     auto iter = values.find(name);
@@ -65,7 +98,13 @@ float Parameters::GetFloat(const std::string& name, float fallback) const {
         return fallback;
     }
 
-    return std::stof(str);
+    float val = 0;
+    try {
+        val = std::stof(str);
+    } catch (const std::exception& e) {
+        LOG_FATAL("[Parameters][GetInt]cannot convert \"&\" to a float", str);
+    }
+    return val;
 }
 
 vec2i Parameters::GetVec2i(const std::string& name, vec2i fallback) const {
@@ -156,8 +195,11 @@ vec4 Parameters::GetVec4(const std::string& name, vec4 fallback) const {
 
 std::string Parameters::GetString(const std::string& name, const std::string& fallback) const {
     auto iter = values.find(name);
-    if (iter == values.end())
+    if (iter == values.end()) {
+        if (name == "type" && fallback == "")
+            return GetString("@");
         return fallback;
+    }
     std::string str = iter->second;
 
     return str;

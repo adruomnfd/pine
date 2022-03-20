@@ -18,6 +18,7 @@ namespace pine {
 std::string sceneDirectory = "";
 
 ScopedFile::ScopedFile(std::string filename, std::ios::openmode mode) {
+    filename = sceneDirectory + filename;
     std::replace(filename.begin(), filename.end(), '\\', '/');
     CHECK(filename != "");
     file.open(filename, mode);
@@ -210,7 +211,8 @@ void SaveImage(std::string filename, vec2i size, int nchannel, uint8_t *data) {
 }
 vec3u8 *ReadLDRImage(std::string filename, vec2i &size) {
     int nchannel = 0;
-    uint8_t *data = (uint8_t *)stbi_load(filename.c_str(), &size.x, &size.y, &nchannel, 3);
+    uint8_t *data =
+        (uint8_t *)stbi_load((sceneDirectory + filename).c_str(), &size.x, &size.y, &nchannel, 3);
     if (!data)
         LOG_WARNING("[FileIO]Failed to load \"&\"", filename);
     return (vec3u8 *)data;
@@ -314,32 +316,31 @@ Parameters LoadScene(std::string filename, Scene *scene) {
 
     Timer timer;
 
-    scene->camera = Camera::Create(params["Camera"]["singleton"], scene);
+    scene->camera = Camera::Create(params["Camera"], scene);
 
-    for (auto &[name, param] : params["Material"])
-        scene->materials[name] = std::make_shared<Material>(Material::Create(param));
-    for (auto &[name, param] : params["Medium"])
-        scene->mediums[name] = std::make_shared<Medium>(Medium::Create(param));
-    for (auto &[name, param] : params["Light"])
-        scene->lights.push_back(Light::Create(param));
+    for (auto &p : params.GetAll("Material"))
+        scene->materials[p.GetString("name")] = std::make_shared<Material>(Material::Create(p));
+    for (auto &p : params.GetAll("Medium"))
+        scene->mediums[p.GetString("name")] = std::make_shared<Medium>(Medium::Create(p));
+    for (auto &p : params.GetAll("Light"))
+        scene->lights.push_back(Light::Create(p));
 
-    for (const auto &[name, param] : params["Shape"]) {
-        if (param.GetString("type") == "TriangleMesh") {
-            std::vector<TriangleMesh> meshes =
-                LoadObj(GetFileDirectory(filename) + param.GetString("file"), scene);
+    for (auto &p : params.GetAll("Shape")) {
+        if (p.GetString("type") == "TriangleMesh") {
+            std::vector<TriangleMesh> meshes = LoadObj(p.GetString("file"), scene);
             for (auto &mesh : meshes) {
-                if (auto material = Find(scene->materials, param.GetString("material")))
+                if (auto material = Find(scene->materials, p.GetString("material")))
                     mesh.material = *material;
-                if (auto mediumInside = Find(scene->mediums, param.GetString("mediumInside")))
+                if (auto mediumInside = Find(scene->mediums, p.GetString("mediumInside")))
                     mesh.mediumInterface.inside = *mediumInside;
-                if (auto mediumOutside = Find(scene->mediums, param.GetString("mediumOutside")))
+                if (auto mediumOutside = Find(scene->mediums, p.GetString("mediumOutside")))
                     mesh.mediumInterface.outside = *mediumOutside;
-                mesh.o2w = Translate(param.GetVec3("translate", vec3(0.0f))) *
-                           Scale(param.GetVec3("scale", vec3(1.0f)));
+                mesh.o2w = Translate(p.GetVec3("translate", vec3(0.0f))) *
+                           Scale(p.GetVec3("scale", vec3(1.0f)));
                 scene->meshes.push_back(mesh);
             }
         } else {
-            scene->shapes.push_back(Shape::Create(param, scene));
+            scene->shapes.push_back(Shape::Create(p, scene));
         }
     }
 
@@ -350,8 +351,9 @@ Parameters LoadScene(std::string filename, Scene *scene) {
             Parameters materialParams;
             std::string materialName = "areaLightMaterial" + ToString(lightId++);
             materialParams.Set("type", "Emissive");
-            materialParams["color"].Set("type", "Constant");
-            materialParams["color"].Set("vec3", areaLight.color.ToRGB());
+            materialParams.AddSubset("color")
+                .Set("type", "Constant")
+                .Set("vec3", areaLight.color.ToRGB());
             scene->materials[materialName] =
                 std::make_shared<Material>(Material::Create(materialParams));
 
@@ -368,7 +370,7 @@ Parameters LoadScene(std::string filename, Scene *scene) {
         }
     }
 
-    scene->integrator = Integrator::Create(params["Integrator"]["singleton"], scene);
+    scene->integrator = Integrator::Create(params["Integrator"], scene);
 
     LOG_VERBOSE("[FileIO]Scene created in & ms", timer.ElapsedMs());
 

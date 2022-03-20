@@ -102,6 +102,8 @@ bool Plane::Intersect(Ray& ray, Interaction& it) const {
     it.n = n;
     it.uv = vec2(Dot(it.p - position, u), Dot(it.p - position, v));
     it.p = position + it.uv.x * u + it.uv.y * v;
+    it.dpdu = u;
+    it.dpdv = v;
     return true;
 }
 AABB Plane::GetAABB() const {
@@ -141,7 +143,12 @@ bool Sphere::Intersect(Ray& ray, Interaction& it) const {
     ray.tmax = t;
     it.n = Normalize(ray(t) - this->c);
     it.p = this->c + it.n * r;
-    it.uv = CartesianToSpherical(it.n) / vec2(Pi * 2, Pi);
+    auto [phi, theta] = CartesianToSpherical(it.n);
+    float sinTheta = std::sin(theta), cosTheta = std::cos(theta);
+    float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
+    it.dpdu = vec3(sinTheta * -sinPhi, sinTheta * cosPhi, 0.0f);
+    it.dpdv = vec3(cosTheta * cosPhi, cosTheta * sinPhi, -sinTheta);
+    it.uv = vec3(phi, theta, 0.0f);
     return true;
 }
 AABB Sphere::GetAABB() const {
@@ -188,7 +195,8 @@ bool Rect::Intersect(Ray& ray, Interaction& it) const {
     it.p = position + ex * u + ey * v;
     it.n = n;
     it.uv = vec2(u, v);
-    it.pdf = 1.0f / (lx * ly);
+    it.dpdu = ex;
+    it.dpdv = ey;
     return true;
 }
 AABB Rect::GetAABB() const {
@@ -241,7 +249,6 @@ bool Cylinder::Intersect(Ray& ray, Interaction& it) const {
     it.p = ray(t);
     it.n = Normalize(vec3(ip.x, 0.0f, ip.z));
     it.uv = vec2(Phi2pi(ip.x, ip.z) / (Pi * 2), ip.y / height);
-    it.pdf = 1.0f / (r * phiMax * height);
 
     return true;
 }
@@ -273,7 +280,9 @@ bool Disk::Intersect(Ray& ray, Interaction& it) const {
     ray.tmax = t;
     it.p = ray.o + t * ray.d;
     it.n = n;
-    it.uv = vec2(Length(p) / r, Phi2pi(p.x, p.z) / (Pi * 2));
+    it.uv = vec2(Length(p), Phi2pi(p.x, p.z));
+    it.dpdu = p / it.uv.x;
+    it.dpdv = vec3(std::cos(it.uv.y), 0.0f, std::sin(it.uv.y));
     return true;
 }
 

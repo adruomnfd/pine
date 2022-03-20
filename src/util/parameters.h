@@ -10,19 +10,16 @@
 namespace pine {
 
 struct Parameters {
-    void Override(const Parameters& it);
     void Summarize(int indent = 0) const;
 
     template <typename T>
-    void Set(std::string name, T val) {
+    Parameters& Set(std::string name, T val) {
         values[name] = ToString(val);
-    }
-    template <typename T>
-    void SetSubset(std::string subsetName, std::string name, T val) {
-        subset[subsetName].Set(name, val);
+        return *this;
     }
 
-    bool Has(const std::string& name) const;
+    bool HasValue(const std::string& name) const;
+    bool HasSubset(const std::string& name) const;
     bool GetBool(const std::string& name, bool fallback = {}) const;
     int GetInt(const std::string& name, int fallback = {}) const;
     float GetFloat(const std::string& name, float fallback = {}) const;
@@ -33,12 +30,13 @@ struct Parameters {
     vec3 GetVec3(const std::string& name, vec3 fallback = {}) const;
     vec4 GetVec4(const std::string& name, vec4 fallback = {}) const;
     std::string GetString(const std::string& name, const std::string& fallback = {}) const;
-    const Parameters& operator[](std::string name) const {
-        return subset[name];
-    }
-    Parameters& operator[](std::string name) {
-        return subset[name];
-    }
+
+    const std::vector<Parameters>& GetAll(std::string name) const;
+    Parameters& AddSubset(std::string name);
+
+    Parameters& operator[](std::string name);
+    const Parameters& operator[](std::string name) const;
+
     auto begin() {
         return subset.begin();
     }
@@ -53,7 +51,7 @@ struct Parameters {
     }
 
     std::map<std::string, std::string> values;
-    mutable std::map<std::string, Parameters> subset;
+    mutable std::map<std::string, std::vector<Parameters>> subset;
 };
 
 }  // namespace pine

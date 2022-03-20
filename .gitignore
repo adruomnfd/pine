@@ -2,4 +2,5 @@ build
 local
 
 .vscode
-result*.bmp
+*.bmp
+*.png

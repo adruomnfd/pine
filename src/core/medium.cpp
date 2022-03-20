@@ -136,7 +136,7 @@ HomogeneousMedium HomogeneousMedium::Create(const Parameters& params) {
 }
 
 GridMedium GridMedium::Create(const Parameters& params) {
-    ScopedFile file(sceneDirectory + params.GetString("file"), std::ios::in);
+    ScopedFile file(params.GetString("file"), std::ios::in);
     vec3i lower;
     vec3i upper;
     file.Read(&lower, sizeof(lower));

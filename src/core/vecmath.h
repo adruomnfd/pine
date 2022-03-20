@@ -1185,14 +1185,19 @@ inline mat4 LookAt(vec3 from, vec3 at, vec3 up = vec3(0, 1, 0)) {
     return mat4((vec4)x, (vec4)y, (vec4)z, vec4(from, 1.0f));
 }
 
-inline mat3 CoordinateSystem(vec3 n) {
-    vec3 t;
+inline void CoordinateSystem(vec3 n, vec3 &t, vec3 &b) {
     if (std::abs(n.x) > std::abs(n.y))
         t = Normalize(Cross(n, vec3(0, 1, 0)));
     else
         t = Normalize(Cross(n, vec3(1, 0, 0)));
-    vec3 b = Cross(n, t);
-    return mat3(t, b, n);
+    b = Cross(n, t);
+}
+
+inline mat3 CoordinateSystem(vec3 n) {
+    mat3 m;
+    m.z = n;
+    CoordinateSystem(n, m.x, m.y);
+    return m;
 }
 
 inline vec3 SphericalToCartesian(float phi, float theta) {
@@ -1206,10 +1211,7 @@ inline float Phi2pi(float x, float y) {
 }
 
 inline vec2 CartesianToSpherical(vec3 d) {
-    float phi = atan2f(d.y, d.x);
-    if (phi < 0.0f)
-        phi = Pi * 2 + phi;
-    return vec2(phi, acosf(d.z));
+    return vec2(Phi2pi(d.x, d.y), acosf(d.z));
 }
 
 inline uint32_t LeftShift32(uint32_t x) {

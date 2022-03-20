@@ -16,29 +16,37 @@ struct BSDFSample {
 };
 
 struct DiffuseBSDF {
-    DiffuseBSDF(const Parameters& params);
-    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u, NodeEvalContext nc) const;
-    vec3 F(vec3 wi, vec3 wo, NodeEvalContext nc) const;
-    float PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const;
+    static DiffuseBSDF Create(const Parameters& params);
+    DiffuseBSDF(NodeInput albedo) : albedo(albedo) {
+    }
+
+    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u, const NodeEvalContext& nc) const;
+
+    vec3 F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const;
+    float PDF(vec3 wi, vec3 wo, const NodeEvalContext& nc) const;
 
     NodeInput albedo;
 };
 
 struct ConductorBSDF {
-    ConductorBSDF(const Parameters& params);
-    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const;
-    vec3 F(vec3 wi, vec3 wo, NodeEvalContext nc) const;
-    float PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const;
+    static ConductorBSDF Create(const Parameters& params);
+    ConductorBSDF(NodeInput albedo, NodeInput roughness) : albedo(albedo), roughness(roughness){};
+
+    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u2, const NodeEvalContext& nc) const;
+    vec3 F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const;
+    float PDF(vec3 wi, vec3 wo, const NodeEvalContext& nc) const;
 
     NodeInput albedo;
     NodeInput roughness;
 };
 
 struct DielectricBSDF {
-    DielectricBSDF(const Parameters& params);
-    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const;
-    vec3 F(vec3 wi, vec3 wo, NodeEvalContext nc) const;
-    float PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const;
+    static DielectricBSDF Create(const Parameters& params);
+    DielectricBSDF(NodeInput roughness, NodeInput eta) : roughness(roughness), eta(eta){};
+
+    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u2, const NodeEvalContext& nc) const;
+    vec3 F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const;
+    float PDF(vec3 wi, vec3 wo, const NodeEvalContext& nc) const;
 
     NodeInput roughness;
     NodeInput eta;
@@ -49,13 +57,13 @@ class BSDF : public TaggedVariant<DiffuseBSDF, ConductorBSDF, DielectricBSDF> {
     using TaggedVariant::TaggedVariant;
     static BSDF Create(const Parameters& params);
 
-    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const {
+    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u2, const NodeEvalContext& nc) const {
         return Dispatch([&](auto&& x) { return x.Sample(wi, u1, u2, nc); });
     }
-    vec3 F(vec3 wi, vec3 wo, NodeEvalContext nc) const {
+    vec3 F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
         return Dispatch([&](auto&& x) { return x.F(wi, wo, nc); });
     }
-    float PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const {
+    float PDF(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
         return Dispatch([&](auto&& x) { return x.PDF(wi, wo, nc); });
     }
 };

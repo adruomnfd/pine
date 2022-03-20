@@ -991,6 +991,7 @@ bool CWBVH::Intersect(Ray& ray, Interaction& it) const {
         const auto& tri = mesh->GetTriangle(triangles[closestTriangleIndex].orginalIndex);
         it.p = tri.InterpolatePosition(it.uv);
         it.n = Normalize(Cross(tri.v0 - tri.v1, tri.v0 - tri.v2));
+        tri.ComputeDpDuv(it.dpdu, it.dpdv);
     }
 
     return hit;

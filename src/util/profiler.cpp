@@ -75,7 +75,7 @@ void Profiler::ReportStat() {
                 rec.name.c_str(), rec.sampleCount, rec.time / (double)rec.sampleCount, rec.time,
                 100.0 * rec.time / totalTime);
 
-    // profilerRecord = std::make_shared<Record>();
+    profilerRecord = std::make_shared<Record>();
     LOG("\n");
 }
 Profiler::Profiler(std::string description) {

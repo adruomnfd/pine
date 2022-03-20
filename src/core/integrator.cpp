@@ -109,7 +109,7 @@ Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler
         return Spectrum(0.0f);
 
     if (it.IsSurfaceInteraction()) {
-        MaterialEvalContext mc(it.p, it.n, it.uv, -ray.d, ls.wo);
+        MaterialEvalContext mc(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d, ls.wo);
         Spectrum f = it.material->F(mc);
         float pdf = it.material->PDF(mc);
         return tr * f * AbsDot(ls.wo, it.n) * ls.Le * BalanceHeuristic(1, ls.pdf, 1, pdf) / ls.pdf;
@@ -129,8 +129,6 @@ void PixelSampleIntegrator::Render() {
         ScopedPR(pr, sampleIndex, sampleIndex + 1 == samplesPerPixel);
 
         ThreadIdParallelFor(filmSize, [&](int id, vec2i p) {
-            film.AddSample(p, Spectrum(vec3(0.2f, 0.3f, 0.5f)));
-
             Sampler& sampler = samplers[id];
             sampler.StartPixel(p, sampleIndex);
 

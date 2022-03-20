@@ -1,192 +1,128 @@
-Integrator{
-    type: Path
-    viztype: Normal
+Integrator: Path{
+    viztype: DpDu
     maxDepth: 3
-    
+
     film{
         outputFileName: result.png
         size: 1280 360
-        filter{
-            type: LanczosSinc
+        filter: LanczosSinc{
             radius: 0.5
         }
     }
-    accel{
-        type: BVH
-    }
-    sampler{
-        type: Halton
-        samplesPerPixel: 16
-        xPixelSamples: 4
-        yPixelSamples: 4
-        jitter: true
+    
+    accel: BVH
+    
+    sampler: Halton{
+        samplesPerPixel: 32
         randomizeStrategy: fastOwen
-        nSampledDimensions: 16
     }
-    lightSampler{
-        type: Uniform
-    }
+
+    lightSampler: Uniform
 }
 
-Camera{
-    type: PinHole
-    from: 0 16 32
+Camera: PinHole{
+    from: 0 4 16
     to:   0 0 0
-    fov:  0.1
+    fov:  0.24
 }
-
-Light{
-    name: light0
-    type: Area
-    position: -2 6 -2
+Light: Area{
+    position: -0.5 4 -4
     ex: 1 0 0
     ey: 0 0 1
-    color: 40
+    color: 120
 }
-
-LightX{
-    name: light1
-    type: Environment
-    environment{
-        type: Atmosphere
-        sunDirection: -6 12 4
-        sunColor: 1.0
-    }
+Light: Area{
+    position: 4 16 4
+    ex: 4 0 0
+    ey: 0 0 4
+    color: 10
 }
-
-Shape{
-    name: plane
-    type: Plane
+Shape: Plane{    
     position: 0 0 0
     normal: 0 1 0
-    material: diffuse
+    material: glossy
 }
-
-Shape{
-    name: sphere0
-    type: Sphere
+Shape: Sphere{
     position: -2.5 0.5 1
     radius: 0.5
     material: glass
 }
-
-Shape{
-    name: sphere1
-    type: Sphere
+Shape: Sphere{
     position: -1.25 0.5 1
     radius: 0.5
     material: plastic
 }
-
-Shape{
-    name: sphere2
-    type: Sphere
+Shape: Sphere{
     position: 0 0.5 1
     radius: 0.5
-    material: diffuse
+    material: rusty
 }
-
-Shape{
-    name: sphere3
-    type: Sphere
+Shape: Sphere{
     position: 1.25 0.5 1
     radius: 0.5
     material: silver
 }
-
-Shape{
-    name: sphere4
-    type: Sphere
+Shape: Sphere{
     position: 2.5 0.5 1
     radius: 0.5
-    material: diffuse-checkerboard
+    material: diffuse
 }
+Material diffuse: Layered{
+    layer0: Diffuse{
+        albedo: 1.0 1.0 1.0
+    }
+    bumpMap: Multiply{
+        input: Noise{
+            input: Position
+            frequency: 20
+            octaves: 4.0
+        }
+        factor: 0.05
+    }
+}
+Material glass: Layered{
+    layer0: Dielectric{
+        roughness: 0.0
+        eta: 1.45
+    }
+}
+Material plastic: Layered{
+    layer0: Diffuse{
+        albedo: 0.98 0.55 0.02
+    }
+    layer1: Dielectric{
+        albedo: 1.0
+        roughness: 0.0
+        eta: 1.45
+    }
+}
+Material glossy: Layered{
+    layer0: Conductor{
+        albedo: 0.99
+        roughness: Checkerboard{
+            input: TexCoord
+            frequency: 2.0
+        }
+        eta: 1.45
+    }
+}
+Material rusty: Layered{
+    layer0: Conductor{
+        albedo: 0.99
 
-Material{
-    name: diffuse-checkerboard
-    type: Layered
-    layer0{
-        type: Diffuse
-        albedo{
-            type: Checkerboard
-            input{
-                type: TexCoord
+        roughness: Texture{
+            texcoord: Multiply{
+                input: Position
+                factor: 1.0
             }
-            frequency{
-                type: Constant
-                float: 5.0
-            }
+            filename: rough.jpg
         }
+        eta: 1.45
     }
 }
-
-Material{
-    name: diffuse
-    type: Layered
-    layer0{
-        type: Diffuse
-        albedo{
-            type: Constant
-            vec3: 1.0 1.0 1.0
-        }
-    }
-}
-
-Material{
-    name: glass
-    type: Layered
-    layer0{
-        type: Dielectric
-        roughness{
-            type: Constant
-            float: 0.0
-        }
-        eta{
-            type: Constant
-            float: 1.45
-        }
-    }
-}
-
-Material{
-    name: plastic
-    type: Layered
-    layer0{
-        type: Diffuse
-        albedo{
-            type: Constant
-            vec3: 0.98 0.55 0.02
-        }
-    }
-    layer1{
-        type: Dielectric
-        albedo{
-            type: Constant
-            vec3: 1.0
-        }
-        roughness{
-            type: Constant
-            float: 0.0
-        }
-        eta{
-            type: Constant
-            float: 1.45
-        }
-    }
-}
-
-Material{
-    name: silver
-    type: Layered
-    layer0{
-        type: Conductor
-        albedo{
-            type: Constant
-            vec3: 0.99
-        }
-        roughness{
-            type: Constant
-            float: 0.0
-        }
+Material silver: Layered{
+    layer0: Conductor{
+        albedo: 0.99
+        roughness: 0.0
     }
 }

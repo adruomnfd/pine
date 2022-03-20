@@ -4,11 +4,8 @@
 
 namespace pine {
 
-DiffuseBSDF::DiffuseBSDF(const Parameters& params) {
-    albedo = Node::Create(params["albedo"]);
-}
-
-std::optional<BSDFSample> DiffuseBSDF::Sample(vec3 wi, float, vec2 u, NodeEvalContext nc) const {
+std::optional<BSDFSample> DiffuseBSDF::Sample(vec3 wi, float, vec2 u,
+                                              const NodeEvalContext& nc) const {
     BSDFSample bs;
 
     vec3 wo = CosineWeightedSampling(u);
@@ -22,23 +19,19 @@ std::optional<BSDFSample> DiffuseBSDF::Sample(vec3 wi, float, vec2 u, NodeEvalCo
     return bs;
 }
 
-vec3 DiffuseBSDF::F(vec3 wi, vec3 wo, NodeEvalContext nc) const {
+vec3 DiffuseBSDF::F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
     if (!SameHemisphere(wi, wo))
         return vec3(0.0f);
     return albedo.EvalVec3(nc) / Pi;
 }
-float DiffuseBSDF::PDF(vec3 wi, vec3 wo, NodeEvalContext) const {
+float DiffuseBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalContext&) const {
     if (!SameHemisphere(wi, wo))
         return Epsilon;
     return AbsCosTheta(wo) / Pi;
 }
 
-ConductorBSDF::ConductorBSDF(const Parameters& params) {
-    roughness = Node::Create(params["roughness"]);
-    albedo = Node::Create(params["albedo"]);
-}
-
-std::optional<BSDFSample> ConductorBSDF::Sample(vec3 wi, float, vec2 u2, NodeEvalContext nc) const {
+std::optional<BSDFSample> ConductorBSDF::Sample(vec3 wi, float, vec2 u2,
+                                                const NodeEvalContext& nc) const {
     BSDFSample bs;
 
     float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
@@ -58,7 +51,7 @@ std::optional<BSDFSample> ConductorBSDF::Sample(vec3 wi, float, vec2 u2, NodeEva
     return bs;
 }
 
-vec3 ConductorBSDF::F(vec3 wi, vec3 wo, NodeEvalContext nc) const {
+vec3 ConductorBSDF::F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
     if (!SameHemisphere(wi, wo))
         return {};
 
@@ -71,7 +64,7 @@ vec3 ConductorBSDF::F(vec3 wi, vec3 wo, NodeEvalContext nc) const {
 
     return fr * distrib.D(wh) * distrib.G(wo, wi) / (4 * AbsCosTheta(wo) * AbsCosTheta(wi));
 }
-float ConductorBSDF::PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const {
+float ConductorBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
     if (!SameHemisphere(wi, wo))
         return {};
 
@@ -83,13 +76,8 @@ float ConductorBSDF::PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const {
     return distrib.PDF(wi, wh) / (4 * AbsDot(wi, wh));
 }
 
-DielectricBSDF::DielectricBSDF(const Parameters& params) {
-    roughness = Node::Create(params["roughness"]);
-    eta = Node::Create(params["eta"]);
-}
-
 std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
-                                                 NodeEvalContext nc) const {
+                                                 const NodeEvalContext& nc) const {
     BSDFSample bs;
     float fr = FrDielectric(AbsCosTheta(wi), eta.EvalFloat(nc));
 
@@ -116,7 +104,7 @@ std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
     return bs;
 }
 
-vec3 DielectricBSDF::F(vec3 wi, vec3 wo, NodeEvalContext nc) const {
+vec3 DielectricBSDF::F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
     float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
     TrowbridgeReitzDistribution distrib(alpha, alpha);
 
@@ -140,7 +128,7 @@ vec3 DielectricBSDF::F(vec3 wi, vec3 wo, NodeEvalContext nc) const {
                fabsf(Dot(wo, wm) * Dot(wi, wm) / denom);
     }
 }
-float DielectricBSDF::PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const {
+float DielectricBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
     float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
     TrowbridgeReitzDistribution distrib(alpha, alpha);
 
@@ -165,15 +153,27 @@ float DielectricBSDF::PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const {
     }
 }
 
+DiffuseBSDF DiffuseBSDF::Create(const Parameters& params) {
+    return DiffuseBSDF(Node::Create(params["albedo"]));
+}
+
+ConductorBSDF ConductorBSDF::Create(const Parameters& params) {
+    return ConductorBSDF(Node::Create(params["albedo"]), Node::Create(params["roughness"]));
+}
+
+DielectricBSDF DielectricBSDF::Create(const Parameters& params) {
+   return DielectricBSDF(Node::Create(params["roughness"]), Node::Create(params["eta"]));
+}
+
 BSDF BSDF::Create(const Parameters& params) {
     std::string type = params.GetString("type");
     SWITCH(type) {
-        CASE("Diffuse") return DiffuseBSDF(params);
-        CASE("Dielectric") return DielectricBSDF(params);
-        CASE("Conductor") return ConductorBSDF(params);
+        CASE("Diffuse") return DiffuseBSDF::Create(params);
+        CASE("Dielectric") return DielectricBSDF::Create(params);
+        CASE("Conductor") return ConductorBSDF::Create(params);
         DEFAULT {
             LOG_WARNING("[BSDF][Create]Unknown type \"&\"", type);
-            return DiffuseBSDF(params);
+            return DiffuseBSDF::Create(params);
         }
     }
 }

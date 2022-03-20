@@ -11,8 +11,6 @@
 
 namespace pine {
 
-extern std::string sceneDirectory;
-
 struct ScopedFile {
     ScopedFile(std::string filename, std::ios::openmode mode);
 

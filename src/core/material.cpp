@@ -34,43 +34,54 @@ float LayeredMaterial::PDF(const MaterialEvalContext& c) const {
 
 LayeredMaterial::LayeredMaterial(const Parameters& params) {
     std::vector<std::pair<int, Parameters>> layers;
-    for (auto& layer : params.subset) {
+    for (auto& layer : params)
         if (layer.first.substr(0, 5) == "layer")
-            layers.push_back({std::stoi(layer.first.substr(5)), layer.second});
-    }
+            layers.push_back({std::stoi(layer.first.substr(5)), layer.second.back()});
 
     std::sort(layers.begin(), layers.end(),
               [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
 
-    for (auto& layer : layers) {
+    for (auto& layer : layers)
         bsdfs.push_back(BSDF::Create(layer.second));
-    }
 }
 
 EmissiveMaterial::EmissiveMaterial(const Parameters& params) {
     color = Node::Create(params["color"]);
 }
 
-std::optional<BSDFSample> Material::Sample(const MaterialEvalContext& c) const {
-    SampledProfiler _(ProfilePhase::MaterialSample);
-    return Dispatch([&](auto&& x) {
-        std::optional<BSDFSample> bs = x.Sample(c);
-        if (bs)
-            bs->wo = c.n2w * bs->wo;
-        return bs;
-    });
+vec3 Material::BumpNormal(const MaterialEvalContext& c) const {
+    if (!bumpMap)
+        return c.n;
+    NodeEvalContext c0 = c, c1 = c;
+    const float delta = 0.01f;
+    c0.uv += vec2(delta, 0.0f);
+    c1.uv += vec2(0.0f, delta);
+    c0.p += c.dpdu * delta;
+    c1.p += c.dpdv * delta;
+    float dddu = (bumpMap->EvalFloat(c0) - bumpMap->EvalFloat(c)) / delta;
+    float dddv = (bumpMap->EvalFloat(c1) - bumpMap->EvalFloat(c)) / delta;
+    vec3 dpdu = c.dpdu + dddu * c.n;
+    vec3 dpdv = c.dpdv + dddv * c.n;
+    return Normalize(Cross(dpdu, dpdv));
 }
 
 Material Material::Create(const Parameters& params) {
     std::string type = params.GetString("type");
+    Material material;
+
     SWITCH(type) {
-        CASE("Layered") return LayeredMaterial(params);
-        CASE("Emissive") return EmissiveMaterial(params);
+        CASE("Layered") material = LayeredMaterial(params);
+        CASE("Emissive") material = EmissiveMaterial(params);
         DEFAULT {
             LOG_WARNING("[Material][Create]Unknown type \"&\"", type);
-            return LayeredMaterial(params);
+            material = LayeredMaterial(params);
         }
     }
+
+    if (params.HasSubset("bumpMap"))
+        material.bumpMap = Node::Create(params["bumpMap"]);
+
+    return material;
 }
 
 }  // namespace pine
