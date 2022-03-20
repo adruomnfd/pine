@@ -1,9 +1,9 @@
 #ifndef PINE_CORE_LIGHT_H
 #define PINE_CORE_LIGHT_H
 
-#include <core/vecmath.h>
 #include <core/spectrum.h>
 #include <util/taggedvariant.h>
+#include <util/profiler.h>
 
 namespace pine {
 
@@ -73,9 +73,11 @@ struct EnvironmentLight : TaggedVariant<Atmosphere> {
     static EnvironmentLight Create(const Parameters& params);
 
     LightSample Sample(vec3 p, vec2 u2) const {
+        SampledProfiler _(ProfilePhase::SampleEnvLight);
         return Dispatch([&](auto&& x) { return x.Sample(p, u2); });
     }
     Spectrum Color(vec3 wo) const {
+        SampledProfiler _(ProfilePhase::SampleEnvLight);
         return Dispatch([&](auto&& x) { return x.Color(wo); });
     }
 };

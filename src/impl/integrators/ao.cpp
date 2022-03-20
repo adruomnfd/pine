@@ -7,6 +7,8 @@
 namespace pine {
 
 std::optional<Spectrum> AOIntegrator::Li(Ray ray, Sampler& sampler) {
+    SampledProfiler _(ProfilePhase::EstimateLi);
+    
     Interaction it;
     if (Intersect(ray, it)) {
         ray.o = it.p;

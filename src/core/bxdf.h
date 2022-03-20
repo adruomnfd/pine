@@ -5,6 +5,8 @@
 #include <core/spectrum.h>
 #include <util/taggedvariant.h>
 
+#include <optional>
+
 namespace pine {
 
 struct BSDFSample {
@@ -15,7 +17,7 @@ struct BSDFSample {
 
 struct DiffuseBSDF {
     DiffuseBSDF(const Parameters& params);
-    BSDFSample Sample(vec3 wi, float u1, vec2 u, NodeEvalContext nc) const;
+    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u, NodeEvalContext nc) const;
     vec3 F(vec3 wi, vec3 wo, NodeEvalContext nc) const;
     float PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const;
 
@@ -24,7 +26,7 @@ struct DiffuseBSDF {
 
 struct ConductorBSDF {
     ConductorBSDF(const Parameters& params);
-    BSDFSample Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const;
+    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const;
     vec3 F(vec3 wi, vec3 wo, NodeEvalContext nc) const;
     float PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const;
 
@@ -34,7 +36,7 @@ struct ConductorBSDF {
 
 struct DielectricBSDF {
     DielectricBSDF(const Parameters& params);
-    BSDFSample Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const;
+    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const;
     vec3 F(vec3 wi, vec3 wo, NodeEvalContext nc) const;
     float PDF(vec3 wi, vec3 wo, NodeEvalContext nc) const;
 
@@ -47,7 +49,7 @@ class BSDF : public TaggedVariant<DiffuseBSDF, ConductorBSDF, DielectricBSDF> {
     using TaggedVariant::TaggedVariant;
     static BSDF Create(const Parameters& params);
 
-    BSDFSample Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const {
+    std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const {
         return Dispatch([&](auto&& x) { return x.Sample(wi, u1, u2, nc); });
     }
     vec3 F(vec3 wi, vec3 wo, NodeEvalContext nc) const {

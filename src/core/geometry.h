@@ -95,12 +95,24 @@ struct Interaction {
     vec3 p;
     vec3 n;
     vec2 uv;
-    std::shared_ptr<Material> material;
+    const Material* material;
     MediumInterface<const Medium*> mediumInterface;
     PhaseFunction phaseFunction;
     bool isMediumInteraction = false;
     float pdf = 0.0f;
     float bvh = 0.0f;
+};
+
+struct RayOctant {
+    RayOctant(const Ray& ray)
+        : octantx3{(int)std::signbit(ray.d[0]) * 3, (int)std::signbit(ray.d[1]) * 3,
+                   (int)std::signbit(ray.d[2]) * 3},
+          invDir(SafeRcp(ray.d)),
+          negOrgDivDir(-ray.o * invDir) {
+    }
+
+    int octantx3[3];
+    vec3 invDir, negOrgDivDir;
 };
 
 struct AABB {
@@ -126,12 +138,12 @@ struct AABB {
     float Offset(float p, int dim) const;
     float SurfaceArea() const;
     void Extend(vec3 p);
-    void Extend(AABB aabb);
+    void Extend(const AABB& aabb);
     friend AABB Union(AABB l, const AABB& r) {
         l.Extend(r);
         return l;
     }
-    friend AABB Intersection(AABB l, AABB r) {
+    friend AABB Intersection(const AABB& l, const AABB& r) {
         AABB ret;
         ret.lower = Max(l.lower, r.lower);
         ret.upper = Min(l.upper, r.upper);
@@ -143,11 +155,11 @@ struct AABB {
     bool IsValid(int dim) const {
         return upper[dim] > lower[dim];
     }
-    bool IsInside(AABB it) {
+    bool IsInside(const AABB& it) {
         return it.lower[0] >= lower[0] && it.lower[1] >= lower[1] && it.lower[2] >= lower[2] &&
                it.upper[0] <= upper[0] && it.upper[1] <= lower[1] && it.upper[2] <= upper[2];
     }
-    void CheckIsInside(AABB it) {
+    void CheckIsInside(const AABB& it) {
         CHECK_GE(it.lower[0], lower[0]);
         CHECK_GE(it.lower[1], lower[1]);
         CHECK_GE(it.lower[2], lower[2]);
@@ -159,7 +171,7 @@ struct AABB {
         return Fstring(fmt, "lower:& upper:&", lower, upper);
     }
 
-    bool Hit(Ray ray) const;
+    bool Hit(const Ray& ray) const;
     bool Hit(Ray ray, float& tmin, float& tmax) const;
 
     bool Hit(vec3 negOrgDivDir, vec3 invdir, float tmin, float tmax) const {
@@ -187,31 +199,29 @@ struct AABB {
         return true;
     }
 
-    PINE_ALWAYS_INLINE bool Hit(int octantx3[3], vec3 negOrgDivDir, vec3 invDir, float tmin,
-                                float tmax) const {
+    PINE_ALWAYS_INLINE bool Hit(const RayOctant& r, float tmin, float tmax) const {
         const float* p = &lower[0];
-        float tmin0 = p[0 + octantx3[0]] * invDir[0] + negOrgDivDir[0];
-        float tmin1 = p[1 + octantx3[1]] * invDir[1] + negOrgDivDir[1];
-        float tmin2 = p[2 + octantx3[2]] * invDir[2] + negOrgDivDir[2];
+        float tmin0 = p[0 + r.octantx3[0]] * r.invDir[0] + r.negOrgDivDir[0];
+        float tmin1 = p[1 + r.octantx3[1]] * r.invDir[1] + r.negOrgDivDir[1];
+        float tmin2 = p[2 + r.octantx3[2]] * r.invDir[2] + r.negOrgDivDir[2];
 
-        float tmax0 = p[3 - octantx3[0]] * invDir[0] + negOrgDivDir[0];
-        float tmax1 = p[4 - octantx3[1]] * invDir[1] + negOrgDivDir[1];
-        float tmax2 = p[5 - octantx3[2]] * invDir[2] + negOrgDivDir[2];
+        float tmax0 = p[3 - r.octantx3[0]] * r.invDir[0] + r.negOrgDivDir[0];
+        float tmax1 = p[4 - r.octantx3[1]] * r.invDir[1] + r.negOrgDivDir[1];
+        float tmax2 = p[5 - r.octantx3[2]] * r.invDir[2] + r.negOrgDivDir[2];
 
         tmin = max(max(max(tmin0, tmin1), tmin2), tmin);
         tmax = min(min(min(tmax0, tmax1), tmax2), tmax);
         return tmin <= tmax;
     }
-    PINE_ALWAYS_INLINE bool Hit(int octantx3[3], vec3 negOrgDivDir, vec3 invDir, float tmin,
-                                float* tmax) const {
+    PINE_ALWAYS_INLINE bool Hit(const RayOctant& r, float tmin, float* tmax) const {
         const float* p = &lower[0];
-        float tmin0 = p[0 + octantx3[0]] * invDir[0] + negOrgDivDir[0];
-        float tmin1 = p[1 + octantx3[1]] * invDir[1] + negOrgDivDir[1];
-        float tmin2 = p[2 + octantx3[2]] * invDir[2] + negOrgDivDir[2];
+        float tmin0 = p[0 + r.octantx3[0]] * r.invDir[0] + r.negOrgDivDir[0];
+        float tmin1 = p[1 + r.octantx3[1]] * r.invDir[1] + r.negOrgDivDir[1];
+        float tmin2 = p[2 + r.octantx3[2]] * r.invDir[2] + r.negOrgDivDir[2];
 
-        float tmax0 = p[3 - octantx3[0]] * invDir[0] + negOrgDivDir[0];
-        float tmax1 = p[4 - octantx3[1]] * invDir[1] + negOrgDivDir[1];
-        float tmax2 = p[5 - octantx3[2]] * invDir[2] + negOrgDivDir[2];
+        float tmax0 = p[3 - r.octantx3[0]] * r.invDir[0] + r.negOrgDivDir[0];
+        float tmax1 = p[4 - r.octantx3[1]] * r.invDir[1] + r.negOrgDivDir[1];
+        float tmax2 = p[5 - r.octantx3[2]] * r.invDir[2] + r.negOrgDivDir[2];
 
         tmin = max(max(max(tmin0, tmin1), tmin2), tmin);
         *tmax = min(min(min(tmax0, tmax1), tmax2), *tmax);
@@ -231,7 +241,7 @@ struct Plane {
         v = tbn.y;
     };
 
-    bool Hit(Ray ray) const;
+    bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
 
@@ -245,7 +255,7 @@ struct Sphere {
     Sphere() = default;
     Sphere(vec3 position, float radius) : c(position), r(radius){};
 
-    bool Hit(Ray ray) const;
+    bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
 
@@ -261,7 +271,7 @@ struct Cylinder {
     Cylinder(vec3 pos, float r, float height, float phiMax)
         : pos(pos), r(r), height(height), phiMax(phiMax){};
 
-    bool Hit(Ray ray) const;
+    bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
 
@@ -280,7 +290,7 @@ struct Disk {
         v = tbn.y;
     };
 
-    bool Hit(Ray ray) const;
+    bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
 
@@ -295,7 +305,7 @@ struct Line {
     Line() = default;
     Line(vec3 p0, vec3 p1, float thickness) : p0(p0), p1(p1), thickness(thickness){};
 
-    bool Hit(Ray ray) const;
+    bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
 
@@ -395,7 +405,7 @@ struct Rect {
           lx(Length(ex)),
           ly(Length(ey)){};
 
-    bool Hit(Ray ray) const;
+    bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
 
@@ -436,7 +446,7 @@ struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line
     using TaggedVariant::TaggedVariant;
     static Shape Create(const Parameters& params, const Scene* scene);
 
-    bool Hit(Ray ray) const {
+    bool Hit(const Ray& ray) const {
         SampledProfiler _(ProfilePhase::ShapeIntersect);
         return Dispatch([&](auto&& x) { return x.Hit(ray); });
     }
@@ -444,11 +454,11 @@ struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line
         SampledProfiler _(ProfilePhase::ShapeIntersect);
         return Dispatch([&](auto&& x) { return x.Intersect(ray, it); });
     }
-    AABB GetAABB() const {
-        return Dispatch([&](auto&& x) { return x.GetAABB(); });
+    const AABB& GetAABB() const {
+        return aabb;
     }
 
-    std::string materialName;
+    AABB aabb;
     std::shared_ptr<Material> material;
     MediumInterface<std::shared_ptr<Medium>> mediumInterface;
 };

@@ -36,7 +36,7 @@ class RayIntegrator : public Integrator {
   public:
     RayIntegrator(const Parameters& parameters, const Scene* scene);
 
-    bool Hit(Ray ray);
+    bool Hit(const Ray& ray);
     bool Intersect(Ray& ray, Interaction& it);
     bool IntersectTr(Ray ray, Spectrum& tr, Sampler& sampler);
     Spectrum EstimateDirect(Ray ray, Interaction it, Sampler& sampler);

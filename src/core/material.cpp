@@ -1,34 +1,33 @@
 #include <core/material.h>
 #include <core/scattering.h>
 #include <core/scene.h>
-#include <util/log.h>
-#include <util/profiler.h>
 #include <util/parameters.h>
+#include <util/log.h>
 
 #include <algorithm>
 
 namespace pine {
 
-BSDFSample LayeredMaterial::Sample(MaterialEvalContext c) const {
-    BSDFSample bs;
-    for (auto bsdf : bsdfs) {
+std::optional<BSDFSample> LayeredMaterial::Sample(const MaterialEvalContext& c) const {
+    std::optional<BSDFSample> bs;
+    for (auto&& bsdf : bsdfs) {
         bs = bsdf.Sample(c.wi, c.u1, c.u2, c);
-        if (SameHemisphere(c.wi, bs.wo))
+        if (bs && SameHemisphere(c.wi, bs->wo))
             break;
     }
 
     return bs;
 }
 
-vec3 LayeredMaterial::F(MaterialEvalContext c) const {
+vec3 LayeredMaterial::F(const MaterialEvalContext& c) const {
     vec3 f;
-    for (auto bsdf : bsdfs)
+    for (auto&& bsdf : bsdfs)
         f += bsdf.F(c.wi, c.wo, c);
     return f;
 }
-float LayeredMaterial::PDF(MaterialEvalContext c) const {
+float LayeredMaterial::PDF(const MaterialEvalContext& c) const {
     float pdf = 0.0f;
-    for (auto bsdf : bsdfs)
+    for (auto&& bsdf : bsdfs)
         pdf += bsdf.PDF(c.wi, c.wo, c);
     return pdf;
 }
@@ -52,51 +51,13 @@ EmissiveMaterial::EmissiveMaterial(const Parameters& params) {
     color = Node::Create(params["color"]);
 }
 
-BSDFSample Material::Sample(MaterialEvalContext c) const {
+std::optional<BSDFSample> Material::Sample(const MaterialEvalContext& c) const {
     SampledProfiler _(ProfilePhase::MaterialSample);
     return Dispatch([&](auto&& x) {
-        mat3 m2w = CoordinateSystem(c.n);
-        mat3 w2m = Inverse(m2w);
-        c.wi = w2m * c.wi;
-        c.wo = w2m * c.wo;
-        c.n = vec3(0, 0, 1);
-
-        BSDFSample bs = x.Sample(c);
-
-        bs.wo = m2w * bs.wo;
+        std::optional<BSDFSample> bs = x.Sample(c);
+        if (bs)
+            bs->wo = c.n2w * bs->wo;
         return bs;
-    });
-}
-
-vec3 Material::F(MaterialEvalContext c) const {
-    SampledProfiler _(ProfilePhase::MaterialSample);
-    return Dispatch([&](auto&& x) {
-        mat3 w2m = Inverse(CoordinateSystem(c.n));
-        c.wi = w2m * c.wi;
-        c.wo = w2m * c.wo;
-        c.n = vec3(0, 0, 1);
-        return x.F(c);
-    });
-}
-float Material::PDF(MaterialEvalContext c) const {
-    SampledProfiler _(ProfilePhase::MaterialSample);
-    return Dispatch([&](auto&& x) {
-        mat3 w2m = Inverse(CoordinateSystem(c.n));
-        c.wi = w2m * c.wi;
-        c.wo = w2m * c.wo;
-        c.n = vec3(0, 0, 1);
-        return x.PDF(c);
-    });
-}
-
-vec3 Material::Le(MaterialEvalContext c) const {
-    SampledProfiler _(ProfilePhase::MaterialSample);
-    return Dispatch([&](auto&& x) {
-        mat3 w2m = Inverse(CoordinateSystem(c.n));
-        c.wi = w2m * c.wi;
-        c.wo = w2m * c.wo;
-        c.n = vec3(0, 0, 1);
-        return x.Le(c);
     });
 }
 

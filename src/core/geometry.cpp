@@ -33,7 +33,7 @@ void AABB::Extend(vec3 p) {
         upper = Max(upper, upper + vec3(1e-4f));
     }
 }
-void AABB::Extend(AABB aabb) {
+void AABB::Extend(const AABB& aabb) {
     lower = Min(lower, aabb.lower);
     upper = Max(upper, aabb.upper);
     if (!IsValid()) {
@@ -42,7 +42,7 @@ void AABB::Extend(AABB aabb) {
     }
 }
 
-bool AABB::Hit(Ray ray) const {
+bool AABB::Hit(const Ray& ray) const {
     float tmin = ray.tmin;
     float tmax = ray.tmax;
     if (tmin > tmax)
@@ -85,7 +85,7 @@ bool AABB::Hit(Ray ray, float& tmin, float& tmax) const {
     return true;
 }
 
-bool Plane::Hit(Ray ray) const {
+bool Plane::Hit(const Ray& ray) const {
     float t = (Dot(position, n) - Dot(ray.o, n)) / Dot(ray.d, n);
     if (t <= ray.tmin)
         return false;
@@ -108,7 +108,7 @@ AABB Plane::GetAABB() const {
     return {vec3(-1e+6f), vec3(1e+6f)};
 }
 
-bool Sphere::Hit(Ray ray) const {
+bool Sphere::Hit(const Ray& ray) const {
     float a = Dot(ray.d, ray.d);
     float b = 2 * Dot(ray.o - c, ray.d);
     float c = Dot(ray.o, ray.o) + Dot(this->c, this->c) - 2 * Dot(ray.o, this->c) - r * r;
@@ -156,7 +156,7 @@ AABB Triangle::GetAABB() const {
     return aabb;
 }
 
-bool Rect::Hit(Ray ray) const {
+bool Rect::Hit(const Ray& ray) const {
     float t = (Dot(position, n) - Dot(ray.o, n)) / Dot(ray.d, n);
     if (t < ray.tmin)
         return false;
@@ -200,9 +200,24 @@ AABB Rect::GetAABB() const {
     return aabb;
 }
 
-bool Cylinder::Hit(Ray ray) const {
-    Interaction it;
-    return Intersect(ray, it);
+bool Cylinder::Hit(const Ray& ray) const {
+    vec3 o = ray.o - pos, d = ray.d;
+    float a = Sqr(d.x) + Sqr(d.z);
+    float b = 2 * (o.x * d.x + o.z * d.z);
+    float c = Sqr(o.x) + Sqr(o.z) - Sqr(r);
+    float determinant = b * b - 4 * a * c;
+    if (determinant <= 0)
+        return false;
+    determinant = std::sqrt(determinant);
+
+    float t = (-b - determinant) / (2 * a);
+    vec3 ip = ray(t) - pos;
+    if (t < ray.tmin || ip.y < 0 || ip.y > height || Phi2pi(ip.x, ip.z) > phiMax)
+        t = (-b + determinant) / (2 * a);
+    ip = ray(t) - pos;
+    if (t < ray.tmin || t > ray.tmax || ip.y < 0 || ip.y > height || Phi2pi(ip.x, ip.z) > phiMax)
+        return false;
+    return true;
 }
 bool Cylinder::Intersect(Ray& ray, Interaction& it) const {
     vec3 o = ray.o - pos, d = ray.d;
@@ -234,7 +249,7 @@ AABB Cylinder::GetAABB() const {
     return {pos - vec3(r, r, 0.0f), pos + vec3(r, r, height)};
 }
 
-bool Disk::Hit(Ray ray) const {
+bool Disk::Hit(const Ray& ray) const {
     float t = (Dot(position, n) - Dot(ray.o, n)) / Dot(ray.d, n);
     if (t < ray.tmin)
         return false;
@@ -266,7 +281,7 @@ AABB Disk::GetAABB() const {
     return {position - vec3(r, 0.0f, r), position + vec3(r, 0.0f, r)};
 }
 
-bool Line::Hit(Ray ray) const {
+bool Line::Hit(const Ray& ray) const {
     (void)ray;
     return false;
 }
@@ -349,6 +364,8 @@ Shape Shape::Create(const Parameters& params, const Scene* scene) {
             shape = Sphere(Sphere::Create(params));
         }
     }
+
+    shape.aabb = shape.Dispatch([](auto&& x) { return x.GetAABB(); });
     if (auto material = Find(scene->materials, params.GetString("material")))
         shape.material = *material;
     if (auto mediumInside = Find(scene->mediums, params.GetString("mediumInside")))

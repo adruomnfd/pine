@@ -874,11 +874,9 @@ static inline float exp2i8(int8_t e) {
 }
 
 bool CWBVH::Hit(Ray) const {
-    SampledProfiler _(ProfilePhase::IntersectShadow);
     return false;
 }
 bool CWBVH::Intersect(Ray& ray, Interaction& it) const {
-    SampledProfiler _(ProfilePhase::IntersectClosest);
     if (ray.tmax <= 0.0f)
         return false;
 

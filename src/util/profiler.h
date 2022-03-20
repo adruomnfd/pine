@@ -45,13 +45,15 @@ enum class ProfilePhase {
     MediumSample,
     SearchNeighbors,
     GenerateSamples,
+    FilmAddSample,
+    SampleEnvLight,
     NumPhase
 };
-static const char* profilePhaseName[] __attribute__((unused)) = {
+static const char* profilePhaseName[] = {
     "GenerateRay",     "ShapeIntersect", "BoundingBoxIntersect", "IntersectClosest",
     "IntersectShadow", "IntersectTr",    "MaterialSample",       "EstimateDirect",
     "EstimateLi",      "MediumTr",       "MediumSample",         "SearchNeighbors",
-    "GenerateSamples"};
+    "GenerateSamples", "FilmAddSample",  "SampleEnvLight"};
 
 struct SampledProfiler {
     static void Initialize();

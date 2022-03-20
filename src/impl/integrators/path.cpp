@@ -51,11 +51,7 @@ std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
             continue;
         }
 
-        MaterialEvalContext mc;
-        mc.n = it.n;
-        mc.p = it.p;
-        mc.uv = it.uv;
-        mc.wi = -ray.d;
+        MaterialEvalContext mc(it.p, it.n, it.uv, -ray.d);
 
         // Accounting for visible emssive surface
         Spectrum le = it.material->Le(mc);
@@ -75,15 +71,14 @@ std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
         // Sample next path
         mc.u1 = sampler.Get1D();
         mc.u2 = sampler.Get2D();
-        BSDFSample bs = it.material->Sample(mc);
-        // Break if fail to generate next path
-        if (bs.wo == vec3(0.0f))
+        if (auto bs = it.material->Sample(mc)) {
+            beta *= AbsDot(bs->wo, it.n) * bs->f / bs->pdf;
+            bsdfPDF = bs->pdf;
+            ray = it.SpawnRay(bs->wo);
+        } else {
+            // Break if fail to generate next path
             break;
-        beta *= AbsDot(bs.wo, it.n) * bs.f / bs.pdf;
-        bsdfPDF = bs.pdf;
-        Ray next = it.SpawnRay(bs.wo);
-        next.tmin *= ray.tmax;
-        ray = next;
+        }
     }
 
     return Clamp(L, 0, clamp);

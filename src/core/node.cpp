@@ -65,7 +65,7 @@ Node* Node::Create(const Parameters& params) {
         CASE("Sqrt")
         return new nodes::Sqrt(Create(params["input"]));
         CASE("Pow")
-        return new nodes::Pow(Create(params["input"]), Create(params["power"]));
+        return new nodes::Pow(Create(params["input"]), Create(params["exp"]));
         CASE("Sin")
         return new nodes::Sin(Create(params["input"]));
         CASE("Cos")

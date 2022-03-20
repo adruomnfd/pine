@@ -45,21 +45,24 @@ RayIntegrator::RayIntegrator(const Parameters& parameters, const Scene* scene)
         accels.push_back(accel);
     }
 }
-bool RayIntegrator::Hit(Ray ray) {
+bool RayIntegrator::Hit(const Ray& ray) {
+    SampledProfiler _(ProfilePhase::IntersectShadow);
     for (const auto& accel : accels)
         if (accel->Hit(ray))
             return true;
+
     for (const auto& shape : scene->shapes)
         if (shape.Hit(ray))
             return true;
     return false;
 }
 bool RayIntegrator::Intersect(Ray& ray, Interaction& it) {
+    SampledProfiler _(ProfilePhase::IntersectClosest);
     bool hit = false;
 
     auto setupIt = [&](auto& shape) {
         hit = true;
-        it.material = shape.material;
+        it.material = shape.material.get();
         if (shape.mediumInterface.IsMediumTransition()) {
             it.mediumInterface.inside = shape.mediumInterface.inside.get();
             it.mediumInterface.outside = shape.mediumInterface.outside.get();

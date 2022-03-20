@@ -8,7 +8,7 @@ DiffuseBSDF::DiffuseBSDF(const Parameters& params) {
     albedo = Node::Create(params["albedo"]);
 }
 
-BSDFSample DiffuseBSDF::Sample(vec3 wi, float, vec2 u, NodeEvalContext nc) const {
+std::optional<BSDFSample> DiffuseBSDF::Sample(vec3 wi, float, vec2 u, NodeEvalContext nc) const {
     BSDFSample bs;
 
     vec3 wo = CosineWeightedSampling(u);
@@ -38,7 +38,7 @@ ConductorBSDF::ConductorBSDF(const Parameters& params) {
     albedo = Node::Create(params["albedo"]);
 }
 
-BSDFSample ConductorBSDF::Sample(vec3 wi, float, vec2 u2, NodeEvalContext nc) const {
+std::optional<BSDFSample> ConductorBSDF::Sample(vec3 wi, float, vec2 u2, NodeEvalContext nc) const {
     BSDFSample bs;
 
     float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
@@ -47,7 +47,7 @@ BSDFSample ConductorBSDF::Sample(vec3 wi, float, vec2 u2, NodeEvalContext nc) co
 
     vec3 wo = Reflect(wi, wm);
     if (!SameHemisphere(wi, wo))
-        return {};
+        return std::nullopt;
 
     vec3 fr = FrSchlick(albedo.EvalVec3(nc), AbsCosTheta(wm));
 
@@ -88,7 +88,8 @@ DielectricBSDF::DielectricBSDF(const Parameters& params) {
     eta = Node::Create(params["eta"]);
 }
 
-BSDFSample DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc) const {
+std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
+                                                 NodeEvalContext nc) const {
     BSDFSample bs;
     float fr = FrDielectric(AbsCosTheta(wi), eta.EvalFloat(nc));
 
@@ -99,14 +100,15 @@ BSDFSample DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2, NodeEvalContext nc
 
         vec3 wo = Reflect(wi, wm);
         if (!SameHemisphere(wi, wo))
-            return {};
+            return std::nullopt;
 
         bs.wo = wo;
         bs.pdf = fr * distrib.PDF(wi, wm) / (4 * AbsDot(wi, wm));
         bs.f = (vec3)fr * distrib.D(wm) * distrib.G(wo, wi) / (4 * CosTheta(wi) * CosTheta(wo));
     } else {
         vec3 wo;
-        Refract(wi, vec3(0, 0, 1), eta.EvalFloat(nc), wo);
+        if (!Refract(wi, vec3(0, 0, 1), eta.EvalFloat(nc), wo))
+            return std::nullopt;
         bs.wo = wo;
         bs.pdf = 1.0f - fr;
         bs.f = vec3(1.0f - fr);

@@ -755,18 +755,11 @@ void BVH::Optimize() {
 }
 
 bool BVH::Hit(Ray) const {
-    SampledProfiler _(ProfilePhase::IntersectShadow);
     return false;
 }
 
 bool BVH::Intersect(Ray& ray, Interaction& it) const {
-    SampledProfiler _(ProfilePhase::IntersectClosest);
-
-    const vec3 invDir = SafeRcp(ray.d);
-    const vec3 negOrgDivDir = -ray.o * invDir;
-    int octantx3[3] = {(int)std::signbit(ray.d[0]) * 3, (int)std::signbit(ray.d[1]) * 3,
-                       (int)std::signbit(ray.d[2]) * 3};
-
+    RayOctant rayOctant = RayOctant(ray);
     bool hit = false;
     const Triangle* closestTriangle = nullptr;
     const Node* PINE_RESTRICT nodes = this->nodes.data();
@@ -788,7 +781,7 @@ bool BVH::Intersect(Ray& ray, Interaction& it) const {
 
             int leftChildIndex = -1, rightChildIndex = -1;
             float t0 = ray.tmax, t1 = ray.tmax;
-            if (node.aabbs[0].Hit(octantx3, negOrgDivDir, invDir, ray.tmin, &t0)) {
+            if (node.aabbs[0].Hit(rayOctant, ray.tmin, &t0)) {
                 const Node& leftChild = nodes[node.children[0]];
                 if (PINE_LIKELY(!leftChild.numPrimitives)) {
                     leftChildIndex = node.children[0];
@@ -800,7 +793,7 @@ bool BVH::Intersect(Ray& ray, Interaction& it) const {
                         }
                 }
             }
-            if (node.aabbs[1].Hit(octantx3, negOrgDivDir, invDir, ray.tmin, &t1)) {
+            if (node.aabbs[1].Hit(rayOctant, ray.tmin, &t1)) {
                 const Node& rightChild = nodes[node.children[1]];
                 if (PINE_LIKELY(!rightChild.numPrimitives)) {
                     rightChildIndex = node.children[1];

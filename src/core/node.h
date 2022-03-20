@@ -12,7 +12,6 @@ namespace pine {
 struct Node;
 
 struct NodeEvalContext {
-    NodeEvalContext() = default;
     NodeEvalContext(vec3 p, vec3 n, vec2 uv) : p(p), n(n), uv(uv){};
     vec3 p;
     vec3 n;
@@ -229,17 +228,17 @@ struct Sqrt : Node {
 
 struct Pow : Node {
     Pow() = default;
-    Pow(NodeInput input, NodeInput power) : input(input), power(power){};
+    Pow(NodeInput input, NodeInput exp) : input(input), exp(exp){};
 
     float EvalFloat(NodeEvalContext c) const override {
-        return std::pow(input.EvalFloat(c), power.EvalFloat(c));
+        return std::pow(input.EvalFloat(c), exp.EvalFloat(c));
     }
     vec3 EvalVec3(NodeEvalContext c) const override {
-        return pine::Pow(input.EvalVec3(c), power.EvalFloat(c));
+        return pine::Pow(input.EvalVec3(c), exp.EvalFloat(c));
     }
 
     NodeInput input;
-    NodeInput power;
+    NodeInput exp;
 };
 
 struct Sin : Node {

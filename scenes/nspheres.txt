@@ -15,7 +15,7 @@ Integrator{
         type: BVH
     }
     sampler{
-        type: Sobol
+        type: Halton
         samplesPerPixel: 16
         xPixelSamples: 4
         yPixelSamples: 4

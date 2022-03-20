@@ -4,6 +4,7 @@
 #include <core/spectrum.h>
 #include <core/filter.h>
 #include <util/parallel.h>
+#include <util/profiler.h>
 
 #include <memory>
 #include <atomic>
@@ -22,6 +23,7 @@ struct Film {
     Film(vec2i size, Filter filter, std::string outputFileName);
 
     void AddSample(vec2 pFilm, const Spectrum& sL) {
+        SampledProfiler _(ProfilePhase::FilmAddSample);
         pFilm -= vec2(0.5f);
         vec2i p0 = Ceil(pFilm - filter.Radius());
         vec2i p1 = Floor(pFilm + filter.Radius());

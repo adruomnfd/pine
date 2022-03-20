@@ -19,6 +19,7 @@ VizIntegrator::VizIntegrator(const Parameters& parameters, const Scene* scene)
 };
 
 std::optional<Spectrum> VizIntegrator::Li(Ray ray, Sampler&) {
+    SampledProfiler _(ProfilePhase::EstimateLi);
     Interaction it;
 
     if (!Intersect(ray, it) && type != Type::Bvh)

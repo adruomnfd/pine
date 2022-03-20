@@ -2,8 +2,9 @@
 #define PINE_CORE_SAMPLER_H
 
 #include <core/vecmath.h>
-#include <util/rng.h>
 #include <util/taggedvariant.h>
+#include <util/profiler.h>
+#include <util/rng.h>
 
 #include <vector>
 
@@ -166,18 +167,23 @@ struct Sampler : TaggedVariant<UniformSampler, StratifiedSampler, HaltonSampler,
     static Sampler Create(const Parameters& params);
 
     int SamplesPerPixel() const {
+        SampledProfiler _(ProfilePhase::GenerateSamples);
         return Dispatch([&](auto&& x) { return x.SamplesPerPixel(); });
     }
     void StartPixel(vec2i p, int sampleIndex) {
+        SampledProfiler _(ProfilePhase::GenerateSamples);
         return Dispatch([&](auto&& x) { return x.StartPixel(p, sampleIndex); });
     }
     void StartNextSample() {
+        SampledProfiler _(ProfilePhase::GenerateSamples);
         return Dispatch([&](auto&& x) { return x.StartNextSample(); });
     }
     float Get1D() {
+        SampledProfiler _(ProfilePhase::GenerateSamples);
         return Dispatch([&](auto&& x) { return x.Get1D(); });
     }
     vec2 Get2D() {
+        SampledProfiler _(ProfilePhase::GenerateSamples);
         return Dispatch([&](auto&& x) { return x.Get2D(); });
     }
     Sampler Clone() const {
