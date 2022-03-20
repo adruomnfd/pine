@@ -1214,6 +1214,10 @@ inline vec2 CartesianToSpherical(vec3 d) {
     return vec2(Phi2pi(d.x, d.y), acosf(d.z));
 }
 
+inline vec3 FaceSameHemisphere(vec3 v, vec3 ref) {
+    return Dot(v, ref) < 0 ? -v : v;
+}
+
 inline uint32_t LeftShift32(uint32_t x) {
     if (x == (1 << 10))
         x--;

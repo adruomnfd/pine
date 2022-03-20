@@ -1,4 +1,5 @@
 #include <core/scene.h>
+#include <core/sampler.h>
 #include <util/fileio.h>
 #include <util/log.h>
 #include <util/reflect.h>

@@ -377,7 +377,8 @@ Shape Shape::Create(const Parameters& params, const Scene* scene) {
     shape.aabb = shape.Dispatch([](auto&& x) { return x.GetAABB(); });
     if (auto material = Find(scene->materials, params.GetString("material")))
         shape.material = *material;
-    if (auto mediumInside = Find(scene->mediums, params.GetString("mediumInside")))
+    if (auto mediumInside =
+            Find(scene->mediums, params.GetString("mediumInside", params.GetString("medium"))))
         shape.mediumInterface.inside = *mediumInside;
     if (auto mediumOutside = Find(scene->mediums, params.GetString("mediumOutside")))
         shape.mediumInterface.outside = *mediumOutside;

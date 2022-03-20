@@ -4,7 +4,7 @@
 namespace pine {
 Filter Filter::Create(const Parameters& params) {
     std::string type = params.GetString("type");
-    vec2 radius = params.GetVec2("radius", vec2(1, 1));
+    vec2 radius = params.GetVec2("radius", vec2(0.5f));
     SWITCH(type) {
         CASE("Box") return BoxFilter(radius);
         CASE("Triangle") return TriangleFilter(radius);

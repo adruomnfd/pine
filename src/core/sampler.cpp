@@ -140,9 +140,9 @@ void SobolSampler::StartPixel(vec2i p, int index) {
     sobolIndex = SobolIntervalToIndex(log2Scale, sampleIndex, pixel);
 }
 void SobolSampler::StartNextSample() {
-    dimension = 2;
     sampleIndex++;
     sobolIndex = SobolIntervalToIndex(log2Scale, sampleIndex, pixel);
+    dimension = 2;
 }
 float SobolSampler::Get1D() {
     if (dimension >= NSobolDimensions)

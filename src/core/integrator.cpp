@@ -105,7 +105,7 @@ Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler
     LightSample ls = lightSampler.Sample(it.p, sampler.Get1D(), sampler.Get2D());
 
     Spectrum tr = Spectrum(1.0f);
-    if (IntersectTr(it.SpawnRayTo(ls.wo, ls.distance), tr, sampler))
+    if (IntersectTr(it.SpawnRay(ls.wo, ls.distance), tr, sampler))
         return Spectrum(0.0f);
 
     if (it.IsSurfaceInteraction()) {

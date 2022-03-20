@@ -60,16 +60,16 @@ struct Interaction {
     Ray SpawnRayTo(vec3 p2) {
         Ray ray;
         ray.d = Normalize(p2 - p, ray.tmax);
-        ray.o = OffsetRayOrigin(p, Dot(ray.d, n) > 0 ? n : -n);
+        ray.o = OffsetRayOrigin(p, FaceSameHemisphere(n, ray.d));
         ray.tmin = 0.0f;
         ray.tmax *= 1.0f - 1e-3f;
         ray.medium = GetMedium(ray.d);
         return ray;
     }
-    Ray SpawnRayTo(vec3 wo, float distance) {
+    Ray SpawnRay(vec3 wo, float distance) {
         Ray ray;
         ray.d = wo;
-        ray.o = OffsetRayOrigin(p, Dot(ray.d, n) > 0 ? n : -n);
+        ray.o = OffsetRayOrigin(p, FaceSameHemisphere(n, ray.d));
         ray.tmin = 0.0f;
         ray.tmax = distance * (1.0f - 1e-3f);
         ray.medium = GetMedium(ray.d);
@@ -78,7 +78,7 @@ struct Interaction {
     Ray SpawnRay(vec3 w) {
         Ray ray;
         ray.d = w;
-        ray.o = OffsetRayOrigin(p, Dot(ray.d, n) > 0 ? n : -n);
+        ray.o = OffsetRayOrigin(p, FaceSameHemisphere(n, ray.d));
         ray.tmin = 0.0f;
         ray.tmax = FloatMax;
         ray.medium = GetMedium(ray.d);

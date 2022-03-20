@@ -1,5 +1,4 @@
 Integrator: Path{
-    viztype: DpDu
     maxDepth: 3
 
     film{

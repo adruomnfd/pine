@@ -50,6 +50,7 @@ struct StratifiedSampler {
     }
     void StartNextSample() {
         sampleIndex++;
+        dimension = 0;
     }
     float Get1D() {
         int stratum = (sampleIndex + Hash(pixel, dimension)) % samplesPerPixel;
@@ -89,8 +90,8 @@ struct HaltonSampler {
     }
     void StartPixel(vec2i p, int sampleIndex);
     void StartNextSample() {
-        dimension = 2;
         haltonIndex += sampleStride;
+        dimension = 2;
     }
     float Get1D();
     vec2 Get2D();
