@@ -11,6 +11,8 @@
 namespace pine {
 
 static constexpr float Pi = 3.1415926535897f;
+static constexpr float Pi2 = Pi * 2;
+static constexpr float Pi4 = Pi * 4;
 static constexpr float Epsilon = std::numeric_limits<float>::epsilon();
 static constexpr float OneMinusEpsilon = 0x1.fffffep-1;
 static constexpr float FloatMax = std::numeric_limits<float>::max();

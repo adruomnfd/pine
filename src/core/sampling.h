@@ -30,12 +30,20 @@ inline vec3 CosineWeightedSampling(vec2 u) {
     return vec3(d.x, d.y, z);
 }
 
-inline vec3 UniformSphereSampling(vec2 u) {
+inline vec3 UniformSphereMampling(vec2 u) {
     return SphericalToCartesian(u.x * Pi * 2, std::acos(1.0f - 2 * u.y));
 }
+inline vec2 InverseUniformSphereMampling(vec3 d) {
+    auto [phi, theta] = CartesianToSpherical(d);
+    return {phi / Pi2, (1.0f - std::cos(theta)) / 2.0f};
+}
 
-inline vec3 UniformHemisphereSampling(vec2 u) {
+inline vec3 UniformHemisphereMampling(vec2 u) {
     return SphericalToCartesian(u.x * Pi * 2, std::acos(u.y));
+}
+inline vec2 InverseUniformHemisphereMampling(vec3 d) {
+    auto [phi, theta] = CartesianToSpherical(d);
+    return {phi / Pi2, std::cos(theta)};
 }
 
 inline float BalanceHeuristic(int nF, float pF, int nG, float pG) {

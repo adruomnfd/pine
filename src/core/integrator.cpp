@@ -84,9 +84,13 @@ Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler
     if (it.IsSurfaceInteraction()) {
         MaterialEvalContext mc(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d, ls.wo);
         Spectrum f = it.material->F(mc);
-        float pdf = it.material->PDF(mc);
-        float w = PowerHeuristic(1, ls.pdf, 1, pdf);
-        return tr * f * AbsDot(ls.wo, it.n) * w * ls.Le / ls.pdf;
+        if (ls.isDelta) {
+            return tr * f * AbsDot(ls.wo, it.n) * ls.Le / ls.pdf;
+        } else {
+            float bsdfPdf = it.material->PDF(mc);
+            float w = PowerHeuristic(1, ls.pdf, 1, bsdfPdf);
+            return tr * f * AbsDot(ls.wo, it.n) * w * ls.Le / ls.pdf;
+        }
     } else {
         return tr * it.phaseFunction.F(-ray.d, ls.wo) * ls.Le / ls.pdf;
     }

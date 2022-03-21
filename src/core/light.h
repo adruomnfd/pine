@@ -5,6 +5,8 @@
 #include <util/taggedvariant.h>
 #include <util/profiler.h>
 
+#include <vector>
+
 namespace pine {
 
 struct LightSample {
@@ -12,6 +14,7 @@ struct LightSample {
     vec3 wo;
     float distance = 1.0f;
     float pdf = 1.0f;
+    bool isDelta = false;
 };
 
 struct PointLight {
@@ -44,14 +47,18 @@ struct AreaLight {
 
 struct Atmosphere {
     static Atmosphere Create(const Parameters& params);
-    Atmosphere(vec3 sunDirection, vec3 sunColor)
-        : sunDirection(Normalize(sunDirection)), sunColor(sunColor){};
+    Atmosphere(vec3 sunDirection, vec3 sunColor, vec2i size, bool interpolate);
 
     LightSample Sample(vec3 p, vec2 u2) const;
     Spectrum Color(vec3 wo) const;
+    float Pdf(vec3 wo) const;
 
     vec3 sunDirection;
     vec3 sunColor;
+    Spectrum sunSampledColor;
+    vec2i size;
+    std::vector<vec3> colors;
+    bool interpolate = true;
 };
 
 struct EnvironmentLight : TaggedVariant<Atmosphere> {
@@ -65,6 +72,10 @@ struct EnvironmentLight : TaggedVariant<Atmosphere> {
     Spectrum Color(vec3 wo) const {
         SampledProfiler _(ProfilePhase::SampleEnvLight);
         return Dispatch([&](auto&& x) { return x.Color(wo); });
+    }
+    float Pdf(vec3 wo) const {
+        SampledProfiler _(ProfilePhase::SampleEnvLight);
+        return Dispatch([&](auto&& x) { return x.Pdf(wo); });
     }
 };
 

@@ -110,32 +110,25 @@ AABB Plane::GetAABB() const {
     return {vec3(-1e+6f), vec3(1e+6f)};
 }
 
-bool Sphere::Hit(const Ray& ray) const {
-    float a = Dot(ray.d, ray.d);
-    float b = 2 * Dot(ray.o - c, ray.d);
-    float c = Dot(ray.o, ray.o) + Dot(this->c, this->c) - 2 * Dot(ray.o, this->c) - r * r;
+float Sphere::ComputeT(vec3 ro, vec3 rd, float tmin, vec3 p, float r) {
+    float a = Dot(rd, rd);
+    float b = 2 * Dot(ro - p, rd);
+    float c = Dot(ro, ro) + Dot(p, p) - 2 * Dot(ro, p) - r * r;
     float d = b * b - 4 * a * c;
     if (d <= 0.0f)
-        return false;
+        return -1.0f;
     d = std::sqrt(d);
     float t = (-b - d) / (2 * a);
-    if (t < ray.tmin)
+    if (t < tmin)
         t = (-b + d) / (2 * a);
-    if (t < ray.tmin)
-        return false;
-    return t < ray.tmax;
+    return t;
+}
+bool Sphere::Hit(const Ray& ray) const {
+    float t = ComputeT(ray.o, ray.d, ray.tmin, c, r);
+    return t > ray.tmin && t < ray.tmax;
 }
 bool Sphere::Intersect(Ray& ray, Interaction& it) const {
-    float a = Dot(ray.d, ray.d);
-    float b = 2 * Dot(ray.o - c, ray.d);
-    float c = Dot(ray.o, ray.o) + Dot(this->c, this->c) - 2 * Dot(ray.o, this->c) - r * r;
-    float d = b * b - 4 * a * c;
-    if (d <= 0.0f)
-        return false;
-    d = std::sqrt(d);
-    float t = (-b - d) / (2 * a);
-    if (t < ray.tmin)
-        t = (-b + d) / (2 * a);
+    float t = ComputeT(ray.o, ray.d, ray.tmin, c, r);
     if (t < ray.tmin)
         return false;
     if (t > ray.tmax)

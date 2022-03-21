@@ -62,6 +62,13 @@ struct Vector2 {
         y /= rhs.y;
         return *this;
     }
+    template <typename U, typename = typename std::enable_if<std::is_integral<T>::value &&
+                                                             std::is_integral<U>::value>::type>
+    Vector2 &operator%=(Vector2<U> rhs) {
+        x %= rhs.x;
+        y %= rhs.y;
+        return *this;
+    }
     template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
     Vector2 &operator*=(U rhs) {
         x *= rhs;
@@ -91,6 +98,11 @@ struct Vector2 {
     friend Vector2<decltype(T{} / U{})> operator/(Vector2<T> lhs, Vector2<U> rhs) {
         return {lhs.x / rhs.x, lhs.y / rhs.y};
     }
+    template <typename U, typename = typename std::enable_if<std::is_integral<T>::value &&
+                                                             std::is_integral<U>::value>::type>
+    friend Vector2<decltype(T{} % U{})> operator%(Vector2<T> lhs, Vector2<U> rhs) {
+        return {lhs.x % rhs.x, lhs.y % rhs.y};
+    }
     template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
     friend Vector2<decltype(T{} * U{})> operator*(Vector2<T> lhs, U rhs) {
         return {lhs.x * rhs, lhs.y * rhs};
@@ -114,6 +126,9 @@ struct Vector2 {
     template <typename U>
     friend bool operator!=(Vector2<T> lhs, Vector2<U> rhs) {
         return lhs.x != rhs.x || lhs.y != rhs.y;
+    }
+    bool HasNaN() const {
+        return std::isnan(x) || std::isnan(y);
     }
 
     Vector2 operator-() const {
@@ -192,6 +207,14 @@ struct Vector3 {
         z /= rhs.z;
         return *this;
     }
+    template <typename U, typename = typename std::enable_if<std::is_integral<T>::value &&
+                                                             std::is_integral<U>::value>::type>
+    Vector3 &operator%=(Vector3<U> rhs) {
+        x %= rhs.x;
+        y %= rhs.y;
+        z %= rhs.z;
+        return *this;
+    }
     template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
     Vector3 &operator*=(U rhs) {
         x *= rhs;
@@ -223,6 +246,11 @@ struct Vector3 {
     friend Vector3<decltype(T{} / U{})> operator/(Vector3<T> lhs, Vector3<U> rhs) {
         return {lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z};
     }
+    template <typename U, typename = typename std::enable_if<std::is_integral<T>::value &&
+                                                             std::is_integral<U>::value>::type>
+    friend Vector3<decltype(T{} % U{})> operator%(Vector3<T> lhs, Vector3<U> rhs) {
+        return {lhs.x % rhs.x, lhs.y % rhs.y, lhs.z % rhs.z};
+    }
     template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
     friend Vector3<decltype(T{} * U{})> operator*(Vector3<T> lhs, U rhs) {
         return {lhs.x * rhs, lhs.y * rhs, lhs.z * rhs};
@@ -248,6 +276,9 @@ struct Vector3 {
         return lhs.x != rhs.x || lhs.y != rhs.y || lhs.z != rhs.z;
     }
 
+    bool HasNaN() const {
+        return std::isnan(x) || std::isnan(y) || std::isnan(z);
+    }
     Vector3 operator-() const {
         return {-x, -y, -z};
     }
@@ -334,7 +365,15 @@ struct Vector4 {
         w /= rhs.w;
         return *this;
     }
-
+    template <typename U, typename = typename std::enable_if<std::is_integral<T>::value &&
+                                                             std::is_integral<U>::value>::type>
+    Vector4 &operator%=(Vector4<U> rhs) {
+        x %= rhs.x;
+        y %= rhs.y;
+        z %= rhs.z;
+        w %= rhs.w;
+        return *this;
+    }
     template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
     Vector4 &operator*=(U rhs) {
         x *= rhs;
@@ -368,6 +407,11 @@ struct Vector4 {
     friend Vector4<decltype(T{} / U{})> operator/(Vector4<T> lhs, Vector4<U> rhs) {
         return {lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z, lhs.w / rhs.w};
     }
+    template <typename U, typename = typename std::enable_if<std::is_integral<T>::value &&
+                                                             std::is_integral<U>::value>::type>
+    friend Vector4<decltype(T{} % U{})> operator%(Vector4<T> lhs, Vector4<U> rhs) {
+        return {lhs.x % rhs.x, lhs.y % rhs.y, lhs.z % rhs.z, lhs.w % rhs.w};
+    }
     template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
     friend Vector4<decltype(T{} * U{})> operator*(Vector4<T> lhs, U rhs) {
         return {lhs.x * rhs, lhs.y * rhs, lhs.z * rhs, lhs.w * rhs};
@@ -393,6 +437,9 @@ struct Vector4 {
         return lhs.x != rhs.x || lhs.y != rhs.y || lhs.z != rhs.z || lhs.w != rhs.w;
     }
 
+    bool HasNaN() const {
+        return std::isnan(x) || std::isnan(y) || std::isnan(z) || std::isnan(w);
+    }
     Vector4 operator-() const {
         return {-x, -y, -z, -w};
     }

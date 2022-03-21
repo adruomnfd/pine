@@ -270,6 +270,7 @@ struct Sphere {
     Sphere() = default;
     Sphere(vec3 position, float radius) : c(position), r(radius){};
 
+    static float ComputeT(vec3 ro, vec3 rd, float tmin, vec3 p, float r);
     bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
@@ -278,7 +279,7 @@ struct Sphere {
     }
     ShapeSample Sample(vec3, vec2 u) const {
         ShapeSample ss;
-        ss.n = UniformSphereSampling(u);
+        ss.n = UniformSphereMampling(u);
         ss.p = c + r * ss.n;
         ss.uv = u * vec2(Pi * 2, Pi);
         return ss;

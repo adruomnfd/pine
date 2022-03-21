@@ -44,11 +44,9 @@ Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
     const float phaseR = 3.0f / (16.0f * Pi) * (1.0f + mu * mu), g = 0.76f,
                 phaseM = 3.0f / (8.0f * Pi) * (1.0f - g * g) * (1.0f + mu * mu) /
                          ((2.0f + g * g) * powf(1.0f + g * g - 2.0f * g * mu, 1.5f));
-    const Sphere atmosphere(vec3(0), atmosphereRadius);
 
     Ray ray = Ray(vec3(0.0f, earthRadius, 0.0f), direction);
-    Interaction it;
-    atmosphere.Intersect(ray, it);
+    ray.tmax = Sphere::ComputeT(ray.o, ray.d, 0.0f, vec3(0.0f), atmosphereRadius);
     float segmentLength = ray.tmax / nSamples, tCurrent = 0.0f;
     float opticalDepthR = 0.0f, opticalDepthM = 0.0f;
     vec3 sumR, sumM;
@@ -61,21 +59,22 @@ Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
         opticalDepthR += hr;
         opticalDepthM += hm;
 
-        Ray rayLight = Ray(samplePosition, sunDirection);
-        Interaction itLight;
-        atmosphere.Intersect(rayLight, itLight);
-        float segmentLengthLight = rayLight.tmax / nSamplesLight, tCurrentLight = 0.0f;
+        float ltmax =
+            Sphere::ComputeT(samplePosition, sunDirection, 0.0f, vec3(0.0f), atmosphereRadius);
+        float segmentLengthLight = ltmax / nSamplesLight;
         float opticalDepthRLight = 0.0f, opticalDepthMLight = 0.0f;
 
         int j = 0;
-        for (; j < nSamplesLight; j++) {
-            vec3 samplePositionLight = rayLight(tCurrentLight + segmentLengthLight * 0.5f);
-            float heightLight = Length(samplePositionLight) - earthRadius;
+        float lo2 = Dot(samplePosition, samplePosition);
+        float ld2 = Dot(sunDirection, sunDirection);
+        float lod = Dot(samplePosition, sunDirection);
+        float lt = segmentLengthLight * 0.5f;
+        for (; j < nSamplesLight; j++, lt += segmentLengthLight) {
+            float heightLight = lo2 + Sqr(lt) * ld2 + 2 * lt * lod - earthRadius;
             if (heightLight < 0)
                 break;
             opticalDepthRLight += std::exp(-heightLight * Hr) * segmentLengthLight;
             opticalDepthMLight += std::exp(-heightLight * Hm) * segmentLengthLight;
-            tCurrentLight += segmentLengthLight;
         }
         if (j == nSamplesLight) {
             vec3 tau = betaR * (opticalDepthR + opticalDepthRLight) +

@@ -39,8 +39,15 @@ Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
         if (!mi.IsMediumInteraction() && !foundIntersection) {
             if (depth == 0 && !scene->envLight)
                 return Spectrum(0.0f);
-            if (scene->envLight)
-                L += beta * scene->envLight->Color(ray.d);
+            if (scene->envLight) {
+                Spectrum le = scene->envLight->Color(ray.d);
+                if (depth == 0) {
+                    L += beta * le;
+                } else {
+                    float lightPdf = scene->envLight->Pdf(ray.d);
+                    L += beta * le * PowerHeuristic(1, bsdfPdf, 1, lightPdf);
+                }
+            }
             break;
         }
 
