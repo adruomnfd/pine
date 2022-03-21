@@ -1,5 +1,6 @@
 #include <core/light.h>
 #include <core/color.h>
+#include <core/geometry.h>
 #include <core/sampling.h>
 #include <util/parameters.h>
 
@@ -22,13 +23,8 @@ LightSample DirectionalLight::Sample(vec3, vec2) const {
     return ls;
 }
 
-LightSample AreaLight::Sample(vec3 p, vec2 u2) const {
-    LightSample ls;
-    vec3 sampleP = position + (u2[0] - 0.5f) * ex + (u2[1] - 0.5f) * ey;
-    ls.wo = Normalize(sampleP - p, ls.distance);
-    ls.pdf = Sqr(ls.distance) / (area * AbsDot(n, -ls.wo));
-    ls.Le = color;
-    return ls;
+LightSample AreaLight::Sample(vec3 p, vec2 u) const {
+    return shape->Sample(p, u);
 }
 
 LightSample Atmosphere::Sample(vec3, vec2) const {
@@ -50,11 +46,6 @@ PointLight PointLight::Create(const Parameters& params) {
 
 DirectionalLight DirectionalLight::Create(const Parameters& params) {
     return DirectionalLight(params.GetVec3("direction"), params.GetVec3("color"));
-}
-
-AreaLight AreaLight::Create(const Parameters& params) {
-    return AreaLight(params.GetVec3("position"), params.GetVec3("ex"), params.GetVec3("ey"),
-                     params.GetVec3("color"));
 }
 
 Atmosphere Atmosphere::Create(const Parameters& params) {
@@ -79,7 +70,6 @@ Light Light::Create(const Parameters& params) {
     SWITCH(type) {
         CASE("Point") return PointLight(PointLight::Create(params));
         CASE("Directional") return DirectionalLight(DirectionalLight::Create(params));
-        CASE("Area") return AreaLight(AreaLight::Create(params));
         CASE("Environment") return EnvironmentLight(EnvironmentLight::Create(params));
         DEFAULT {
             LOG_WARNING("[Light][Create]Unknown type \"&\"", type);

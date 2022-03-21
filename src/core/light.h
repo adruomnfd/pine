@@ -37,23 +37,9 @@ struct DirectionalLight {
 };
 
 struct AreaLight {
-    static AreaLight Create(const Parameters& params);
-    AreaLight(vec3 position, vec3 ex, vec3 ey, vec3 color)
-        : position(position),
-          ex(ex),
-          ey(ey),
-          n(Normalize(Cross(ex, ey))),
-          area(Length(Cross(ex, ey))),
-          color(Spectrum(color, SpectrumType::Illuminant)){};
-
     LightSample Sample(vec3 p, vec2 u2) const;
 
-    vec3 position;
-    vec3 ex;
-    vec3 ey;
-    vec3 n;
-    float area;
-    Spectrum color;
+    const Shape* shape = nullptr;
 };
 
 struct Atmosphere {

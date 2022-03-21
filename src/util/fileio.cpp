@@ -218,18 +218,17 @@ vec3u8 *ReadLDRImage(std::string filename, vec2i &size) {
     return (vec3u8 *)data;
 }
 
-std::vector<TriangleMesh> LoadObj(std::string filename, Scene *) {
+TriangleMesh LoadObj(std::string filename) {
     Profiler _("LoadObj");
     LOG_VERBOSE("[FileIO]Loading \"&\"", filename);
     Timer timer;
 
-    std::vector<TriangleMesh> meshes;
+    TriangleMesh mesh;
     std::string raw = ReadStringFile(filename);
     std::string_view str = raw;
     LOG_VERBOSE("[FileIO]Reading .obj into & MB string in & ms", str.size() / 1000000.0,
                 timer.ElapsedMs());
 
-    TriangleMesh mesh;
     std::string face;
     face.reserve(64);
 
@@ -303,10 +302,9 @@ std::vector<TriangleMesh> LoadObj(std::string filename, Scene *) {
         str = str.substr(pos + 1);
     }
     LOG("[FileIO]Loaded mesh has & M triangles", mesh.indices.size() / 3 / 1000000.0);
-    meshes.push_back(mesh);
 
     LOG_VERBOSE("[FileIO]Obj loaded in & ms", timer.Reset());
-    return meshes;
+    return mesh;
 }
 
 Parameters LoadScene(std::string filename, Scene *scene) {
@@ -324,51 +322,14 @@ Parameters LoadScene(std::string filename, Scene *scene) {
         scene->mediums[p.GetString("name")] = std::make_shared<Medium>(Medium::Create(p));
     for (auto &p : params.GetAll("Light"))
         scene->lights.push_back(Light::Create(p));
-
-    for (auto &p : params.GetAll("Shape")) {
-        if (p.GetString("type") == "TriangleMesh") {
-            std::vector<TriangleMesh> meshes = LoadObj(p.GetString("file"), scene);
-            for (auto &mesh : meshes) {
-                if (auto material = Find(scene->materials, p.GetString("material")))
-                    mesh.material = *material;
-                if (auto mediumInside = Find(scene->mediums, p.GetString("mediumInside")))
-                    mesh.mediumInterface.inside = *mediumInside;
-                if (auto mediumOutside = Find(scene->mediums, p.GetString("mediumOutside")))
-                    mesh.mediumInterface.outside = *mediumOutside;
-                mesh.o2w = Translate(p.GetVec3("translate", vec3(0.0f))) *
-                           Scale(p.GetVec3("scale", vec3(1.0f)));
-                scene->meshes.push_back(mesh);
-            }
-        } else {
-            scene->shapes.push_back(Shape::Create(p, scene));
-        }
-    }
-
-    int lightId = 0;
-    for (const Light &light : scene->lights) {
-        if (light.Tag() == Light::Index<AreaLight>()) {
-            const AreaLight &areaLight = light.Be<AreaLight>();
-            Parameters materialParams;
-            std::string materialName = "areaLightMaterial" + ToString(lightId++);
-            materialParams.Set("type", "Emissive");
-            materialParams.AddSubset("color")
-                .Set("type", "Constant")
-                .Set("vec3", areaLight.color.ToRGB());
-            scene->materials[materialName] =
-                std::make_shared<Material>(Material::Create(materialParams));
-
-            Parameters shapeParams;
-            shapeParams.Set("type", "Rect");
-            shapeParams.Set("position", areaLight.position);
-            shapeParams.Set("ex", areaLight.ex);
-            shapeParams.Set("ey", areaLight.ey);
-            shapeParams.Set("material", materialName);
-            scene->shapes.push_back(Shape::Create(shapeParams, scene));
-        }
-        if (light.Tag() == Light::Index<EnvironmentLight>()) {
+    for (auto &p : params.GetAll("Shape"))
+        scene->shapes.push_back(Shape::Create(p, scene));
+    for (auto &shape : scene->shapes)
+        if (auto light = shape.GetLight())
+            scene->lights.push_back(*light);
+    for (const Light &light : scene->lights)
+        if (light.Tag() == Light::Index<EnvironmentLight>())
             scene->envLight = light.Be<EnvironmentLight>();
-        }
-    }
 
     scene->integrator = Integrator::Create(params["Integrator"], scene);
 

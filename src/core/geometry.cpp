@@ -148,7 +148,7 @@ bool Sphere::Intersect(Ray& ray, Interaction& it) const {
     float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
     it.dpdu = vec3(sinTheta * -sinPhi, sinTheta * cosPhi, 0.0f);
     it.dpdv = vec3(cosTheta * cosPhi, cosTheta * sinPhi, -sinTheta);
-    it.uv = vec3(phi, theta, 0.0f);
+    it.uv = vec2(phi, theta);
     return true;
 }
 AABB Sphere::GetAABB() const {
@@ -356,6 +356,10 @@ Rect Rect::Create(const Parameters& params) {
     return Rect(params.GetVec3("position"), params.GetVec3("ex"), params.GetVec3("ey"));
 }
 
+TriangleMesh TriangleMesh::Create(const Parameters& params) {
+    return LoadObj(params.GetString("file"));
+}
+
 Shape Shape::Create(const Parameters& params, const Scene* scene) {
     std::string type = params.GetString("type");
     Shape shape;
@@ -368,6 +372,7 @@ Shape Shape::Create(const Parameters& params, const Scene* scene) {
         CASE("Cylinder") shape = Cylinder(Cylinder::Create(params));
         CASE("Disk") shape = Disk(Disk::Create(params));
         CASE("Line") shape = Line(Line::Create(params));
+        CASE("TriangleMesh") shape = TriangleMesh(TriangleMesh::Create(params));
         DEFAULT {
             LOG_WARNING("[Shape][Create]Unknown type \"&\"", type);
             shape = Sphere(Sphere::Create(params));

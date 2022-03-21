@@ -8,7 +8,7 @@
 
 namespace pine {
 
-class BVH : public Accel {
+class BVHImpl {
   public:
     struct alignas(16) Node {
         float SurfaceArea() const {
@@ -24,7 +24,7 @@ class BVH : public Accel {
                 nodes[parent].UpdateAABB(nodes);
         }
         float ComputeCost(Node* nodes) {
-            if (triangles)
+            if (primitiveIndices.size())
                 return SurfaceArea();
             return SurfaceArea() + nodes[children[0]].ComputeCost(nodes) +
                    nodes[children[1]].ComputeCost(nodes);
@@ -44,34 +44,46 @@ class BVH : public Accel {
         int indexAsChild = -1;
         bool removed = false;
 
-        int numPrimitives = 0;
-        Triangle* triangles = nullptr;
+        std::vector<int> primitiveIndices;
     };
     struct Primitive {
         AABB aabb;
-        Triangle triangle;
+        int index = 0;
     };
 
-    BVH(const Parameters&) {
-    }
-    ~BVH() {
-        for (Node& node : nodes)
-            if (node.triangles)
-                delete[] node.triangles;
-    }
-    PINE_DELETE_COPY_MOVE(BVH)
+    void Build(std::vector<Primitive> primitives);
 
-    void Initialize(const TriangleMesh* mesh) override;
     int BuildSAHBinned(Primitive* begin, Primitive* end, AABB aabb);
     int BuildSAHFull(Primitive* begin, Primitive* end, AABB aabb);
-    int BuildSpatialSplit(Primitive* begin, Primitive* end, AABB aabb, float SAroot, int depth = 0);
     void Optimize();
 
-    bool Hit(Ray ray) const override;
-    bool Intersect(Ray& ray, Interaction& it) const override;
+    bool Hit(Ray) const {
+        return false;
+    }
+    template <typename F, typename G>
+    bool Intersect(Ray& ray, Interaction& it, F&& f, G&& g) const;
+    AABB GetAABB() const {
+        CHECK(nodes.size());
+        return Union(nodes[rootIndex].aabbs[0], nodes[rootIndex].aabbs[1]);
+    }
 
     int rootIndex = -1;
     std::vector<Node> nodes;
+};
+
+class BVH : public Accel {
+  public:
+    BVH(const Parameters&) {
+    }
+
+    void Initialize(const Scene* scene);
+    bool Hit(Ray ray) const;
+    bool Intersect(Ray& ray, Interaction& it) const;
+
+    std::vector<BVHImpl> lbvh;
+    BVHImpl tbvh;
+    std::vector<int> indices;
+    const Scene* scene;
 };
 
 }  // namespace pine

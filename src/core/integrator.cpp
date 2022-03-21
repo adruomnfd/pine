@@ -40,50 +40,19 @@ Integrator::Integrator(const Parameters& parameters, const Scene* scene) : scene
 }
 
 RayIntegrator::RayIntegrator(const Parameters& parameters, const Scene* scene)
-    : Integrator(parameters, scene) {
-    for (const auto& mesh : scene->meshes) {
-        std::shared_ptr<Accel> accel = Accel::Create(parameters["accel"]);
-        accel->Initialize(&mesh);
-        accels.push_back(accel);
-    }
+    : Integrator(parameters, scene), accel(Accel::Create(parameters["accel"])) {
+    accel->Initialize(scene);
 }
-bool RayIntegrator::Hit(const Ray& ray) {
+bool RayIntegrator::Hit(Ray ray) {
     SampledProfiler _(ProfilePhase::IntersectShadow);
-    for (const auto& accel : accels)
-        if (accel->Hit(ray))
-            return true;
 
-    for (const auto& shape : scene->shapes)
-        if (shape.Hit(ray))
-            return true;
-    return false;
+    Interaction it;
+    return accel->Intersect(ray, it);
 }
 bool RayIntegrator::Intersect(Ray& ray, Interaction& it) {
     SampledProfiler _(ProfilePhase::IntersectClosest);
-    bool hit = false;
 
-    auto setupIt = [&](auto& shape) {
-        hit = true;
-        it.material = shape.material.get();
-        if (shape.mediumInterface.IsMediumTransition()) {
-            it.mediumInterface.inside = shape.mediumInterface.inside.get();
-            it.mediumInterface.outside = shape.mediumInterface.outside.get();
-        } else {
-            it.mediumInterface = MediumInterface<const Medium*>(ray.medium);
-        }
-    };
-
-    for (int i = 0; i < (int)accels.size(); i++)
-        if (accels[i]->Intersect(ray, it))
-            setupIt(scene->meshes[i]);
-
-    for (const auto& shape : scene->shapes)
-        if (shape.Intersect(ray, it)) {
-            setupIt(shape);
-            it.shape = &shape;
-        }
-
-    return hit;
+    return accel->Intersect(ray, it);
 }
 bool RayIntegrator::IntersectTr(Ray ray, Spectrum& tr, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::IntersectTr);

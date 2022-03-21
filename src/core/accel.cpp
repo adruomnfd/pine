@@ -10,7 +10,7 @@ std::shared_ptr<Accel> Accel::Create(const Parameters& parameters) {
     std::string type = parameters.GetString("type");
     SWITCH(type) {
         CASE("BVH") return std::make_shared<BVH>(parameters);
-        CASE("CWBVH") return std::make_shared<CWBVH>(parameters);
+        // CASE("CWBVH") return std::make_shared<CWBVH>(parameters);
         DEFAULT {
             LOG_WARNING("[Accel][Create]Unknown type \"&\"", type);
             return std::make_shared<BVH>(parameters);

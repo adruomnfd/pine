@@ -1,5 +1,5 @@
 Integrator: Path{
-    maxDepth: 10
+    maxDepth: 6
 
     film{
         outputFileName: result.png
@@ -17,6 +17,8 @@ Integrator: Path{
     }
 
     lightSampler: Uniform
+
+    clamp: 8.0
 }
 
 Camera: PinHole{
@@ -24,22 +26,16 @@ Camera: PinHole{
     to:   0 0 0
     fov:  0.24
 }
-Light: Area{
-    position: -0.5 4 -4
-    ex: 1 0 0
-    ey: 0 0 1
-    color: 120
-}
-Light: Area{
-    position: 4 16 4
+Shape: Rect{
+    position: 8 16 4
     ex: 4 0 0
     ey: 0 0 4
-    color: 10
+    material: emissive
 }
 Shape: Plane{    
     position: 0 0 0
     normal: 0 1 0
-    material: glossy
+    material: matte
 }
 Shape: Sphere{
     position: -2.5 0.5 1
@@ -66,9 +62,22 @@ Shape: Sphere{
     radius: 0.5
     material: diffuse
 }
+
+Material matte: Layered{
+    layer0: Diffuse{
+        albedo: MultiplyAdd{
+            input: Checkerboard{
+                input: TexCoord
+                frequency: 4.0
+            }
+            mulFactor: 0.95
+            addFactor: 0.05
+        }
+    }
+}
 Material diffuse: Layered{
     layer0: Diffuse{
-        albedo: 1.0 1.0 1.0
+        albedo: 0.95
     }
     bumpMap: Multiply{
         input: Noise{
@@ -124,4 +133,7 @@ Material silver: Layered{
         albedo: 0.99
         roughness: 0.0
     }
+}
+Material emissive: Emissive{
+    color: 80
 }

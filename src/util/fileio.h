@@ -39,7 +39,7 @@ void SaveImage(std::string filename, vec2i size, int nchannel, float* data);
 void SaveImage(std::string filename, vec2i size, int nchannel, uint8_t* data);
 vec3u8* ReadLDRImage(std::string filename, vec2i& size);
 
-std::vector<TriangleMesh> LoadObj(std::string filename, Scene* scene);
+TriangleMesh LoadObj(std::string filename);
 Parameters LoadScene(std::string filename, Scene* scene);
 
 template <typename T>

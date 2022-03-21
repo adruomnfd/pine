@@ -20,7 +20,6 @@ struct Scene {
     std::map<std::string, std::shared_ptr<Material>> materials;
     std::map<std::string, std::shared_ptr<Medium>> mediums;
     std::vector<Shape> shapes;
-    std::vector<TriangleMesh> meshes;
     std::vector<Light> lights;
     std::optional<EnvironmentLight> envLight;
     Camera camera;

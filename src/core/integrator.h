@@ -36,12 +36,13 @@ class RayIntegrator : public Integrator {
   public:
     RayIntegrator(const Parameters& parameters, const Scene* scene);
 
-    bool Hit(const Ray& ray);
+    bool Hit(Ray ray);
     bool Intersect(Ray& ray, Interaction& it);
     bool IntersectTr(Ray ray, Spectrum& tr, Sampler& sampler);
     Spectrum EstimateDirect(Ray ray, Interaction it, Sampler& sampler);
 
-    std::vector<std::shared_ptr<Accel>> accels;
+    std::shared_ptr<Accel> accel;
+    std::vector<int> meshIndices;
 };
 
 class PixelSampleIntegrator : public RayIntegrator {

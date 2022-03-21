@@ -1,9 +1,9 @@
 #ifndef PINE_CORE_GEOMETRY_H
 #define PINE_CORE_GEOMETRY_H
 
-#include <core/vecmath.h>
 #include <core/material.h>
 #include <core/medium.h>
+#include <core/light.h>
 #include <util/taggedvariant.h>
 #include <util/profiler.h>
 
@@ -234,6 +234,12 @@ struct AABB {
     vec3 upper = vec3(-FloatMax);
 };
 
+struct ShapeSample : LightSample {
+    vec3 p;
+    vec3 n;
+    vec2 uv;
+};
+
 struct Plane {
     static Plane Create(const Parameters& params);
     Plane() = default;
@@ -248,6 +254,10 @@ struct Plane {
     AABB GetAABB() const;
     float Area() const {
         return FloatMax;
+    }
+    ShapeSample Sample(vec3, vec2) const {
+        LOG_FATAL("[Plane]doesn't support Sample()");
+        return {};
     }
 
     vec3 position;
@@ -265,6 +275,13 @@ struct Sphere {
     AABB GetAABB() const;
     float Area() const {
         return 4 * Pi * r * r;
+    }
+    ShapeSample Sample(vec3, vec2 u) const {
+        ShapeSample ss;
+        ss.n = UniformSphereSampling(u);
+        ss.p = c + r * ss.n;
+        ss.uv = u * vec2(Pi * 2, Pi);
+        return ss;
     }
 
     PINE_ARCHIVE(c, r)
@@ -284,6 +301,10 @@ struct Cylinder {
     AABB GetAABB() const;
     float Area() const {
         return height * Pi * 2 * r;
+    }
+    ShapeSample Sample(vec3, vec2) const {
+        LOG_FATAL("[Cylinder]doesn't support Sample()");
+        return {};
     }
 
     vec3 pos;
@@ -307,6 +328,10 @@ struct Disk {
     float Area() const {
         return Pi * r * r;
     }
+    ShapeSample Sample(vec3, vec2) const {
+        LOG_FATAL("[Disk]doesn't support Sample()");
+        return {};
+    }
 
     vec3 position;
     vec3 n;
@@ -324,6 +349,10 @@ struct Line {
     AABB GetAABB() const;
     float Area() const {
         return 0;
+    }
+    ShapeSample Sample(vec3, vec2) const {
+        LOG_FATAL("[Line]doesn't support Sample()");
+        return {};
     }
 
     vec3 p0, p1;
@@ -412,6 +441,15 @@ struct Triangle {
     float Area() const {
         return Length(Cross(v1 - v0, v2 - v0)) / 2;
     }
+    ShapeSample Sample(vec3, vec2 u) const {
+        ShapeSample ss;
+        if (u.x + u.y > 1.0f)
+            u = vec2(1.0f) - u;
+        ss.p = InterpolatePosition(u);
+        ss.n = Normal();
+        ss.uv = u;
+        return ss;
+    }
 
     PINE_ARCHIVE(v0, v1, v2)
 
@@ -435,15 +473,39 @@ struct Rect {
     float Area() const {
         return lx * ly;
     }
+    ShapeSample Sample(vec3, vec2 u) const {
+        ShapeSample ss;
+        ss.p = position + ex * lx * (u.x - 0.5f) + ey * ly * (u.y - 0.5f);
+        ss.n = n;
+        ss.uv = u;
+        return ss;
+    }
 
     vec3 position, ex, ey, n;
     float lx, ly;
 };
 
 struct TriangleMesh {
+    static TriangleMesh Create(const Parameters& params);
     TriangleMesh() = default;
     TriangleMesh(std::vector<vec3> vertices, std::vector<uint32_t> indices)
         : vertices(std::move(vertices)), indices(std::move(indices)){};
+
+    bool Hit(const Ray&) const {
+        return false;
+    }
+    bool Intersect(Ray&, Interaction&) const {
+        return false;
+    }
+    AABB GetAABB() const {
+        return {};
+    }
+    float Area() const {
+        return {};
+    }
+    float Pdf(const Ray&, const Interaction&) const {
+        return {};
+    }
 
     int GetNumTriangles() const {
         return indices.size() / 3;
@@ -458,18 +520,18 @@ struct TriangleMesh {
             ts[i] = GetTriangle(i);
         return ts;
     }
+    ShapeSample Sample(vec3, vec2) const {
+        LOG_FATAL("[TriangleMesh]doesn't support Sample()");
+        return {};
+    }
 
     std::vector<vec3> vertices;
     std::vector<vec3> normals;
     std::vector<vec2> texcoords;
     std::vector<uint32_t> indices;
-    mat4 o2w;
-
-    std::shared_ptr<Material> material;
-    MediumInterface<std::shared_ptr<Medium>> mediumInterface;
 };
 
-struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line> {
+struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line, TriangleMesh> {
     using TaggedVariant::TaggedVariant;
     static Shape Create(const Parameters& params, const Scene* scene);
 
@@ -487,8 +549,23 @@ struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line
     float Area() const {
         return Dispatch([&](auto&& x) { return x.Area(); });
     }
-    float Pdf(const Ray& ray, const Interaction& it) const{
+    float Pdf(const Ray& ray, const Interaction& it) const {
         return Sqr(ray.tmax) / (AbsDot(-ray.d, it.n) * Area());
+    }
+    ShapeSample Sample(vec3 p, vec2 u) const {
+        CHECK(material);
+        ShapeSample ss = Dispatch([&](auto&& x) { return x.Sample(p, u); });
+        ss.wo = Normalize(ss.p - p, ss.distance);
+        MaterialEvalContext mc(ss.p, ss.n, ss.uv, vec3(), vec3(), -ss.wo);
+        ss.Le = material->Le(mc);
+        ss.pdf = Sqr(ss.distance) / (AbsDot(-ss.wo, ss.n) * Area());
+        return ss;
+    }
+    std::optional<Light> GetLight() const {
+        if (material && material->Is<EmissiveMaterial>())
+            return AreaLight{this};
+        else
+            return std::nullopt;
     }
 
     AABB aabb;
