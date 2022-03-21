@@ -19,7 +19,7 @@ std::optional<BSDFSample> LayeredMaterial::Sample(const MaterialEvalContext& c) 
     return bs;
 }
 
-vec3 LayeredMaterial::F(const MaterialEvalContext& c) const {
+Spectrum LayeredMaterial::F(const MaterialEvalContext& c) const {
     vec3 f;
     for (auto&& bsdf : bsdfs)
         f += bsdf.F(c.wi, c.wo, c);

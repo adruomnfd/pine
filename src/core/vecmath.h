@@ -877,6 +877,16 @@ inline Vector3<T> Cross(Vector3<T> lhs, Vector3<T> rhs) {
 }
 
 template <typename T>
+inline T Area(Vector2<T> v) {
+    return v.x * v.y;
+}
+
+template <typename T>
+inline T Volume(Vector3<T> v) {
+    return v.x * v.y * v.z;
+}
+
+template <typename T>
 inline Vector2<T> Min(Vector2<T> lhs, Vector2<T> rhs) {
     return {std::min(lhs.x, rhs.x), std::min(lhs.y, rhs.y)};
 }
@@ -1057,6 +1067,9 @@ inline Matrix4<T> Transpose(const Matrix4<T> &m) {
 
 // Floating-point vecmath
 
+inline float SafeRcp(float v) {
+    return v == 0.0f ? 1e+20f : 1.0f / v;
+}
 inline vec3 SafeRcp(vec3 v) {
     v.x = v.x == 0.0f ? 1e+20f : 1.0f / v.x;
     v.y = v.y == 0.0f ? 1e+20f : 1.0f / v.y;

@@ -79,27 +79,34 @@ float ConductorBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
 std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
                                                  const NodeEvalContext& nc) const {
     BSDFSample bs;
-    float fr = FrDielectric(AbsCosTheta(wi), eta.EvalFloat(nc));
+    float etap = eta.EvalFloat(nc);
+    if (CosTheta(wi) < 0)
+        etap = 1.0f / etap;
+    float fr = FrDielectric(AbsCosTheta(wi), etap);
+
+    float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
+    TrowbridgeReitzDistribution distrib(alpha, alpha);
+    vec3 wm = distrib.SampleWm(wi, u2);
 
     if (u1 < fr) {
-        float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
-        TrowbridgeReitzDistribution distrib(alpha, alpha);
-        vec3 wm = distrib.SampleWm(wi, u2);
-
         vec3 wo = Reflect(wi, wm);
         if (!SameHemisphere(wi, wo))
             return std::nullopt;
 
         bs.wo = wo;
         bs.pdf = fr * distrib.PDF(wi, wm) / (4 * AbsDot(wi, wm));
-        bs.f = (vec3)fr * distrib.D(wm) * distrib.G(wo, wi) / (4 * CosTheta(wi) * CosTheta(wo));
+        bs.f = fr * distrib.D(wm) * distrib.G(wo, wi) / (4 * CosTheta(wi) * CosTheta(wo));
     } else {
         vec3 wo;
-        if (!Refract(wi, vec3(0, 0, 1), eta.EvalFloat(nc), wo))
+        if (!Refract(wi, wm, etap, wo))
             return std::nullopt;
+        float cosThetaO = CosTheta(wo), cosThetaI = CosTheta(wi);
         bs.wo = wo;
-        bs.pdf = 1.0f - fr;
-        bs.f = vec3(1.0f - fr);
+        float denom = Sqr(Dot(wo, wm) + Dot(wi, wm) / etap);
+        float dwm_dwo = AbsDot(wo, wm) / denom;
+        bs.pdf = (1.0f - fr) * distrib.PDF(wi, wm) * dwm_dwo;
+        bs.f = (1.0f - fr) * distrib.D(wm) * distrib.G(wi, wo) *
+               fabsf(Dot(wo, wm) * Dot(wi, wm) / denom / cosThetaI / cosThetaO);
     }
     return bs;
 }
@@ -110,9 +117,9 @@ vec3 DielectricBSDF::F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
 
     float cosThetaO = CosTheta(wo), cosThetaI = CosTheta(wi);
     bool reflect = cosThetaI * cosThetaO > 0;
-    float etap = 1.0f;
+    float etap = eta.EvalFloat(nc);
     if (!reflect)
-        etap = cosThetaO > 0 ? eta.EvalFloat(nc) : (1.0f / eta.EvalFloat(nc));
+        etap = 1.0f / etap;
 
     vec3 wm = FaceForward(Normalize(wi * etap + wo), vec3(0, 0, 1));
     if (Dot(wm, wo) * cosThetaI < 0.0f || Dot(wm, wi) * cosThetaO < 0.0f)
@@ -134,9 +141,9 @@ float DielectricBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
 
     float cosThetaO = CosTheta(wo), cosThetaI = CosTheta(wi);
     bool reflect = cosThetaI * cosThetaO > 0;
-    float etap = 1.0f;
+    float etap = eta.EvalFloat(nc);
     if (!reflect)
-        etap = cosThetaO > 0 ? eta.EvalFloat(nc) : (1.0f / eta.EvalFloat(nc));
+        etap = 1.0f / etap;
 
     vec3 wm = FaceForward(Normalize(wi * etap + wo), vec3(0, 0, 1));
     if (Dot(wm, wo) * cosThetaI < 0.0f || Dot(wm, wi) * cosThetaO < 0.0f)
@@ -162,7 +169,7 @@ ConductorBSDF ConductorBSDF::Create(const Parameters& params) {
 }
 
 DielectricBSDF DielectricBSDF::Create(const Parameters& params) {
-   return DielectricBSDF(Node::Create(params["roughness"]), Node::Create(params["eta"]));
+    return DielectricBSDF(Node::Create(params["roughness"]), Node::Create(params["eta"]));
 }
 
 BSDF BSDF::Create(const Parameters& params) {

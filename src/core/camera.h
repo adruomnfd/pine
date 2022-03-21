@@ -14,7 +14,7 @@ struct PinHoleCamera {
     PinHoleCamera(vec3 from, vec3 to, float fov)
         : origin(from), lookat(LookAt(from, to)), fovT(1 / std::tan(fov / 2)){};
 
-    Ray GenRay(vec2 co, vec2) const;
+    Ray GenRay(vec2i filmSize, vec2 co, vec2 ul) const;
 
     vec3 origin;
     mat3 lookat;
@@ -31,7 +31,7 @@ struct ThinLenCamera {
           lenRadius(lenRadius),
           focusDistance(focusDistance){};
 
-    Ray GenRay(vec2 co, vec2 u2) const;
+    Ray GenRay(vec2i filmSize, vec2 co, vec2 u2) const;
 
     vec3 origin;
     mat3 lookat;
@@ -44,9 +44,9 @@ struct Camera : public TaggedVariant<PinHoleCamera, ThinLenCamera> {
     using TaggedVariant::TaggedVariant;
     static Camera Create(const Parameters& params, const Scene* scene);
 
-    Ray GenRay(vec2 co, vec2 u2) const {
+    Ray GenRay(vec2i filmSize, vec2 co, vec2 u2) const {
         SampledProfiler _(ProfilePhase::GenerateRay);
-        Ray ray = Dispatch([&](auto&& x) { return x.GenRay(co, u2); });
+        Ray ray = Dispatch([&](auto&& x) { return x.GenRay(filmSize, co, u2); });
         ray.medium = medium.get();
         return ray;
     }

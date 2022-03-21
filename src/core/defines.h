@@ -78,6 +78,7 @@ namespace pine {
 struct Scene;
 struct Ray;
 struct AABB;
+struct Shape;
 struct TriangleMesh;
 struct Interaction;
 struct RNG;

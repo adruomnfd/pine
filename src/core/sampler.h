@@ -12,7 +12,7 @@ namespace pine {
 
 struct UniformSampler {
     static UniformSampler Create(const Parameters& params);
-    UniformSampler(int samplesPerPixel) : samplesPerPixel(samplesPerPixel) {
+    UniformSampler(int samplesPerPixel, int seed = 0) : samplesPerPixel(samplesPerPixel), rng(seed) {
     }
 
     int SamplesPerPixel() const {
@@ -162,8 +162,69 @@ struct SobolSampler {
     int64_t sobolIndex = 0;
 };
 
+struct MltSampler {
+    MltSampler(float sigma, float largeStepProbability, int seed)
+        : rng(seed), sigma(sigma), largeStepProbability(largeStepProbability){};
+    int SamplesPerPixel() const {
+        LOG_FATAL("[MltSampler]SamplesPerPixel() is not implemented");
+        return 0;
+    }
+    void StartPixel(vec2i, int) {
+        LOG_FATAL("[MltSampler]StartPixel() is not implemented");
+    }
+    void StartNextSample() {
+        sampleIndex++;
+        dimension = 0;
+        largeStep = rng.Uniformf() < largeStepProbability;
+    }
+    float Get1D() {
+        EnsureReady(dimension);
+        return X[dimension++].value;
+    }
+    vec2 Get2D() {
+        return {Get1D(), Get1D()};
+    }
+
+    void Accept() {
+        if (largeStep)
+            lastLargeStepIndex = sampleIndex;
+    }
+    void Reject() {
+        for (auto& Xi : X)
+            if (Xi.lastModificationIndex == sampleIndex)
+                Xi.Restore();
+        --sampleIndex;
+    }
+
+  private:
+    void EnsureReady(int dim);
+
+    struct PrimarySample {
+        void Backup() {
+            valueBackup = value;
+            modifyBackup = lastModificationIndex;
+        }
+        void Restore() {
+            value = valueBackup;
+            lastModificationIndex = modifyBackup;
+        }
+
+        float value = 0, valueBackup = 0;
+        int64_t lastModificationIndex = 0;
+        int64_t modifyBackup = 0;
+    };
+
+    RNG rng;
+    const float sigma, largeStepProbability;
+    std::vector<PrimarySample> X;
+    int64_t sampleIndex = 0;
+    int64_t dimension = 0;
+    bool largeStep = true;
+    int64_t lastLargeStepIndex = 0;
+};
+
 struct Sampler : TaggedVariant<UniformSampler, StratifiedSampler, HaltonSampler,
-                               ZeroTwoSequenceSampler, SobolSampler> {
+                               ZeroTwoSequenceSampler, SobolSampler, MltSampler> {
     using TaggedVariant::TaggedVariant;
     static Sampler Create(const Parameters& params);
 

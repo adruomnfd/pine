@@ -118,16 +118,17 @@ struct ProgressReporter {
   private:
     std::string tag, desc, performance;
     Timer ETA, interval;
-    int64_t multiplier, previous;
+    int64_t multiplier = 1, previous = 0;
 
   public:
     int64_t total;
 };
 
 struct ScopedPR {
-    ScopedPR(ProgressReporter& pr, int64_t current, bool lastIter = false)
+    ScopedPR(ProgressReporter& pr, int64_t current, bool lastIter = false, bool active = true)
         : pr(pr), lastIter(lastIter) {
-        pr.Report(current);
+        if (active)
+            pr.Report(current);
     }
     ~ScopedPR() {
         if (lastIter)
@@ -137,6 +138,7 @@ struct ScopedPR {
 
     ProgressReporter& pr;
     bool lastIter;
+    bool active;
 };
 
 }  // namespace pine

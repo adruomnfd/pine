@@ -40,9 +40,10 @@ src/util/fileio.cpp
 src/util/parser.cpp
 src/util/profiler.cpp
 src/util/parameters.cpp
-src/impl/integrators/ao.cpp
-src/impl/integrators/viz.cpp
-src/impl/integrators/path.cpp
+src/impl/integrator/ao.cpp
+src/impl/integrator/viz.cpp
+src/impl/integrator/mlt.cpp
+src/impl/integrator/path.cpp
 src/impl/accel/bvh.cpp
 src/impl/accel/cwbvh.cpp
 ext/stb_image.cpp

@@ -1,4 +1,4 @@
-#include <impl/integrators/path.h>
+#include <impl/integrator/path.h>
 #include <core/scene.h>
 #include <core/color.h>
 #include <util/parameters.h>
@@ -10,11 +10,11 @@ PathIntegrator::PathIntegrator(const Parameters& parameters, const Scene* scene)
     maxDepth = parameters.GetInt("maxDepth", 4);
     clamp = parameters.GetFloat("clamp", FloatMax);
 }
-std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
+
+Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::EstimateLi);
-    Spectrum L(0.0f);
-    Spectrum beta(1.0f);
-    float bsdfPDF;
+    Spectrum L(0.0f), beta(1.0f);
+    float bsdfPdf = 0.0f;
 
     for (int depth = 0; depth < maxDepth; depth++) {
         Interaction it;
@@ -51,17 +51,24 @@ std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
             continue;
         }
 
-        it.n = it.material->BumpNormal(MaterialEvalContext(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d));
-
         MaterialEvalContext mc(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d);
+        it.n = it.material->BumpNormal(mc);
+        mc = MaterialEvalContext(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d);
 
         // Accounting for visible emssive surface
-        Spectrum le = it.material->Le(mc);
-        if (!le.IsBlack()) {
-            if (depth == 0)
+        if (it.material->Is<EmissiveMaterial>()) {
+            Spectrum le = it.material->Le(mc);
+            if (depth == 0) {
                 L += beta * le;
+            } else {
+                float lightPdf = it.shape->Pdf(ray, it);
+                L += beta * le * PowerHeuristic(1, bsdfPdf, 1, lightPdf);
+            }
             break;
         }
+
+        if (depth == maxDepth - 1)
+            break;
 
         // Sampling light
         L += beta * EstimateDirect(ray, it, sampler);
@@ -71,10 +78,18 @@ std::optional<Spectrum> PathIntegrator::Li(Ray ray, Sampler& sampler) {
         mc.u2 = sampler.Get2D();
         if (auto bs = it.material->Sample(mc)) {
             beta *= AbsDot(bs->wo, it.n) * bs->f / bs->pdf;
-            bsdfPDF = bs->pdf;
+            bsdfPdf = bs->pdf;
             ray = it.SpawnRay(bs->wo);
+
+            if (depth > 2) {
+                float terminatePdf = Clamp(1.0f - beta.y(), 0.0f, 1.0f);
+                if (sampler.Get1D() < terminatePdf)
+                    break;
+                else
+                    beta /= 1.0f - terminatePdf;
+            }
         } else {
-            // Break if fail to generate next path
+            // Break if failed to generate next path
             break;
         }
     }

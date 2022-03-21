@@ -37,9 +37,9 @@ struct LayeredMaterial {
     LayeredMaterial(const Parameters& params);
 
     std::optional<BSDFSample> Sample(const MaterialEvalContext& c) const;
-    vec3 F(const MaterialEvalContext& c) const;
+    Spectrum F(const MaterialEvalContext& c) const;
     float PDF(const MaterialEvalContext& c) const;
-    vec3 Le(const MaterialEvalContext&) const {
+    Spectrum Le(const MaterialEvalContext&) const {
         return {};
     }
 
@@ -52,14 +52,17 @@ struct EmissiveMaterial {
     std::optional<BSDFSample> Sample(const MaterialEvalContext&) const {
         return std::nullopt;
     }
-    vec3 F(const MaterialEvalContext&) const {
+    Spectrum F(const MaterialEvalContext&) const {
         return {};
     }
     float PDF(const MaterialEvalContext&) const {
         return {};
     }
-    vec3 Le(const MaterialEvalContext& c) const {
-        return color.EvalVec3(c);
+    Spectrum Le(const MaterialEvalContext& c) const {
+        if (CosTheta(c.wi) > 0.0f)
+            return color.EvalVec3(c);
+        else
+            return vec3(0.0f);
     }
 
     NodeInput color;
@@ -82,7 +85,7 @@ struct Material : public TaggedVariant<LayeredMaterial, EmissiveMaterial> {
         });
     }
 
-    vec3 F(const MaterialEvalContext& c) const {
+    Spectrum F(const MaterialEvalContext& c) const {
         SampledProfiler _(ProfilePhase::MaterialSample);
         return Dispatch([&](auto&& x) { return x.F(c); });
     }
@@ -92,7 +95,7 @@ struct Material : public TaggedVariant<LayeredMaterial, EmissiveMaterial> {
         return Dispatch([&](auto&& x) { return x.PDF(c); });
     }
 
-    vec3 Le(const MaterialEvalContext& c) const {
+    Spectrum Le(const MaterialEvalContext& c) const {
         SampledProfiler _(ProfilePhase::MaterialSample);
 
         return Dispatch([&](auto&& x) { return x.Le(c); });

@@ -1,5 +1,5 @@
 Integrator: Path{
-    maxDepth: 3
+    maxDepth: 10
 
     film{
         outputFileName: result.png
@@ -12,7 +12,7 @@ Integrator: Path{
     accel: BVH
     
     sampler: Halton{
-        samplesPerPixel: 32
+        samplesPerPixel: 128
         randomizeStrategy: fastOwen
     }
 

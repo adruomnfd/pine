@@ -1,4 +1,4 @@
-#include <impl/integrators/ao.h>
+#include <impl/integrator/ao.h>
 #include <core/scene.h>
 #include <core/color.h>
 #include <util/parallel.h>
@@ -6,7 +6,7 @@
 
 namespace pine {
 
-std::optional<Spectrum> AOIntegrator::Li(Ray ray, Sampler& sampler) {
+Spectrum AOIntegrator::Li(Ray ray, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::EstimateLi);
 
     Interaction it;

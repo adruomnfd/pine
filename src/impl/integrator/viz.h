@@ -1,5 +1,5 @@
-#ifndef PINE_IMPL_BVHVIZ_INTEGRATOR_H
-#define PINE_IMPL_BVHVIZ_INTEGRATOR_H
+#ifndef PINE_IMPL_INTEGRATOR_VIZ_H
+#define PINE_IMPL_INTEGRATOR_VIZ_H
 
 #include <core/integrator.h>
 
@@ -9,11 +9,11 @@ class VizIntegrator : public PixelSampleIntegrator {
   public:
     VizIntegrator(const Parameters& parameters, const Scene* scene);
 
-    std::optional<Spectrum> Li(Ray ray, Sampler&) override;
+    Spectrum Li(Ray ray, Sampler&) override;
 
     enum class Type { Bvh, Position, Normal, Texcoord, DpDu, DpDv } type;
 };
 
 }  // namespace pine
 
-#endif  // PINE_IMPL_BVHVIZ_INTEGRATOR_H
+#endif  // PINE_IMPL_INTEGRATOR_VIZ_H

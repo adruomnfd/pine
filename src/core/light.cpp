@@ -8,7 +8,7 @@ namespace pine {
 LightSample PointLight::Sample(vec3 p, vec2) const {
     LightSample ls;
     ls.wo = Normalize(position - p, ls.distance);
-    ls.pdf = Sqr(ls.distance);
+    ls.pdf = 1.0f;
     ls.Le = color;
     return ls;
 }
@@ -26,7 +26,7 @@ LightSample AreaLight::Sample(vec3 p, vec2 u2) const {
     LightSample ls;
     vec3 sampleP = position + (u2[0] - 0.5f) * ex + (u2[1] - 0.5f) * ey;
     ls.wo = Normalize(sampleP - p, ls.distance);
-    ls.pdf = Sqr(ls.distance) / AbsDot(ls.wo, n) / area;
+    ls.pdf = Sqr(ls.distance) / (area * AbsDot(n, -ls.wo));
     ls.Le = color;
     return ls;
 }

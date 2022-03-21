@@ -34,9 +34,15 @@ std::optional<size_t> FirstOf(std::string_view str, const std::vector<char>& cha
     });
 }
 
-void EscapeSpace(std::string_view& raw) {
-    while (std::isspace(raw[0]))
-        raw = raw.substr(1);
+void EscapeSpace(std::string_view& str) {
+    while (std::isspace(str[0])) {
+        str = str.substr(1);
+        if (str.substr(0, 2) == "//") {
+            while (str[0] != '\n' && str[0] != '\r')
+                str = str.substr(1);
+            str = str.substr(1);
+        }
+    }
 }
 
 Parameters ParseBlock(std::string_view& block, int depth = 0) {

@@ -3,7 +3,7 @@
 
 namespace pine {
 
-LightSample UniformLightSampler::Sample(vec3 p, float ul, vec2 ud) {
+LightSample UniformLightSampler::Sample(vec3 p, float ul, vec2 ud) const{
     if (lights.size() == 0)
         return {};
     uint32_t index = min(size_t(ul * lights.size()), lights.size() - 1);

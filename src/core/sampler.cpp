@@ -219,6 +219,28 @@ float SobolSampler::SampleDimension(int dim) const {
     }
 }
 
+void MltSampler::EnsureReady(int dim) {
+    if (dim >= (int)X.size())
+        X.resize(dim + 1);
+    PrimarySample& Xi = X[dim];
+
+    if (Xi.lastModificationIndex < lastLargeStepIndex) {
+        Xi.value = rng.Uniformf();
+        Xi.lastModificationIndex = lastLargeStepIndex;
+    }
+
+    Xi.Backup();
+    if (largeStep) {
+        Xi.value = rng.Uniformf();
+    } else {
+        int64_t nSmall = sampleIndex - Xi.lastModificationIndex;
+        float normalSample = std::sqrt(2.0f) * ErfInv(2 * rng.Uniformf() - 1);
+        float effSigma = sigma * std::sqrt((float)nSmall);
+        Xi.value = Fract(Xi.value + normalSample * effSigma);
+    }
+    Xi.lastModificationIndex = sampleIndex;
+}
+
 UniformSampler UniformSampler::Create(const Parameters& params) {
     return UniformSampler(params.GetInt("samplesPerPixel"));
 }

@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <mutex>
 #include <cmath>
 
 namespace pine {
@@ -18,6 +19,10 @@ double Timer::Reset() {
 }
 
 void ProgressReporter::Report(int64_t current) {
+    static std::mutex mutex;
+    if (current < previous)
+        return;
+    std::lock_guard<std::mutex> lk(mutex);
     int nDigit = std::max((int)log10(total) + 1, 1);
     if (current == 0) {
         ETA.Reset();

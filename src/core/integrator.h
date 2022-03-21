@@ -49,7 +49,7 @@ class PixelSampleIntegrator : public RayIntegrator {
     using RayIntegrator::RayIntegrator;
 
     virtual void Render();
-    virtual std::optional<Spectrum> Li(Ray ray, Sampler& sampler) = 0;
+    virtual Spectrum Li(Ray ray, Sampler& sampler) = 0;
 };
 
 class SinglePassIntegrator : public RayIntegrator {
@@ -57,7 +57,7 @@ class SinglePassIntegrator : public RayIntegrator {
     using RayIntegrator::RayIntegrator;
 
     virtual void Render();
-    virtual std::optional<Spectrum> Li(Ray ray, Sampler& sampler) = 0;
+    virtual Spectrum Li(Ray ray, Sampler& sampler) = 0;
 };
 
 }  // namespace pine

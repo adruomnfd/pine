@@ -263,6 +263,11 @@ struct TaggedVariant {
     }
 
     template <typename T>
+    bool Is() const{
+        return tag == Index<T>();
+    }
+
+    template <typename T>
     T& Be() {
         CHECK(IsValid());
         return value.template Be<T>();

@@ -97,7 +97,8 @@ struct Interaction {
     vec2 uv;
     vec3 dpdu, dpdv;
 
-    const Material* material;
+    const Material* material = nullptr;
+    const Shape* shape = nullptr;
     MediumInterface<const Medium*> mediumInterface;
     PhaseFunction phaseFunction;
     bool isMediumInteraction = false;
@@ -245,6 +246,9 @@ struct Plane {
     bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
+    float Area() const {
+        return FloatMax;
+    }
 
     vec3 position;
     vec3 n;
@@ -259,6 +263,9 @@ struct Sphere {
     bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
+    float Area() const {
+        return 4 * Pi * r * r;
+    }
 
     PINE_ARCHIVE(c, r)
 
@@ -275,6 +282,9 @@ struct Cylinder {
     bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
+    float Area() const {
+        return height * Pi * 2 * r;
+    }
 
     vec3 pos;
     float r;
@@ -294,6 +304,9 @@ struct Disk {
     bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
+    float Area() const {
+        return Pi * r * r;
+    }
 
     vec3 position;
     vec3 n;
@@ -309,6 +322,9 @@ struct Line {
     bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
+    float Area() const {
+        return 0;
+    }
 
     vec3 p0, p1;
     float thickness;
@@ -393,6 +409,9 @@ struct Triangle {
         dpdu = v1 - v0;
         dpdv = v2 - v0;
     }
+    float Area() const {
+        return Length(Cross(v1 - v0, v2 - v0)) / 2;
+    }
 
     PINE_ARCHIVE(v0, v1, v2)
 
@@ -413,6 +432,9 @@ struct Rect {
     bool Hit(const Ray& ray) const;
     bool Intersect(Ray& ray, Interaction& it) const;
     AABB GetAABB() const;
+    float Area() const {
+        return lx * ly;
+    }
 
     vec3 position, ex, ey, n;
     float lx, ly;
@@ -461,6 +483,12 @@ struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line
     }
     const AABB& GetAABB() const {
         return aabb;
+    }
+    float Area() const {
+        return Dispatch([&](auto&& x) { return x.Area(); });
+    }
+    float Pdf(const Ray& ray, const Interaction& it) const{
+        return Sqr(ray.tmax) / (AbsDot(-ray.d, it.n) * Area());
     }
 
     AABB aabb;

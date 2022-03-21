@@ -30,11 +30,14 @@ void Film::WriteToDisk(std::string filename) const {
     SaveImage(filename, size, 4, (float*)&rgba[0]);
 }
 
-void Film::CopyToRGBArray() {
+void Film::CopyToRGBArray(float multiplier, bool cumulative) {
     for (int i = 0; i < size.x * size.y; i++) {
-        float invWeight = 1.0f / (float)pixels[i].weight;
-        for (int c = 0; c < 4; c++)
-            rgba[i][c] = float(pixels[i].rgba[c]) * invWeight;
+        float weight = multiplier / (float)pixels[i].weight;
+        if (cumulative)
+            weight *= pixels[i].nsamples;
+        for (int c = 0; c < 3; c++)
+            rgba[i][c] = float(pixels[i].rgb[c]) * weight;
+        rgba[i][3] = 1.0f;
     }
 }
 void Film::ApplyToneMapping() {

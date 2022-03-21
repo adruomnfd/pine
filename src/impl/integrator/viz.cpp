@@ -1,4 +1,4 @@
-#include <impl/integrators/viz.h>
+#include <impl/integrator/viz.h>
 #include <core/color.h>
 
 namespace pine {
@@ -20,12 +20,12 @@ VizIntegrator::VizIntegrator(const Parameters& parameters, const Scene* scene)
     }
 };
 
-std::optional<Spectrum> VizIntegrator::Li(Ray ray, Sampler&) {
+Spectrum VizIntegrator::Li(Ray ray, Sampler&) {
     SampledProfiler _(ProfilePhase::EstimateLi);
     Interaction it;
 
     if (!Intersect(ray, it) && type != Type::Bvh)
-        return std::nullopt;
+        return Spectrum(0.0f);
 
     switch (type) {
     case Type::Bvh: return ColorMap(it.bvh / 200.0f);

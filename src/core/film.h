@@ -13,8 +13,9 @@
 namespace pine {
 
 struct Pixel {
-    AtomicFloat rgba[4];
+    AtomicFloat rgb[3];
     AtomicFloat weight;
+    std::atomic<int> nsamples{0};
 };
 
 struct Film {
@@ -35,11 +36,11 @@ struct Film {
             for (int x = p0.x; x <= p1.x; x++) {
                 float weight = GetFilterValue(vec2(x, y) - pFilm);
                 Pixel& pixel = GetPixel(vec2i(x, y));
-                pixel.rgba[0].Add(L[0] * weight);
-                pixel.rgba[1].Add(L[1] * weight);
-                pixel.rgba[2].Add(L[2] * weight);
-                pixel.rgba[3].Add(weight);
+                pixel.rgb[0].Add(L[0] * weight);
+                pixel.rgb[1].Add(L[1] * weight);
+                pixel.rgb[2].Add(L[2] * weight);
                 pixel.weight.Add(weight);
+                ++pixel.nsamples;
             }
     }
 
@@ -52,16 +53,15 @@ struct Film {
     }
     void Clear() {
         for (int i = 0; i < size.x * size.y; i++) {
-            pixels[i].rgba[0] = 0.0f;
-            pixels[i].rgba[1] = 0.0f;
-            pixels[i].rgba[2] = 0.0f;
-            pixels[i].rgba[3] = 0.0f;
+            pixels[i].rgb[0] = 0.0f;
+            pixels[i].rgb[1] = 0.0f;
+            pixels[i].rgb[2] = 0.0f;
             pixels[i].weight = 0.0f;
             rgba[i] = {};
         }
     }
-    void Finalize() {
-        CopyToRGBArray();
+    void Finalize(float multiplier = 1.0f, bool cumulative = false) {
+        CopyToRGBArray(multiplier, cumulative);
         ApplyToneMapping();
         ApplyGammaCorrection();
         WriteToDisk(outputFileName);
@@ -73,7 +73,7 @@ struct Film {
         vec2i pi = filterTableWidth * Min(Abs(p) / filter.Radius(), vec2(OneMinusEpsilon));
         return filterTable[pi.y * filterTableWidth + pi.x];
     }
-    void CopyToRGBArray();
+    void CopyToRGBArray(float multiplier, bool cumulative);
     void ApplyToneMapping();
     void ApplyGammaCorrection();
 
