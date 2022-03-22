@@ -163,8 +163,8 @@ HomogeneousMedium HomogeneousMedium::Create(const Parameters& params) {
 GridMedium GridMedium::Create(const Parameters& params) {
     auto [density, size] = LoadVolume(params.GetString("file"));
 
-    LOG("[Medium]Grid size: &", size);
-    LOG("[Medium]Memory usage: & MB", sizeof(density[0]) * density.size() / 1000000.0);
+    LOG("[GridMedium]Grid size: &", size);
+    LOG("[GridMedium]Memory usage: & MB", sizeof(density[0]) * density.size() / 1000000.0);
     return GridMedium(params.GetVec3("sigma_a"), params.GetVec3("sigma_s"),
                       PhaseFunction(params.GetFloat("g", 0.0f)), size, params.GetVec3("position"),
                       params.GetFloat("scale", 1.0f), std::move(density),
