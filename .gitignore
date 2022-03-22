@@ -1,5 +1,5 @@
 build
 local
 .vscode
-./*.bmp
-./*.png
+/*.bmp
+/*.png
