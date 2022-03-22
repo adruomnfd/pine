@@ -2,7 +2,7 @@ Integrator: Path{
     maxDepth: 6
 
     film{
-        outputFileName: result.png
+        outputFileName: nspheres.png
         size: 1280 360
         filter: LanczosSinc{
             radius: 0.5

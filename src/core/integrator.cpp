@@ -54,54 +54,59 @@ bool RayIntegrator::Intersect(Ray& ray, Interaction& it) {
 
     return accel->Intersect(ray, it);
 }
-bool RayIntegrator::IntersectTr(Ray ray, Spectrum& tr, Sampler& sampler) {
+Spectrum RayIntegrator::IntersectTr(Ray ray, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::IntersectTr);
 
     vec3 p2 = ray(ray.tmax);
     Interaction it;
-    tr = Spectrum(1.0f);
+    Spectrum tr = Spectrum(1.0f);
 
     while (true) {
         bool hitSurface = Intersect(ray, it);
         if (ray.medium)
             tr *= ray.medium->Tr(ray, sampler);
+        if (hitSurface && it.material)
+            return Spectrum(0.0f);
         if (!hitSurface)
-            return false;
-        if (it.material)
-            return true;
+            break;
         ray = it.SpawnRayTo(p2);
     }
+
+    return tr;
 }
 Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler) {
     SampledProfiler _(ProfilePhase::EstimateDirect);
 
     LightSample ls = lightSampler.Sample(it.p, sampler.Get1D(), sampler.Get2D());
 
-    Spectrum tr = Spectrum(1.0f);
-    if (IntersectTr(it.SpawnRay(ls.wo, ls.distance), tr, sampler))
+    Spectrum tr = IntersectTr(it.SpawnRay(ls.wo, ls.distance), sampler);
+    if (tr.IsBlack())
         return Spectrum(0.0f);
 
+    Spectrum f;
+    float scatteringPdf;
     if (it.IsSurfaceInteraction()) {
         MaterialEvalContext mc(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d, ls.wo);
-        Spectrum f = it.material->F(mc);
-        if (ls.isDelta) {
-            return tr * f * AbsDot(ls.wo, it.n) * ls.Le / ls.pdf;
-        } else {
-            float bsdfPdf = it.material->PDF(mc);
-            float w = PowerHeuristic(1, ls.pdf, 1, bsdfPdf);
-            return tr * f * AbsDot(ls.wo, it.n) * w * ls.Le / ls.pdf;
-        }
+        f = it.material->F(mc) * AbsDot(ls.wo, it.n);
+        scatteringPdf = it.material->PDF(mc);
     } else {
-        return tr * it.phaseFunction.F(-ray.d, ls.wo) * ls.Le / ls.pdf;
+        float p = it.phaseFunction->P(-ray.d, ls.wo);
+        f = Spectrum(p);
+        scatteringPdf = p;
     }
+    float w = PowerHeuristic(1, ls.pdf, 1, scatteringPdf);
+
+    if (ls.isDelta)
+        return tr * f * ls.Le / ls.pdf;
+    else
+        return tr * f * w * ls.Le / ls.pdf;
 }
 
 void PixelSampleIntegrator::Render() {
     Profiler _("Render");
     film.Clear();
 
-    ProgressReporter pr("Rendering", "Samples", "Samples", samplesPerPixel,
-                        filmSize.x * filmSize.y);
+    ProgressReporter pr("Rendering", "Samples", "Samples", samplesPerPixel, Area(filmSize));
 
     for (int sampleIndex = 0; sampleIndex < samplesPerPixel; sampleIndex++) {
         ScopedPR(pr, sampleIndex, sampleIndex + 1 == samplesPerPixel);
@@ -124,7 +129,7 @@ void SinglePassIntegrator::Render() {
     Profiler _("Render");
     film.Clear();
 
-    int total = filmSize.x * filmSize.y;
+    int total = Area(filmSize);
     int groupSize = max(total / 100, 1);
     int nGroups = (total + groupSize - 1) / groupSize;
 

@@ -45,7 +45,7 @@ void ParallelFor(int size, F&& f) {
 
 template <typename F, typename... Args>
 void ParallelFor(vec2i size, F&& f) {
-    ParallelForImpl(size.x * size.y, [&f, w = size.x](int, int index) {
+    ParallelForImpl(Area(size), [&f, w = size.x](int, int index) {
         f({index % w, index / w});
     });
 }
@@ -57,7 +57,7 @@ void ThreadIdParallelFor(int size, F&& f) {
 
 template <typename F, typename... Args>
 void ThreadIdParallelFor(vec2i size, F&& f) {
-    ParallelForImpl(size.x * size.y, [&f, w = size.x](int threadId, int index) {
+    ParallelForImpl(Area(size), [&f, w = size.x](int threadId, int index) {
         f(threadId, {index % w, index / w});
     });
 }

@@ -101,7 +101,7 @@ constexpr size_t NumFieldsImpl(std::index_sequence<Is...>) {
     else
         return NumFieldsImpl<T>(std::make_index_sequence<sizeof...(Is) - 1>());
 }
-template <typename Ty, typename = typename std::enable_if_t<std::is_pod<std::decay_t<Ty>>::value>>
+template <typename Ty>
 constexpr size_t NumFields() {
     using T = std::decay_t<Ty>;
     return NumFieldsImpl<T>(std::make_index_sequence<sizeof(T) / sizeof(char)>());
@@ -165,8 +165,7 @@ constexpr auto&& Get(T&& x) {
     return std::get<I>(TieAsTuple(std::forward<T>(x)));
 }
 
-template <typename T, typename F, int Index = 0,
-          typename = typename std::enable_if_t<std::is_pod<std::decay_t<T>>::value>>
+template <typename T, typename F, int Index = 0>
 constexpr void ForEachField(T&& x, F&& f) {
     if constexpr (Index != NumFields<T>()) {
         f(Get<Index>(x));

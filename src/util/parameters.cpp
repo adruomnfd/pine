@@ -26,19 +26,18 @@ Parameters& Parameters::AddSubset(std::string name) {
 }
 
 Parameters& Parameters::operator[](std::string name) {
-    static Parameters fallback;
     auto& ss = subset[name];
 
     if (HasValue(name) && ss.size() == 0)
         AddSubset(name).Set("@", GetString(name));
 
     if (ss.size() == 0) {
-        LOG_WARNING("[Parameters][GetSubset]No subset named \"&\"", name);
-        return fallback;
+        ss.resize(1);
+        return ss[0];
     }
     if (ss.size() != 1) {
         LOG_WARNING("[Parameters][GetSubset]Find & subset with name \"&\", returns the last one",
-                    subset[name].size(), name);
+                    ss.size(), name);
     }
     return subset[name].back();
 }
@@ -54,10 +53,10 @@ bool Parameters::HasSubset(const std::string& name) const {
     return subset.find(name) != subset.end();
 }
 
-bool Parameters::GetBool(const std::string& name, bool fallback) const {
+std::optional<bool> Parameters::TryGetBool(const std::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
+        return std::nullopt;
     std::string str = iter->second;
     for (size_t i = 0; i < str.size(); i++)
         if ('A' <= str[i] && str[i] <= 'Z')
@@ -70,15 +69,11 @@ bool Parameters::GetBool(const std::string& name, bool fallback) const {
     else
         return (bool)std::stoi(str);
 }
-int Parameters::GetInt(const std::string& name, int fallback) const {
+std::optional<int> Parameters::TryGetInt(const std::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
+        return std::nullopt;
     std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetInt]& do not have a value", name.c_str());
-        return fallback;
-    }
 
     int val = 0;
     try {
@@ -88,15 +83,11 @@ int Parameters::GetInt(const std::string& name, int fallback) const {
     }
     return val;
 }
-float Parameters::GetFloat(const std::string& name, float fallback) const {
+std::optional<float> Parameters::TryGetFloat(const std::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
+        return std::nullopt;
     std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetFloat]& do not have a value", name.c_str());
-        return fallback;
-    }
 
     float val = 0;
     try {
@@ -107,98 +98,74 @@ float Parameters::GetFloat(const std::string& name, float fallback) const {
     return val;
 }
 
-vec2i Parameters::GetVec2i(const std::string& name, vec2i fallback) const {
+std::optional<vec2i> Parameters::TryGetVec2i(const std::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
+        return std::nullopt;
     std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec2i]& do not have a value", name.c_str());
-        return fallback;
-    }
 
     vec2i v;
     StrToInts(str, &v[0], 2);
     return v;
 }
-vec3i Parameters::GetVec3i(const std::string& name, vec3i fallback) const {
+std::optional<vec3i> Parameters::TryGetVec3i(const std::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
+        return std::nullopt;
     std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec3i]& do not have a value", name.c_str());
-        return fallback;
-    }
 
     vec3i v;
     StrToInts(str, &v[0], 3);
     return v;
 }
-vec4i Parameters::GetVec4i(const std::string& name, vec4i fallback) const {
+std::optional<vec4i> Parameters::TryGetVec4i(const std::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
+        return std::nullopt;
     std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec4i]& do not have a value", name.c_str());
-        return fallback;
-    }
 
     vec4i v;
     StrToInts(str, &v[0], 4);
     return v;
 }
 
-vec2 Parameters::GetVec2(const std::string& name, vec2 fallback) const {
+std::optional<vec2> Parameters::TryGetVec2(const std::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
+        return std::nullopt;
     std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec2]& do not have a value", name.c_str());
-        return fallback;
-    }
 
     vec2 v;
     StrToFloats(str, &v[0], 2);
     return v;
 }
-vec3 Parameters::GetVec3(const std::string& name, vec3 fallback) const {
+std::optional<vec3> Parameters::TryGetVec3(const std::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
+        return std::nullopt;
     std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec3]& do not have a value", name.c_str());
-        return fallback;
-    }
 
     vec3 v;
     StrToFloats(str, &v[0], 3);
     return v;
 }
-vec4 Parameters::GetVec4(const std::string& name, vec4 fallback) const {
+std::optional<vec4> Parameters::TryGetVec4(const std::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
+        return std::nullopt;
     std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec4]& do not have a value", name.c_str());
-        return fallback;
-    }
 
     vec4 v;
     StrToFloats(str, &v[0], 4);
     return v;
 }
 
-std::string Parameters::GetString(const std::string& name, const std::string& fallback) const {
+std::optional<std::string> Parameters::TryGetString(const std::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end()) {
-        if (name == "type" && fallback == "")
+        if (name == "type" && HasValue("@"))
             return GetString("@");
-        return fallback;
+        return std::nullopt;
     }
     std::string str = iter->second;
 

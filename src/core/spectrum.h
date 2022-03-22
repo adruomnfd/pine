@@ -48,6 +48,8 @@ class RGBSpectrum;
 template <int nSpectrumSamples>
 class CoefficientSpectrum {
   public:
+    static constexpr int nSamples = nSpectrumSamples;
+
     CoefficientSpectrum(float v = 0.0f) {
         for (int i = 0; i < nSpectrumSamples; i++)
             c[i] = v;
@@ -114,6 +116,16 @@ class CoefficientSpectrum {
     friend CoefficientSpectrum Lerp(float t, const CoefficientSpectrum& s1,
                                     const CoefficientSpectrum& s2) {
         return (1 - t) * s1 + t * s2;
+    }
+
+    float Sum() const {
+        float s = 0;
+        for (int i = 0; i < nSpectrumSamples; i++)
+            s += c[i];
+        return s;
+    }
+    float Average() const {
+        return Sum() / nSpectrumSamples;
     }
 
     CoefficientSpectrum operator-() const {

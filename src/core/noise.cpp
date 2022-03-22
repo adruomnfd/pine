@@ -51,7 +51,7 @@ vec3 Turbulence3D(vec3 np, float frequency, int octaves) {
 }
 
 std::vector<vec2> GenerateWhiteNoise(vec2i size, int seed) {
-    std::vector<vec2> noise(size.x * size.y);
+    std::vector<vec2> noise(Area(size));
     RNG sampler(seed);
     for (int y = 0; y < size.y; y++)
         for (int x = 0; x < size.x; x++)
@@ -60,7 +60,7 @@ std::vector<vec2> GenerateWhiteNoise(vec2i size, int seed) {
     return noise;
 }
 std::vector<vec2> GenerateBlueNoise(vec2i size, int seed) {
-    std::vector<vec2> noise(size.x * size.y);
+    std::vector<vec2> noise(Area(size));
     RNG sampler(seed);
     for (int y = 0; y < size.y; y++)
         for (int x = 0; x < size.x; x++)
@@ -70,7 +70,7 @@ std::vector<vec2> GenerateBlueNoise(vec2i size, int seed) {
     const float sigma_i2 = 2.1f * 2.1f;
     const float sigma_s2 = 1.0f * 1.0f;
     // const int d = 2;
-    const int numIterations = size.x * size.y * 2;
+    const int numIterations = Area(size) * 2;
 
     auto Energy = [&](vec2i pi) {
         float sum = 0.0f;

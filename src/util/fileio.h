@@ -20,7 +20,16 @@ struct ScopedFile {
     bool Success() const {
         return file.is_open() && file.good();
     }
-
+    template <typename T>
+    T Read() {
+        T val;
+        Read(&val, sizeof(T));
+        return val;
+    }
+    template <typename T>
+    void Write(const T& val) {
+        Write(&val, sizeof(T));
+    }
     mutable std::fstream file;
     mutable size_t size = (size_t)-1;
 };
@@ -40,6 +49,10 @@ void SaveImage(std::string filename, vec2i size, int nchannel, uint8_t* data);
 vec3u8* ReadLDRImage(std::string filename, vec2i& size);
 
 TriangleMesh LoadObj(std::string filename);
+std::pair<std::vector<float>, vec3i> LoadVolume(std::string filename);
+void CompressVolume(std::string filename, const std::vector<float>& densityf, vec3i size);
+std::pair<std::vector<float>, vec3i> LoadCompressedVolume(std::string filename);
+
 Parameters LoadScene(std::string filename, Scene* scene);
 
 template <typename T>

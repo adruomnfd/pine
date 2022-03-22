@@ -46,8 +46,8 @@ src/impl/integrator/mlt.cpp
 src/impl/integrator/path.cpp
 src/impl/accel/bvh.cpp
 src/impl/accel/cwbvh.cpp
-ext/stb_image.cpp
-ext/stb_image_write.cpp
+ext/stb_image/stb_image.cpp
+ext/stb_image/stb_image_write.cpp
 )
 
 set_target_properties(pinelib PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -61,6 +61,10 @@ target_link_libraries(pine pinelib)
 #Image Tool
 add_executable(imgtool src/cli/imgtool.cpp)
 target_link_libraries(imgtool pinelib)
+
+#Volume Tool
+add_executable(voltool src/cli/voltool.cpp)
+target_link_libraries(voltool pinelib)
 
 #Pine Test
 add_executable(pine_test test/test_main.cpp)

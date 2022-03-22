@@ -29,17 +29,33 @@ LightSample AreaLight::Sample(vec3 p, vec2 u) const {
     return shape->Sample(p, u);
 }
 
-Atmosphere::Atmosphere(vec3 sundir, vec3 suncol, vec2i size, bool interpolate)
+LightSample Sky::Sample(vec3, vec2) const {
+    LightSample ls;
+    ls.distance = 1e+10f;
+    ls.isDelta = true;
+    ls.wo = sunDirection;
+    ls.Le = SkyColor(ls.wo, sunDirection, sunColor.ToRGB());
+    ls.pdf = 1.0f;
+    return ls;
+}
+Spectrum Sky::Color(vec3 wo) const {
+    return SkyColor(wo, sunDirection, sunColor.ToRGB());
+}
+float Sky::Pdf(vec3) const {
+    return 0.0f;
+}
+
+Atmosphere::Atmosphere(vec3 sundir, Spectrum suncol, vec2i size, bool interpolate)
     : sunDirection(Normalize(sundir)), sunColor(suncol), size(size), interpolate(interpolate) {
     colors.resize(Area(size));
     for (int y = 0; y < size.y; y++) {
         for (int x = 0; x < size.x; x++) {
             vec3 d = UniformSphereMampling(vec2((float)x / size.x, (float)y / size.y));
-            vec3 color = AtmosphereColor(d, sunDirection, sunColor).ToRGB();
+            vec3 color = AtmosphereColor(d, sunDirection, sunColor.ToRGB()).ToRGB();
             colors[y * size.x + x] = color.HasNaN() ? vec3(0.0f) : color;
         }
     }
-    sunSampledColor = AtmosphereColor(sunDirection, sunDirection, sunColor);
+    sunSampledColor = AtmosphereColor(sunDirection, sunDirection, sunColor.ToRGB());
 };
 
 LightSample Atmosphere::Sample(vec3, vec2 u) const {
@@ -97,6 +113,9 @@ DirectionalLight DirectionalLight::Create(const Parameters& params) {
     return DirectionalLight(params.GetVec3("direction"), params.GetVec3("color"));
 }
 
+Sky Sky::Create(const Parameters& params) {
+    return Sky(params.GetVec3("sunDirection"), params.GetVec3("sunColor"));
+}
 Atmosphere Atmosphere::Create(const Parameters& params) {
     return Atmosphere(params.GetVec3("sunDirection", vec3(2, 6, 3)),
                       params.GetVec3("sunColor", vec3(1.0f)), params.GetVec2i("size", vec2i(512)),
@@ -108,6 +127,7 @@ EnvironmentLight EnvironmentLight::Create(const Parameters& lightParams) {
     std::string type = params.GetString("type");
     SWITCH(type) {
         CASE("Atmosphere") return Atmosphere(Atmosphere::Create(params));
+        CASE("Sky") return Sky(Sky::Create(params));
         DEFAULT {
             LOG_WARNING("[EnvironmentLight][Create]Unknown type \"&\"", type);
             return Atmosphere(Atmosphere::Create(params));

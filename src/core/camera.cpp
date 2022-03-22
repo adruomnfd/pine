@@ -9,7 +9,7 @@ PinHoleCamera PinHoleCamera::Create(const Parameters& params) {
     return PinHoleCamera(params.GetVec3("from"), params.GetVec3("to"), params.GetFloat("fov"));
 }
 
-Ray PinHoleCamera::GenRay(vec2i filmSize,vec2 co,  vec2) const {
+Ray PinHoleCamera::GenRay(vec2i filmSize, vec2 co, vec2) const {
     Ray ray;
     co = (co - filmSize / 2) / filmSize.y;
     ray.o = origin;
@@ -22,7 +22,7 @@ ThinLenCamera ThinLenCamera::Create(const Parameters& params) {
                          params.GetFloat("lenRadius"), params.GetFloat("focusDistance"));
 }
 
-Ray ThinLenCamera::GenRay(vec2i filmSize,vec2 co,  vec2 u2) const {
+Ray ThinLenCamera::GenRay(vec2i filmSize, vec2 co, vec2 u2) const {
     Ray ray;
     co = (co - filmSize / 2) / filmSize.y;
     vec3 dir = Normalize(vec3(co, fovT));
@@ -46,8 +46,12 @@ Camera Camera::Create(const Parameters& params, const Scene* scene) {
         }
     }
 
-    if (auto medium = Find(scene->mediums, params.GetString("medium")))
+    if (auto name = params.TryGetString("medium")) {
+        auto medium = Find(scene->mediums, *name);
+        if (!medium)
+            LOG_WARNING("[Camera][Create]Medium \"&\" is not found", name);
         camera.medium = *medium;
+    }
     if (camera.medium)
         LOG_VERBOSE("[Camera]In medium");
     return camera;

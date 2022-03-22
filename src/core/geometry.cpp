@@ -373,13 +373,30 @@ Shape Shape::Create(const Parameters& params, const Scene* scene) {
     }
 
     shape.aabb = shape.Dispatch([](auto&& x) { return x.GetAABB(); });
-    if (auto material = Find(scene->materials, params.GetString("material")))
+    if (auto name = params.TryGetString("material")) {
+        auto material = Find(scene->materials, *name);
+        if (!material)
+            LOG_WARNING("[Shape][Create]Material \"&\" is not found", name);
         shape.material = *material;
-    if (auto mediumInside =
-            Find(scene->mediums, params.GetString("mediumInside", params.GetString("medium"))))
-        shape.mediumInterface.inside = *mediumInside;
-    if (auto mediumOutside = Find(scene->mediums, params.GetString("mediumOutside")))
-        shape.mediumInterface.outside = *mediumOutside;
+    }
+    if (auto name = params.TryGetString("medium")) {
+        auto medium = Find(scene->mediums, *name);
+        if (!medium)
+            LOG_WARNING("[Shape][Create]Medium \"&\" is not found", name);
+        shape.mediumInterface.inside = *medium;
+    }
+    if (auto name = params.TryGetString("mediumInside")) {
+        auto medium = Find(scene->mediums, *name);
+        if (!medium)
+            LOG_WARNING("[Shape][Create]Medium \"&\" is not found", name);
+        shape.mediumInterface.inside = *medium;
+    }
+    if (auto name = params.TryGetString("mediumOutside")) {
+        auto medium = Find(scene->mediums, *name);
+        if (!medium)
+            LOG_WARNING("[Shape][Create]Medium \"&\" is not found", name);
+        shape.mediumInterface.outside = *medium;
+    }
     return shape;
 }
 }  // namespace pine

@@ -22,23 +22,22 @@ Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
 
         // Sample medium scatter event
         Interaction mi;
-        MediumSample ms;
-        if (ray.medium) {
-            ms = ray.medium->Sample(ray, mi, sampler);
-            beta *= ms.tr;
-        }
+        if (ray.medium)
+            beta *= ray.medium->Sample(ray, mi, sampler);
 
         // If medium scatter event happens
         if (mi.IsMediumInteraction()) {
+            if (depth == maxDepth - 1)
+                break;
             L += beta * EstimateDirect(ray, mi, sampler);
-            ray = mi.SpawnRay(ms.wo);
+            vec3 wo;
+            bsdfPdf = mi.phaseFunction->Sample(-ray.d, wo, sampler.Get2D());
+            ray = mi.SpawnRay(wo);
             continue;
         }
 
         // If no medium scatter event happens and ray does not intersect with surface
-        if (!mi.IsMediumInteraction() && !foundIntersection) {
-            if (depth == 0 && !scene->envLight)
-                return Spectrum(0.0f);
+        if (!foundIntersection) {
             if (scene->envLight) {
                 Spectrum le = scene->envLight->Color(ray.d);
                 if (depth == 0) {
@@ -84,16 +83,18 @@ Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
         mc.u1 = sampler.Get1D();
         mc.u2 = sampler.Get2D();
         if (auto bs = it.material->Sample(mc)) {
+            if (bs->f.IsBlack() || bs->pdf == 0.0f)
+                break;
             beta *= AbsDot(bs->wo, it.n) * bs->f / bs->pdf;
             bsdfPdf = bs->pdf;
             ray = it.SpawnRay(bs->wo);
 
             if (depth > 2) {
-                float terminatePdf = Clamp(1.0f - beta.y(), 0.0f, 1.0f);
-                if (sampler.Get1D() < terminatePdf)
+                float q = Clamp(1.0f - beta.y(), 0.05f, 1.0f);
+                if (sampler.Get1D() < q)
                     break;
                 else
-                    beta /= 1.0f - terminatePdf;
+                    beta /= 1.0f - q;
             }
         } else {
             // Break if failed to generate next path

@@ -20,7 +20,7 @@ vec3 NodeInput::EvalVec3(const NodeEvalContext& c) const {
 nodes::Texture::Texture(NodeInput texcoord, std::string filename) : texcoord(texcoord) {
     LOG_VERBOSE("[Texture]Loading \"&\"", filename);
     std::unique_ptr<vec3u8[]> ptr(ReadLDRImage(filename, size));
-    texels.assign(ptr.get(), ptr.get() + size.x * size.y);
+    texels.assign(ptr.get(), ptr.get() + Area(size));
 }
 
 vec3 nodes::Texture::EvalVec3(const NodeEvalContext& c) const {

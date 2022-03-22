@@ -252,7 +252,7 @@ StratifiedSampler StratifiedSampler::Create(const Parameters& params) {
 
 HaltonSampler HaltonSampler::Create(const Parameters& params) {
     RandomizeStrategy randomizeStrategy = RandomizeStrategy::PermuteDigits;
-    SWITCH(params.GetString("randomizeStrategy")) {
+    SWITCH(params.GetString("randomizeStrategy", "permutateDigits")) {
         CASE("none") randomizeStrategy = RandomizeStrategy::None;
         CASE("permutateDigits") randomizeStrategy = RandomizeStrategy::PermuteDigits;
     }
@@ -267,7 +267,7 @@ ZeroTwoSequenceSampler ZeroTwoSequenceSampler::Create(const Parameters& params) 
 
 SobolSampler SobolSampler::Create(const Parameters& params) {
     RandomizeStrategy randomizeStrategy = RandomizeStrategy::BinaryPermutate;
-    SWITCH(params.GetString("randomizeStrategy")) {
+    SWITCH(params.GetString("randomizeStrategy", "fastOwen")) {
         CASE("none") randomizeStrategy = RandomizeStrategy::None;
         CASE("binaryPermutate") randomizeStrategy = RandomizeStrategy::BinaryPermutate;
         CASE("Owen") randomizeStrategy = RandomizeStrategy::Owen;

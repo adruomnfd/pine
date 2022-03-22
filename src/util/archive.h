@@ -31,7 +31,7 @@ struct ArchiveReader {
     ArchiveReader(BufferType& data) : data(data){};
 
     template <typename T>
-    void Add(T& value) {
+    void Add(T&& value) {
         size_t size = sizeof(value);
         memcpy(&value, data.data() + offset, size);
         offset += size;
@@ -47,23 +47,30 @@ class ArchiverBase {
     ArchiverBase() = default;
     ArchiverBase(BufferType data) : data(std::move(data)){};
 
+    template <typename T>
+    T Unarchive() {
+        T object;
+        ArchiveImpl(object);
+        return object;
+    }
+
     template <typename T, typename... Ts>
-    const BufferType& Archive(T& first, Ts&... rest) {
-        ArchiveImpl(first);
+    const BufferType& Archive(T&& first, Ts&&... rest) {
+        ArchiveImpl(std::forward<T>(first));
         if constexpr (sizeof...(rest) != 0)
-            Archive(rest...);
+            Archive(std::forward<Ts>(rest)...);
         return data;
     }
 
     template <typename Ty>
-    void ArchiveImpl(Ty& object) {
+    void ArchiveImpl(Ty&& object) {
         using T = std::decay_t<Ty>;
 
         if constexpr (std::is_trivial<T>::value) {
-            strategy.Add(object);
+            strategy.Add(std::forward<Ty>(object));
 
         } else if constexpr (IsMap<T>::value) {
-            strategy.Add(object);
+            strategy.Add(std::forward<Ty>(object));
             if constexpr (RenewPtr) {
                 size_t size = object.size();
                 new (&object) T;
@@ -82,7 +89,7 @@ class ArchiverBase {
             }
 
         } else if constexpr (IsVector<T>::value) {
-            strategy.Add(object);
+            strategy.Add(std::forward<Ty>(object));
             if constexpr (RenewPtr) {
                 size_t size = object.size();
                 new (&object) T;
@@ -90,17 +97,17 @@ class ArchiverBase {
             }
 
             for (size_t i = 0; i < object.size(); i++)
-                ArchiveImpl(object[i]);
+                ArchiveImpl(std::forward<Ty>(object)[i]);
 
         } else if constexpr (IsPointer<T>::value) {
             using Tv = std::decay_t<decltype(*object)>;
             if constexpr (RenewPtr)
                 object = T(new Tv);
 
-            ArchiveImpl(*object);
+            ArchiveImpl(*std::forward<Ty>(object));
 
         } else {
-            ForEachField(object, [&](auto&& field) { ArchiveImpl(field); });
+            ForEachField(std::forward<Ty>(object), [&](auto&& field) { ArchiveImpl(field); });
         }
     }
 

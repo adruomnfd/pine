@@ -7,7 +7,7 @@
 namespace pine {
 
 std::shared_ptr<Accel> Accel::Create(const Parameters& parameters) {
-    std::string type = parameters.GetString("type");
+    std::string type = parameters.GetString("type", "BVH");
     SWITCH(type) {
         CASE("BVH") return std::make_shared<BVH>(parameters);
         // CASE("CWBVH") return std::make_shared<CWBVH>(parameters);

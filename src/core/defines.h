@@ -79,6 +79,7 @@ struct Scene;
 struct Ray;
 struct AABB;
 struct Shape;
+struct Medium;
 struct TriangleMesh;
 struct Interaction;
 struct RNG;

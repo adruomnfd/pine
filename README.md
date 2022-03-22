@@ -8,8 +8,11 @@ cmake --build build
 
 ### example:
 ```
-build/pine scenes/nspheres.txt result.bmp
+build/pine scenes/nspheres.txt
 ```
-All the settings like `samplesPerPixel` or `filmSize` are specified in the scene file (`scenes/nspheres.txt`).  
-After rendering is finished, you can find the result `result.png` in the same folder  
-<img src="docs/results/nspheres.png" width="600"/>
+<img src="docs/teasers/spheres.png" width="600"/>
+
+```
+build/pine scenes/cloud.txt
+```
+<img src="docs/teasers/cloud.png" width="600"/>

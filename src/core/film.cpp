@@ -19,19 +19,19 @@ Film::Film(vec2i size, Filter filter, std::string outputFileName)
                       (y + 0.5f) / filterTableWidth * filter.Radius().y};
             filterTable[offset++] = filter.Evaluate(p);
         }
-    pixels = std::shared_ptr<Pixel[]>(new Pixel[size.x * size.y]);
-    rgba = std::shared_ptr<vec4[]>(new vec4[size.x * size.y]);
+    pixels = std::shared_ptr<Pixel[]>(new Pixel[Area(size)]);
+    rgba = std::shared_ptr<vec4[]>(new vec4[Area(size)]);
 }
 
 void Film::WriteToDisk(std::string filename) const {
-    std::unique_ptr<vec4u8[]> rgba8 = std::unique_ptr<vec4u8[]>(new vec4u8[size.x * size.y]);
-    for (int i = 0; i < size.x * size.y; i++)
+    std::unique_ptr<vec4u8[]> rgba8 = std::unique_ptr<vec4u8[]>(new vec4u8[Area(size)]);
+    for (int i = 0; i < Area(size); i++)
         rgba8[i] = rgba[i] * 255;
     SaveImage(filename, size, 4, (float*)&rgba[0]);
 }
 
 void Film::CopyToRGBArray(float multiplier, bool cumulative) {
-    for (int i = 0; i < size.x * size.y; i++) {
+    for (int i = 0; i < Area(size); i++) {
         float weight = multiplier / (float)pixels[i].weight;
         if (cumulative)
             weight *= pixels[i].nsamples;
@@ -41,11 +41,11 @@ void Film::CopyToRGBArray(float multiplier, bool cumulative) {
     }
 }
 void Film::ApplyToneMapping() {
-    for (int i = 0; i < size.x * size.y; i++)
+    for (int i = 0; i < Area(size); i++)
         rgba[i] = vec4(Uncharted2Flimic(rgba[i]), rgba[i].w);
 }
 void Film::ApplyGammaCorrection() {
-    for (int i = 0; i < size.x * size.y; i++)
+    for (int i = 0; i < Area(size); i++)
         rgba[i] = vec4(Pow((vec3)rgba[i], 1.0f / 2.2f), rgba[i].w);
 }
 

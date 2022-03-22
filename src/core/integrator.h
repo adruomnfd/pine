@@ -38,7 +38,7 @@ class RayIntegrator : public Integrator {
 
     bool Hit(Ray ray);
     bool Intersect(Ray& ray, Interaction& it);
-    bool IntersectTr(Ray ray, Spectrum& tr, Sampler& sampler);
+    Spectrum IntersectTr(Ray ray, Sampler& sampler);
     Spectrum EstimateDirect(Ray ray, Interaction it, Sampler& sampler);
 
     std::shared_ptr<Accel> accel;

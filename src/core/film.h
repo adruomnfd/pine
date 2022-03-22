@@ -52,7 +52,7 @@ struct Film {
         return size;
     }
     void Clear() {
-        for (int i = 0; i < size.x * size.y; i++) {
+        for (int i = 0; i < Area(size); i++) {
             pixels[i].rgb[0] = 0.0f;
             pixels[i].rgb[1] = 0.0f;
             pixels[i].rgb[2] = 0.0f;

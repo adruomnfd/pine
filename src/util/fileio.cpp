@@ -3,6 +3,7 @@
 #include <util/parser.h>
 #include <util/archive.h>
 #include <util/profiler.h>
+#include <util/huffman.h>
 #include <util/log.h>
 #include <util/misc.h>
 
@@ -10,8 +11,8 @@
 #include <sstream>
 #include <vector>
 
-#include <ext/stb_image_write.h>
-#include <ext/stb_image.h>
+#include <ext/stb_image/stb_image_write.h>
+#include <ext/stb_image/stb_image.h>
 
 namespace pine {
 
@@ -105,7 +106,7 @@ void SaveBMPImage(std::string filename, vec2i size, int nchannel, uint8_t *data)
     LOG_VERBOSE("[FileIO]Saving image \"&\"", filename);
     ScopedFile file(filename, std::ios::out);
 
-    std::vector<vec3u8> colors(size.x * size.y);
+    std::vector<vec3u8> colors(Area(size));
     for (int x = 0; x < size.x; x++)
         for (int y = 0; y < size.y; y++) {
             vec3u8 c;
@@ -115,7 +116,7 @@ void SaveBMPImage(std::string filename, vec2i size, int nchannel, uint8_t *data)
             colors[x + (size.y - 1 - y) * size.x] = c;
         }
 
-    int filesize = 54 + 3 * size.x * size.y;
+    int filesize = 54 + 3 * Area(size);
     uint8_t header[] = {'B',
                         'M',
                         (uint8_t)(filesize),
@@ -184,7 +185,7 @@ void SaveBMPImage(std::string filename, vec2i size, int nchannel, uint8_t *data)
     }
 }
 void SaveImage(std::string filename, vec2i size, int nchannel, float *data) {
-    std::vector<uint8_t> pixels(size.x * size.y * nchannel);
+    std::vector<uint8_t> pixels(Area(size) * nchannel);
     for (int x = 0; x < size.x; x++)
         for (int y = 0; y < size.y; y++)
             for (int c = 0; c < nchannel; c++)
@@ -216,6 +217,54 @@ vec3u8 *ReadLDRImage(std::string filename, vec2i &size) {
     if (!data)
         LOG_WARNING("[FileIO]Failed to load \"&\"", filename);
     return (vec3u8 *)data;
+}
+
+std::pair<std::vector<float>, vec3i> LoadVolume(std::string filename) {
+    if (GetFileExtension(filename) == "compressed")
+        return LoadCompressedVolume(filename);
+    ScopedFile file(filename, std::ios::in | std::ios::binary);
+    vec3i size = file.Read<vec3i>();
+    std::vector<float> density(Volume(size));
+    file.Read(&density[0], density.size() * sizeof(density[0]));
+
+    return {std::move(density), size};
+}
+void CompressVolume(std::string filename, const std::vector<float> &densityf, vec3i size) {
+    ScopedFile file(filename, std::ios::out | std::ios::binary);
+
+    std::vector<uint16_t> densityi(densityf.size());
+    for (size_t i = 0; i < densityf.size(); i++)
+        densityi[i] = densityf[i] * int(std::numeric_limits<uint16_t>::max()) / 32;
+
+    auto tree = BuildHuffmanTree(densityi);
+    auto encoded = HuffmanEncode(tree, densityi);
+    auto treeData = Serializer().Archive(tree.GetRepresentation(tree));
+    auto encodedData = Serializer().Archive(encoded);
+    file.Write(size);
+    file.Write(treeData.size());
+    file.Write(encodedData.size());
+    file.Write(treeData.data(), treeData.size() * sizeof(treeData[0]));
+    file.Write(encodedData.data(), encodedData.size() * sizeof(encodedData[0]));
+}
+std::pair<std::vector<float>, vec3i> LoadCompressedVolume(std::string filename) {
+    ScopedFile file(filename, std::ios::in | std::ios::binary);
+    vec3i size = file.Read<vec3i>();
+    size_t treeSize = file.Read<size_t>();
+    size_t encodedSize = file.Read<size_t>();
+    ArchiveBufferType treeData(treeSize);
+    ArchiveBufferType encodedData(encodedSize);
+    file.Read(&treeData[0], treeSize * sizeof(treeData[0]));
+    file.Read(&encodedData[0], encodedSize * sizeof(encodedData[0]));
+    auto tree = HuffmanTree<uint16_t>::FromRepresentation(
+        Deserializer(treeData).Unarchive<HuffmanTree<uint16_t>::ReprType>());
+    auto encoded = Deserializer(encodedData).Unarchive<HuffmanEncoded>();
+    auto densityi = HuffmanDecode<std::vector<uint16_t>>(tree, encoded);
+
+    std::vector<float> densityf(densityi.size());
+    for (size_t i = 0; i < densityi.size(); i++)
+        densityf[i] = densityi[i] / float(int(std::numeric_limits<uint16_t>::max()) / 32);
+
+    return {densityf, size};
 }
 
 TriangleMesh LoadObj(std::string filename) {
@@ -314,8 +363,6 @@ Parameters LoadScene(std::string filename, Scene *scene) {
 
     Timer timer;
 
-    scene->camera = Camera::Create(params["Camera"], scene);
-
     for (auto &p : params.GetAll("Material"))
         scene->materials[p.GetString("name")] = std::make_shared<Material>(Material::Create(p));
     for (auto &p : params.GetAll("Medium"))
@@ -331,6 +378,7 @@ Parameters LoadScene(std::string filename, Scene *scene) {
         if (light.Tag() == Light::Index<EnvironmentLight>())
             scene->envLight = light.Be<EnvironmentLight>();
 
+    scene->camera = Camera::Create(params["Camera"], scene);
     scene->integrator = Integrator::Create(params["Integrator"], scene);
 
     LOG_VERBOSE("[FileIO]Scene created in & ms", timer.ElapsedMs());

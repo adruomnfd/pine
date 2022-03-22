@@ -542,6 +542,8 @@ bool BVHImpl::Intersect(Ray& ray, Interaction& it, F&& f, G&& g) const {
 
 void BVH::Initialize(const Scene* scene) {
     this->scene = scene;
+    if (scene->shapes.size() == 0)
+        return;
 
     for (int i = 0; i < (int)scene->shapes.size(); i++) {
         if (scene->shapes[i].Is<TriangleMesh>()) {
@@ -579,9 +581,14 @@ void BVH::Initialize(const Scene* scene) {
 }
 
 bool BVH::Hit(Ray ray) const {
+    if (scene->shapes.size() == 0)
+        return false;
     return tbvh.Hit(ray);
 }
 bool BVH::Intersect(Ray& ray, Interaction& it) const {
+    if (scene->shapes.size() == 0)
+        return false;
+
     int triangleIndex = -1;
     return tbvh.Intersect(
         ray, it,

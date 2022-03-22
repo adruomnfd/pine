@@ -1071,17 +1071,21 @@ template <typename T>
 inline bool Inside(Vector2<T> p, Vector2<T> minInclude, Vector2<T> maxExclude) {
     return p.x >= minInclude.x && p.y >= minInclude.y && p.x < maxExclude.x && p.y < maxExclude.y;
 }
-
 template <typename T>
-inline T TrilinearInterp(T c[2][2][2], Vector3<T> uvw) {
+inline bool Inside(Vector3<T> p, Vector3<T> minInclude, Vector3<T> maxExclude) {
+    return p.x >= minInclude.x && p.x < maxExclude.x && p.y >= minInclude.y && p.y < maxExclude.y &&
+           p.z >= minInclude.z && p.z < maxExclude.z;
+}
+
+template <typename T, typename U>
+inline T TrilinearInterp(T c[2][2][2], Vector3<U> uvw) {
     T ret = 0;
     for (int x = 0; x < 2; x++)
         for (int y = 0; y < 2; y++)
-            for (int z = 0; z < 2; z++) {
+            for (int z = 0; z < 2; z++)
                 ret += (x * uvw.x + (1 - x) * (1.0 - uvw.x)) *
                        (y * uvw.y + (1 - y) * (1.0 - uvw.y)) *
                        (z * uvw.z + (1 - z) * (1.0 - uvw.z)) * c[x][y][z];
-            }
     return ret;
 }
 

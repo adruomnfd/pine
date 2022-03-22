@@ -45,23 +45,36 @@ struct AreaLight {
     const Shape* shape = nullptr;
 };
 
-struct Atmosphere {
-    static Atmosphere Create(const Parameters& params);
-    Atmosphere(vec3 sunDirection, vec3 sunColor, vec2i size, bool interpolate);
+struct Sky {
+    static Sky Create(const Parameters& params);
+    Sky(vec3 sunDirection, Spectrum sunColor) : sunDirection(Normalize(sunDirection)), sunColor(sunColor) {
+    }
 
     LightSample Sample(vec3 p, vec2 u2) const;
     Spectrum Color(vec3 wo) const;
     float Pdf(vec3 wo) const;
 
     vec3 sunDirection;
-    vec3 sunColor;
+    Spectrum sunColor;
+};
+
+struct Atmosphere {
+    static Atmosphere Create(const Parameters& params);
+    Atmosphere(vec3 sunDirection, Spectrum sunColor, vec2i size, bool interpolate);
+
+    LightSample Sample(vec3 p, vec2 u2) const;
+    Spectrum Color(vec3 wo) const;
+    float Pdf(vec3 wo) const;
+
+    vec3 sunDirection;
+    Spectrum sunColor;
     Spectrum sunSampledColor;
     vec2i size;
     std::vector<vec3> colors;
     bool interpolate = true;
 };
 
-struct EnvironmentLight : TaggedVariant<Atmosphere> {
+struct EnvironmentLight : TaggedVariant<Atmosphere, Sky> {
     using TaggedVariant::TaggedVariant;
     static EnvironmentLight Create(const Parameters& params);
 

@@ -52,10 +52,10 @@ inline vec3 OffsetRayOrigin(vec3 p, vec3 n) {
 
 struct Interaction {
     bool IsSurfaceInteraction() const {
-        return !isMediumInteraction;
+        return phaseFunction == nullptr;
     }
     bool IsMediumInteraction() const {
-        return isMediumInteraction;
+        return phaseFunction != nullptr;
     }
     Ray SpawnRayTo(vec3 p2) {
         Ray ray;
@@ -100,8 +100,7 @@ struct Interaction {
     const Material* material = nullptr;
     const Shape* shape = nullptr;
     MediumInterface<const Medium*> mediumInterface;
-    PhaseFunction phaseFunction;
-    bool isMediumInteraction = false;
+    const PhaseFunction* phaseFunction = nullptr;
     float bvh = 0.0f;
 };
 
