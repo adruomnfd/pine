@@ -232,13 +232,18 @@ std::pair<std::vector<float>, vec3i> LoadVolume(std::string filename) {
 void CompressVolume(std::string filename, const std::vector<float> &densityf, vec3i size) {
     ScopedFile file(filename, std::ios::out | std::ios::binary);
 
+    for (size_t i = 0; i < densityf.size(); i++)
+        if (densityf[i] > 32)
+            LOG_WARNING("Original density has voxel with value larger than 32, which will be "
+                        "clamped to 32 for compression");
+
     std::vector<uint16_t> densityi(densityf.size());
     for (size_t i = 0; i < densityf.size(); i++)
-        densityi[i] = densityf[i] * int(std::numeric_limits<uint16_t>::max()) / 32;
+        densityi[i] = min(densityf[i], 32.0f) * int(std::numeric_limits<uint16_t>::max()) / 32;
 
     auto tree = BuildHuffmanTree(densityi);
     auto encoded = HuffmanEncode(tree, densityi);
-    auto treeData = Serializer().Archive(tree.GetRepresentation(tree));
+    auto treeData = Serializer().Archive(tree);
     auto encodedData = Serializer().Archive(encoded);
     file.Write(size);
     file.Write(treeData.size());
@@ -255,8 +260,7 @@ std::pair<std::vector<float>, vec3i> LoadCompressedVolume(std::string filename) 
     ArchiveBufferType encodedData(encodedSize);
     file.Read(&treeData[0], treeSize * sizeof(treeData[0]));
     file.Read(&encodedData[0], encodedSize * sizeof(encodedData[0]));
-    auto tree = HuffmanTree<uint16_t>::FromRepresentation(
-        Deserializer(treeData).Unarchive<HuffmanTree<uint16_t>::ReprType>());
+    auto tree = Deserializer(treeData).Unarchive<HuffmanTree<uint16_t>>();
     auto encoded = Deserializer(encodedData).Unarchive<HuffmanEncoded>();
     auto densityi = HuffmanDecode<std::vector<uint16_t>>(tree, encoded);
 

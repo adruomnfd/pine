@@ -28,16 +28,6 @@ void Append(std::vector<T>& a, const std::vector<T>& b) {
 
 template <typename T>
 struct HuffmanTree {
-    using ReprType = std::vector<std::pair<T, uint32_t>>;
-    
-    static ReprType GetRepresentation(const HuffmanTree& tree) {
-        return ReprType(begin(tree.encoder), end(tree.encoder));
-    }
-    static HuffmanTree FromRepresentation(const ReprType& data) {
-        std::unordered_map<T, uint32_t> map(begin(data), end(data));
-        return HuffmanTree{map};
-    }
-
     mutable std::unordered_map<T, uint32_t> encoder;
 };
 
