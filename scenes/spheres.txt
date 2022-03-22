@@ -8,17 +8,10 @@ Integrator: Path{
             radius: 0.5
         }
     }
-    
-    accel: BVH
-    
+        
     sampler: Halton{
         samplesPerPixel: 128
-        randomizeStrategy: fastOwen
     }
-
-    lightSampler: Uniform
-
-    clamp: 8.0
 }
 
 Camera: PinHole{

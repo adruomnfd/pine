@@ -11,10 +11,7 @@ Integrator: Path{
     
     sampler: Halton{
         samplesPerPixel: 128
-        randomizeStrategy: fastOwen
     }
-
-    lightSampler: Uniform
 }
 
 Camera: PinHole{
@@ -32,10 +29,10 @@ Light: Environment{
 }
 
 Medium volume: Grid{
+    file: wdas_cloud_eighth.compressed
     sigma_a: 1
     sigma_s: 100
     g: 0.0
-    file: wdas_cloud_eighth.compressed
     position: 0 0 0
     scale: 2.0
 }

@@ -3,7 +3,7 @@
 
 namespace pine {
 
-LightSample UniformLightSampler::Sample(vec3 p, float ul, vec2 ud) const{
+LightSample UniformLightSampler::Sample(vec3 p, float ul, vec2 ud) const {
     if (lights.size() == 0)
         return {};
     uint32_t index = min(size_t(ul * lights.size()), lights.size() - 1);
@@ -16,7 +16,7 @@ UniformLightSampler UniformLightSampler::Create(const Parameters&,
 }
 
 LightSampler LightSampler::Create(const Parameters& params, const std::vector<Light>& lights) {
-    std::string type = params.GetString("type");
+    std::string type = params.GetString("type", "Uniform");
     SWITCH(type) {
         CASE("Uniform") return UniformLightSampler(UniformLightSampler::Create(params, lights));
         DEFAULT {
