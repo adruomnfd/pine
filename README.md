@@ -8,7 +8,7 @@ cmake --build build
 
 ### example:
 ```
-build/pine scenes/nspheres.txt
+build/pine scenes/spheres.txt
 ```
 <img src="docs/teasers/spheres.png" width="600"/>
 
