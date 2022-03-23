@@ -3,11 +3,25 @@
 
 namespace pine {
 
-LightSample UniformLightSampler::Sample(vec3 p, float ul, vec2 ud) const {
+SampledLight UniformLightSampler::SampleLight(vec3, vec3, float ul) const {
     if (lights.size() == 0)
         return {};
     uint32_t index = min(size_t(ul * lights.size()), lights.size() - 1);
-    return lights[index].Sample(p, ud);
+
+    SampledLight sl;
+    sl.light = &lights[index];
+    sl.pdf = Pdf();
+    return sl;
+}
+SampledLight UniformLightSampler::SampleLight(float ul) const {
+    if (lights.size() == 0)
+        return {};
+    uint32_t index = min(size_t(ul * lights.size()), lights.size() - 1);
+
+    SampledLight sl;
+    sl.light = &lights[index];
+    sl.pdf = Pdf();
+    return sl;
 }
 
 UniformLightSampler UniformLightSampler::Create(const Parameters&,

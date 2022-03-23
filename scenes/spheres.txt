@@ -1,6 +1,12 @@
 Integrator: Path{
     maxDepth: 6
+        
+    sampler: Halton{
+        samplesPerPixel: 128
+    }
+}
 
+Camera: ThinLen{
     film{
         outputFileName: spheres.png
         size: 1280 360
@@ -8,13 +14,7 @@ Integrator: Path{
             radius: 0.5
         }
     }
-        
-    sampler: Halton{
-        samplesPerPixel: 128
-    }
-}
 
-Camera: PinHole{
     from: 0 4 16
     to:   0 0 0
     fov:  0.24

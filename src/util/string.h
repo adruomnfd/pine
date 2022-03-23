@@ -41,7 +41,7 @@ auto ToStringImpl(const T &val, PriorityTag<1>) {
 }
 
 template <typename... Ts>
-auto ToString(const Ts &...vals) {
+auto ToString(const Ts &... vals) {
     std::string str;
     int expand[] = {0, (str += pine::ToStringImpl(vals, PriorityTag<2>{}), 0)...};
     (void)expand;
@@ -140,7 +140,7 @@ class Fstring {
     }
 
     template <typename T, typename... Ts>
-    Fstring(const char *format, const T &first, const Ts &...rest) {
+    Fstring(const char *format, const T &first, const Ts &... rest) {
         static_assert(!std::is_same<T, Format>::value, "Error");
 
         *this = Formatting(format, first);
@@ -152,7 +152,7 @@ class Fstring {
     }
 
     template <typename T, typename... Ts>
-    Fstring(const char *format, Format fmt, const T &first, const Ts &...rest) {
+    Fstring(const char *format, Format fmt, const T &first, const Ts &... rest) {
         static_assert(!std::is_same<T, Format>::value, "Two consecutive _Format_ is not allowed");
 
         *this = Formatting(format, first, fmt);
@@ -164,7 +164,7 @@ class Fstring {
     }
 
     template <typename T, typename... Ts>
-    Fstring(Format fmt, const char *format, const T &first, const Ts &...rest) {
+    Fstring(Format fmt, const char *format, const T &first, const Ts &... rest) {
         static_assert(!std::is_same<T, Format>::value,
                       "local _Format_ cannot be applied when global _Format_ is specified");
 

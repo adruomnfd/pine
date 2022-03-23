@@ -515,7 +515,8 @@
 //             for (int i = 0; i < (int)nodes2.size(); i++)
 //                 inefficiencies[i] = {i, nodes2[i].Inefficiency(nodes2.data())};
 
-//             std::partial_sort(inefficiencies.begin(), inefficiencies.begin() + nodes2.size() / 200,
+//             std::partial_sort(inefficiencies.begin(), inefficiencies.begin() + nodes2.size() /
+//             200,
 //                               inefficiencies.end());
 //             for (int i = 0; i < (int)nodes2.size() / 200; i++) {
 //                 int nodeIndex = inefficiencies[i].index;
@@ -887,8 +888,8 @@
 //     for (int b = 0; b < 3; b++)
 //         octant |= (invdir[b] < 0) << b;
 //     uint64_t octinv8 = (7 - octant) * 0x0101010101010101;
-//     const bool octl[3] = {std::signbit(ray.d[0]), std::signbit(ray.d[1]), std::signbit(ray.d[2])};
-//     const bool octh[3] = {!octl[0], !octl[1], !octl[2]};
+//     const bool octl[3] = {std::signbit(ray.d[0]), std::signbit(ray.d[1]),
+//     std::signbit(ray.d[2])}; const bool octh[3] = {!octl[0], !octl[1], !octl[2]};
 
 //     const Node8Compressed* PINE_RESTRICT nodes = this->nodes.data();
 //     const CompactTriangle* PINE_RESTRICT triangles = this->triangles.data();
@@ -904,7 +905,8 @@
 //         float tmax1 = node.qlohi[1][octh[1]][nodeIndex] * dir[1] + org[1];
 //         float tmin2 = node.qlohi[2][octl[2]][nodeIndex] * dir[2] + org[2];
 //         float tmax2 = node.qlohi[2][octh[2]][nodeIndex] * dir[2] + org[2];
-//         return max(max(max(tmin, tmin0), tmin1), tmin2) <= min(min(min(tmax, tmax0), tmax1), tmax2);
+//         return max(max(max(tmin, tmin0), tmin1), tmin2) <= min(min(min(tmax, tmax0), tmax1),
+//         tmax2);
 //     };
 //     auto GetClosestNode = [&](uint64_t& G) {
 //         int bit_index = highest_set_bit(G & 0xff000000);

@@ -1,9 +1,10 @@
 #ifndef PINE_CORE_MEDIUM_H
 #define PINE_CORE_MEDIUM_H
 
+#include <core/spectrum.h>
 #include <core/vecmath.h>
 #include <core/sampler.h>
-#include <core/spectrum.h>
+#include <core/ray.h>
 #include <util/taggedvariant.h>
 #include <util/profiler.h>
 

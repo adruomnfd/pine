@@ -263,7 +263,7 @@ struct TaggedVariant {
     }
 
     template <typename T>
-    bool Is() const{
+    bool Is() const {
         return tag == Index<T>();
     }
 

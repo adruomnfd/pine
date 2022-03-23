@@ -3,53 +3,68 @@
 
 #include <core/geometry.h>
 #include <core/medium.h>
+#include <core/film.h>
 #include <util/taggedvariant.h>
 #include <util/profiler.h>
 
 namespace pine {
 
-struct PinHoleCamera {
-    static PinHoleCamera Create(const Parameters& params);
-
-    PinHoleCamera(vec3 from, vec3 to, float fov)
-        : origin(from), lookat(LookAt(from, to)), fovT(1 / std::tan(fov / 2)){};
-
-    Ray GenRay(vec2i filmSize, vec2 co, vec2 ul) const;
-    Spectrum We(const Ray& ray);
-
-    vec3 origin;
-    mat3 lookat;
-    float fovT;
+struct CameraSample {
+    vec2 pFilm;
+    Spectrum we;
+    vec3 p;
+    vec3 wo;
+    float pdf = 1.0f;
 };
 
 struct ThinLenCamera {
     static ThinLenCamera Create(const Parameters& params);
 
-    ThinLenCamera(vec3 from, vec3 to, float fov, float lenRadius, float focusDistance)
-        : origin(from),
-          lookat(LookAt(from, to)),
-          fovT(1 / std::tan(fov / 2)),
-          lenRadius(lenRadius),
-          focusDistance(focusDistance){};
+    ThinLenCamera(Film film, vec3 from, vec3 to, float fov, float lensRadius, float focalDistance)
+        : c2w(LookAt(from, to)),
+          w2c(Inverse(c2w)),
+          film(film),
+          fov(std::tan(fov / 2)),
+          lensRadius(lensRadius),
+          focalDistance(focalDistance){};
 
-    Ray GenRay(vec2i filmSize, vec2 co, vec2 u2) const;
+    Ray GenRay(vec2 pFilm, vec2 u2) const;
+    Spectrum We(const Ray& ray, vec2& pFilm) const;
+    SpatialPdf PdfWe(const Ray& ray) const;
+    CameraSample SampleWi(vec3 p, vec2 u) const;
+    Film& GetFilm() {
+        return film;
+    }
 
-    vec3 origin;
-    mat3 lookat;
-    float fovT;
-    float lenRadius;
-    float focusDistance;
+    mat4 c2w;
+    mat4 w2c;
+    Film film;
+    float fov;
+    float lensRadius;
+    float focalDistance;
 };
 
-struct Camera : public TaggedVariant<PinHoleCamera, ThinLenCamera> {
+struct Camera : public TaggedVariant<ThinLenCamera> {
     using TaggedVariant::TaggedVariant;
-    static Camera Create(const Parameters& params, const Scene* scene);
+    static Camera Create(const Parameters& params, Scene* scene);
 
-    Ray GenRay(vec2i filmSize, vec2 co, vec2 u2) const {
+    Ray GenRay(vec2 pFilm, vec2 u2) const {
         SampledProfiler _(ProfilePhase::GenerateRay);
-        Ray ray = Dispatch([&](auto&& x) { return x.GenRay(filmSize, co, u2); });
+        Ray ray = Dispatch([&](auto&& x) { return x.GenRay(pFilm, u2); });
         ray.medium = medium.get();
         return ray;
+    }
+    Spectrum We(const Ray& ray, vec2& pFilm) const {
+        return Dispatch([&](auto&& x) { return x.We(ray, pFilm); });
+    }
+    SpatialPdf PdfWe(const Ray& ray) const {
+        return Dispatch([&](auto&& x) { return x.PdfWe(ray); });
+    }
+    CameraSample SampleWi(vec3 p, vec2 u) const {
+        return Dispatch([&](auto&& x) { return x.SampleWi(p, u); });
+    }
+    Film& GetFilm() {
+        return Dispatch([&](auto&& x) -> auto& { return x.GetFilm(); });
     }
 
     std::shared_ptr<Medium> medium;

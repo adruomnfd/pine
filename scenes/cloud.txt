@@ -1,6 +1,12 @@
 Integrator: Path{
     maxDepth: 64
+    
+    sampler: Halton{
+        samplesPerPixel: 128
+    }
+}
 
+Camera: ThinLen{
     film{
         outputFileName: cloud.png
         size: 1280 640
@@ -9,12 +15,6 @@ Integrator: Path{
         }
     }
     
-    sampler: Halton{
-        samplesPerPixel: 128
-    }
-}
-
-Camera: PinHole{
     from: -10 -0.5 0
     to:   0 0 0
     fov:  0.26

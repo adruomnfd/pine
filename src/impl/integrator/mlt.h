@@ -7,7 +7,7 @@
 namespace pine {
 
 struct MltIntegrator : public PathIntegrator {
-    MltIntegrator(const Parameters& parameters, const Scene* scene);
+    MltIntegrator(const Parameters& parameters,  Scene* scene);
 
     void Render() override;
 

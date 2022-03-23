@@ -7,7 +7,7 @@ namespace pine {
 
 class VizIntegrator : public PixelSampleIntegrator {
   public:
-    VizIntegrator(const Parameters& parameters, const Scene* scene);
+    VizIntegrator(const Parameters& parameters,  Scene* scene);
 
     Spectrum Li(Ray ray, Sampler&) override;
 

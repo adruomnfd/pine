@@ -44,6 +44,7 @@ src/impl/integrator/ao.cpp
 src/impl/integrator/viz.cpp
 src/impl/integrator/mlt.cpp
 src/impl/integrator/path.cpp
+src/impl/integrator/lightpath.cpp
 src/impl/accel/bvh.cpp
 src/impl/accel/cwbvh.cpp
 ext/stb_image/stb_image.cpp

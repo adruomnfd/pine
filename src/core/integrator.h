@@ -15,16 +15,15 @@ namespace pine {
 
 class Integrator {
   public:
-    static std::shared_ptr<Integrator> Create(const Parameters& parameters, const Scene* scene);
-    Integrator(const Parameters& parameters, const Scene* scene);
+    static std::shared_ptr<Integrator> Create(const Parameters& parameters, Scene* scene);
+    Integrator(const Parameters& parameters, Scene* scene);
     virtual ~Integrator() = default;
 
     virtual void Render() = 0;
 
   protected:
-    const Scene* scene;
-
-    Film film;
+    Scene* scene = nullptr;
+    Film* film = nullptr;
     vec2i filmSize;
 
     std::vector<Sampler> samplers;
@@ -34,7 +33,7 @@ class Integrator {
 
 class RayIntegrator : public Integrator {
   public:
-    RayIntegrator(const Parameters& parameters, const Scene* scene);
+    RayIntegrator(const Parameters& parameters, Scene* scene);
 
     bool Hit(Ray ray);
     bool Intersect(Ray& ray, Interaction& it);

@@ -102,8 +102,7 @@ Fstring& Fstring::operator+=(const Fstring& rhs) {
     return *this;
 }
 
-Fstring Fstring::FormattingCharArray(const char* str, int minWidth,
-                                                     bool leftAlign) {
+Fstring Fstring::FormattingCharArray(const char* str, int minWidth, bool leftAlign) {
     Fstring formatted;
     for (int i = 0;;) {
         if (str[i] == '\0')

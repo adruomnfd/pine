@@ -25,6 +25,7 @@ struct Film {
 
     void AddSample(vec2 pFilm, const Spectrum& sL) {
         SampledProfiler _(ProfilePhase::FilmAddSample);
+        pFilm *= size;
         pFilm -= vec2(0.5f);
         vec2i p0 = Ceil(pFilm - filter.Radius());
         vec2i p1 = Floor(pFilm + filter.Radius());
@@ -50,6 +51,9 @@ struct Film {
 
     vec2i Size() const {
         return size;
+    }
+    float Aspect() const {
+        return (float)size.x / size.y;
     }
     void Clear() {
         for (int i = 0; i < Area(size); i++) {

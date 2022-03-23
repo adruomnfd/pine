@@ -12,7 +12,8 @@ namespace pine {
 
 struct UniformSampler {
     static UniformSampler Create(const Parameters& params);
-    UniformSampler(int samplesPerPixel, int seed = 0) : samplesPerPixel(samplesPerPixel), rng(seed) {
+    UniformSampler(int samplesPerPixel, int seed = 0)
+        : samplesPerPixel(samplesPerPixel), rng(seed) {
     }
 
     int SamplesPerPixel() const {

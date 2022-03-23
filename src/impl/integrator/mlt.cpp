@@ -3,7 +3,7 @@
 
 namespace pine {
 
-MltIntegrator::MltIntegrator(const Parameters& parameters, const Scene* scene)
+MltIntegrator::MltIntegrator(const Parameters& parameters,  Scene* scene)
     : PathIntegrator(parameters, scene) {
     nMutations = (int64_t)Area(filmSize) * parameters.GetInt("mutationsPerPixel", samplesPerPixel);
 };
@@ -20,8 +20,8 @@ void MltIntegrator::Render() {
     AtomicFloat atomicI;
     ParallelFor(nBootstrapSamples, [&](int index) {
         Sampler sampler = UniformSampler(1, index);
-        vec2 pFilm = sampler.Get2D() * filmSize;
-        Ray ray = scene->camera.GenRay(filmSize, pFilm, sampler.Get2D());
+        vec2 pFilm = sampler.Get2D();
+        Ray ray = scene->camera.GenRay(pFilm, sampler.Get2D());
         atomicI.Add(Li(ray, sampler).y());
     });
     float I = (float)atomicI / nBootstrapSamples;
@@ -32,8 +32,8 @@ void MltIntegrator::Render() {
         Sampler sampler = MltSampler(0.01f, 0.3f, chainIndex);
 
         auto L = [&]() {
-            vec2 pFilm = sampler.Get2D() * filmSize;
-            Ray ray = scene->camera.GenRay(filmSize, pFilm, sampler.Get2D());
+            vec2 pFilm = sampler.Get2D();
+            Ray ray = scene->camera.GenRay(pFilm, sampler.Get2D());
             return std::pair(pFilm, Li(ray, sampler));
         };
 
@@ -46,8 +46,8 @@ void MltIntegrator::Render() {
 
             Spectrum wCurrent = (1.0f - pAccept) * Lcurrent * SafeRcp(Lcurrent.y());
             Spectrum wProposed = pAccept * Lproposed * SafeRcp(Lproposed.y());
-            film.AddSample(pFilmCurrent, wCurrent);
-            film.AddSample(pFilmProposed, wProposed);
+            film->AddSample(pFilmCurrent, wCurrent);
+            film->AddSample(pFilmProposed, wProposed);
 
             if (rng.Uniformf() < pAccept) {
                 pFilmCurrent = pFilmProposed;
@@ -59,7 +59,7 @@ void MltIntegrator::Render() {
         }
     });
 
-    film.Finalize(I * (float)Area(filmSize) / nMutations, true);
+    film->Finalize(I * (float)Area(filmSize) / nMutations, true);
 }
 
 }  // namespace pine

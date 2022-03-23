@@ -14,6 +14,21 @@ LightSample PointLight::Sample(vec3 p, vec2) const {
     ls.isDelta = true;
     return ls;
 }
+LightLeSample PointLight::SampleLe(vec2, vec2 ud) const {
+    LightLeSample ls;
+    ls.Le = color;
+    ls.ray.o = position;
+    ls.ray.d = UniformSphereSampling(ud);
+    ls.pdf.pos = 1.0f;
+    ls.pdf.dir = 1.0f / Pi4;
+    return ls;
+}
+SpatialPdf PointLight::PdfLe(const Ray&) const {
+    SpatialPdf pdf;
+    pdf.pos = 0.0f;
+    pdf.dir = 1.0f / Pi4;
+    return pdf;
+}
 
 LightSample DirectionalLight::Sample(vec3, vec2) const {
     LightSample ls;
@@ -50,7 +65,7 @@ Atmosphere::Atmosphere(vec3 sundir, Spectrum suncol, vec2i size, bool interpolat
     colors.resize(Area(size));
     for (int y = 0; y < size.y; y++) {
         for (int x = 0; x < size.x; x++) {
-            vec3 d = UniformSphereMampling(vec2((float)x / size.x, (float)y / size.y));
+            vec3 d = UniformSphereSampling(vec2((float)x / size.x, (float)y / size.y));
             vec3 color = AtmosphereColor(d, sunDirection, sunColor.ToRGB()).ToRGB();
             colors[y * size.x + x] = color.HasNaN() ? vec3(0.0f) : color;
         }
@@ -63,7 +78,7 @@ LightSample Atmosphere::Sample(vec3, vec2 u) const {
     ls.distance = 1e+10f;
     if (u.x < 0.5f) {
         u.x *= 2.0f;
-        ls.wo = UniformSphereMampling(u);
+        ls.wo = UniformSphereSampling(u);
         ls.pdf = 1.0f / Pi4;
         vec2i st = Min(u * size, size - vec2(1));
         ls.Le = colors[st.y * size.x + st.x];

@@ -5,7 +5,7 @@
 
 namespace pine {
 
-PathIntegrator::PathIntegrator(const Parameters& parameters, const Scene* scene)
+PathIntegrator::PathIntegrator(const Parameters& parameters, Scene* scene)
     : SinglePassIntegrator(parameters, scene) {
     maxDepth = parameters.GetInt("maxDepth", 4);
     clamp = parameters.GetFloat("clamp", FloatMax);

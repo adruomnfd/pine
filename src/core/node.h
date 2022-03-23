@@ -12,8 +12,7 @@ namespace pine {
 struct Node;
 
 struct NodeEvalContext {
-    NodeEvalContext(vec3 p, vec3 n, vec2 uv)
-        : p(p), n(n), uv(uv){};
+    NodeEvalContext(vec3 p, vec3 n, vec2 uv) : p(p), n(n), uv(uv){};
     vec3 p;
     vec3 n;
     vec2 uv;

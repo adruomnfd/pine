@@ -72,7 +72,8 @@
 //     };
 
 //     struct Node8 {
-//         void Compress(std::vector<Node8Compressed>& nodes, std::vector<CompactTriangle>& triangles,
+//         void Compress(std::vector<Node8Compressed>& nodes, std::vector<CompactTriangle>&
+//         triangles,
 //                       uint32_t index);
 //         void Destory();
 

@@ -45,9 +45,7 @@ void ParallelFor(int size, F&& f) {
 
 template <typename F, typename... Args>
 void ParallelFor(vec2i size, F&& f) {
-    ParallelForImpl(Area(size), [&f, w = size.x](int, int index) {
-        f({index % w, index / w});
-    });
+    ParallelForImpl(Area(size), [&f, w = size.x](int, int index) { f({index % w, index / w}); });
 }
 
 template <typename F, typename... Args>

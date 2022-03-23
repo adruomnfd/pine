@@ -8,12 +8,18 @@
 
 namespace pine {
 
+struct SampledLight {
+    const Light* light = nullptr;
+    float pdf = 0.0f;
+};
+
 struct UniformLightSampler {
     static UniformLightSampler Create(const Parameters& params, const std::vector<Light>& lights);
     UniformLightSampler(const std::vector<Light>& lights) : lights(lights) {
     }
 
-    LightSample Sample(vec3 p, float ul, vec2 ud) const;
+    SampledLight SampleLight(vec3 p, vec3 n, float ul) const;
+    SampledLight SampleLight(float ul) const;
     float Pdf() const {
         if (!lights.size())
             return 0.0f;
@@ -27,13 +33,11 @@ struct LightSampler : TaggedVariant<UniformLightSampler> {
     using TaggedVariant::TaggedVariant;
     static LightSampler Create(const Parameters& params, const std::vector<Light>& lights);
 
-    LightSample Sample(vec3 p, float ul, vec2 ud) const {
-        LightSample ls = Dispatch([&](auto&& x) { return x.Sample(p, ul, ud); });
-        ls.pdf *= Pdf();
-        return ls;
+    SampledLight SampleLight(vec3 p, vec3 n, float ul) const {
+        return Dispatch([&](auto&& x) { return x.SampleLight(p, n, ul); });
     }
-    float Pdf() const {
-        return Dispatch([&](auto&& x) { return x.Pdf(); });
+    SampledLight SampleLight(float ul) const {
+        return Dispatch([&](auto&& x) { return x.SampleLight(ul); });
     }
 };
 

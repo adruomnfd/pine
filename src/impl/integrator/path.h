@@ -6,7 +6,7 @@
 namespace pine {
 
 struct PathIntegrator : SinglePassIntegrator {
-    PathIntegrator(const Parameters& parameters, const Scene* scene);
+    PathIntegrator(const Parameters& parameters, Scene* scene);
     Spectrum Li(Ray ray, Sampler& sampler) override;
 
     int maxDepth;

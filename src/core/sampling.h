@@ -5,6 +5,11 @@
 
 namespace pine {
 
+struct SpatialPdf {
+    float pos = 0.0f;
+    float dir = 0.0f;
+};
+
 inline vec2 SampleDiskPolar(vec2 u) {
     float r = std::sqrt(u[0]);
     float theta = 2 * Pi * u[1];
@@ -30,7 +35,7 @@ inline vec3 CosineWeightedSampling(vec2 u) {
     return vec3(d.x, d.y, z);
 }
 
-inline vec3 UniformSphereMampling(vec2 u) {
+inline vec3 UniformSphereSampling(vec2 u) {
     return SphericalToCartesian(u.x * Pi * 2, std::acos(1.0f - 2 * u.y));
 }
 inline vec2 InverseUniformSphereMampling(vec3 d) {

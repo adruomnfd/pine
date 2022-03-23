@@ -114,19 +114,12 @@ float GridMedium::Density(vec3 p) const {
         return D(p);
 
     vec3i pi = p;
-    vec3i ps[] = {
-        pi + vec3i(0, 0, 0),
-        pi + vec3i(0, 0, 1),
-        pi + vec3i(0, 1, 0),
-        pi + vec3i(0, 1, 1),
-        pi + vec3i(1, 0, 0),
-        pi + vec3i(1, 0, 1),
-        pi + vec3i(1, 1, 0),
-        pi + vec3i(1, 1, 1)
-    };
+    vec3i ps[] = {pi + vec3i(0, 0, 0), pi + vec3i(0, 0, 1), pi + vec3i(0, 1, 0),
+                  pi + vec3i(0, 1, 1), pi + vec3i(1, 0, 0), pi + vec3i(1, 0, 1),
+                  pi + vec3i(1, 1, 0), pi + vec3i(1, 1, 1)};
     float ds[2][2][2] = {{{D(ps[0]), D(ps[1])}, {D(ps[2]), D(ps[3])}},
                          {{D(ps[4]), D(ps[5])}, {D(ps[6]), D(ps[7])}}};
-                         
+
     return TrilinearInterp(ds, p - pi);
 }
 float GridMedium::D(vec3i p) const {

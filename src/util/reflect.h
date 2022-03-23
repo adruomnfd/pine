@@ -22,7 +22,7 @@ struct PriorityTag<0> {};
 template <typename T>
 struct IsVector {
     template <typename U>
-    static constexpr std::true_type Check(decltype((void(U::*)(size_t)) & U::resize)*);
+    static constexpr std::true_type Check(decltype((void (U::*)(size_t)) & U::resize)*);
     template <typename U>
     static constexpr std::false_type Check(...);
 
@@ -68,8 +68,8 @@ struct HasArchiveMethod {
     };
     template <typename U>
     static constexpr std::true_type Check(
-        decltype((void(U::*)(Invokable&)) & U::template Archive<Invokable&>)*,
-        decltype((void(U::*)(Invokable&) const) & U::template Archive<Invokable&>)*);
+        decltype((void (U::*)(Invokable&)) & U::template Archive<Invokable&>)*,
+        decltype((void (U::*)(Invokable&) const) & U::template Archive<Invokable&>)*);
     template <typename U>
     static constexpr std::false_type Check(...);
 
@@ -87,7 +87,7 @@ struct ToAny {
 template <typename T, typename... Ts>
 struct IsAggregateInitializableFrom {
     template <typename U>
-    static constexpr std::true_type Check(decltype(U{Ts()...}) *);
+    static constexpr std::true_type Check(decltype(U{Ts()...})*);
     template <typename U>
     static constexpr std::false_type Check(...);
 

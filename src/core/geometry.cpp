@@ -353,7 +353,7 @@ TriangleMesh TriangleMesh::Create(const Parameters& params) {
     return LoadObj(params.GetString("file"));
 }
 
-Shape Shape::Create(const Parameters& params, const Scene* scene) {
+Shape Shape::Create(const Parameters& params, Scene* scene) {
     std::string type = params.GetString("type");
     Shape shape;
 
