@@ -15,20 +15,33 @@ Integrator: Path{
 }
 
 Camera: PinHole{
-    from: -10 0 0
+    from: -10 -0.5 0
     to:   0 0 0
     fov:  0.26
-    medium: volume
+    medium: cloud
+}
+
+Shape: Rect{
+    position: 0 -100 0
+    ex: 1000 0 0
+    ey: 0 0 1000
+    material: diffuse
+}
+
+Material diffuse: Layered{
+    layer0: Diffuse{
+        albedo: 0.2
+    }
 }
 
 Light: Environment{
     environment: Sky{
-        sunDirection: -4 24 4
+        sunDirection: -1 6 1
         sunColor: 1
     }
 }
 
-Medium volume: Grid{
+Medium cloud: Grid{
     file: wdas_cloud_eighth.compressed
     sigma_a: 1
     sigma_s: 100

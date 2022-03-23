@@ -24,9 +24,9 @@ int main(int argc, char* argv[]) {
 
     SWITCH(next()) {
         CASE("compress")
-                if(argc == 2){
+                if(argc == 1){
                     auto [density, size] = LoadVolume(files()[0]);
-                    CompressVolume(files()[1],density,size);
+                    CompressVolume(ChangeFileExtension(files()[0], "compressed"), density, size);
                 }
                 else{
                     LOG("Usage: compress [from] [to]");
@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
             LOG("Usage: voltool [compress] [filename]");
     }
 
-// clang-format on
+    // clang-format on
 
-return 0;
+    return 0;
 }

@@ -1,12 +1,10 @@
-## work-in-progress
-
-### build with CMake:
+### Build with CMake:
 ```
 cmake -Bbuild
 cmake --build build
 ```
 
-### example:
+### Example:
 ```
 build/pine scenes/spheres.txt
 ```

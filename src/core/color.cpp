@@ -94,7 +94,7 @@ Spectrum SkyColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
     std::swap(direction.y, direction.z);
     auto [phi, theta] = CartesianToSpherical(direction);
     theta /= Pi;
-    return sunColor * Sqr(Lerp(theta, vec3(0.4f, 0.6f, 0.8f), vec3(0.01f, 0.03f, 0.3f)));
+    return sunColor * Sqr(Lerp(theta, vec3(0.01f, 0.03f, 0.3f), vec3(0.4f, 0.6f, 0.8f)));
 }
 
 }  // namespace pine

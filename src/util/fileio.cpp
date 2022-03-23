@@ -1,11 +1,11 @@
 #include <core/scene.h>
+#include <util/profiler.h>
+#include <util/archive.h>
+#include <util/huffman.h>
 #include <util/fileio.h>
 #include <util/parser.h>
-#include <util/archive.h>
-#include <util/profiler.h>
-#include <util/huffman.h>
-#include <util/log.h>
 #include <util/misc.h>
+#include <util/log.h>
 
 #include <algorithm>
 #include <sstream>
@@ -233,9 +233,11 @@ void CompressVolume(std::string filename, const std::vector<float> &densityf, ve
     ScopedFile file(filename, std::ios::out | std::ios::binary);
 
     for (size_t i = 0; i < densityf.size(); i++)
-        if (densityf[i] > 32)
+        if (densityf[i] > 32) {
             LOG_WARNING("Original density has voxel with value larger than 32, which will be "
                         "clamped to 32 for compression");
+            break;
+        }
 
     std::vector<uint16_t> densityi(densityf.size());
     for (size_t i = 0; i < densityf.size(); i++)
