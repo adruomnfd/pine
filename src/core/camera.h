@@ -15,6 +15,7 @@ struct PinHoleCamera {
         : origin(from), lookat(LookAt(from, to)), fovT(1 / std::tan(fov / 2)){};
 
     Ray GenRay(vec2i filmSize, vec2 co, vec2 ul) const;
+    Spectrum We(const Ray& ray);
 
     vec3 origin;
     mat3 lookat;
