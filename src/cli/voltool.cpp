@@ -14,23 +14,19 @@ int main(int argc, char* argv[]) {
             return *(argv++);
         }
     };
-    // auto putback = [&]() {
-    //     ++argc;
-    //     --argv;
-    // };
     auto files = [&]() { return std::vector<std::string>(argv, argv + argc); };
 
     // clang-format off
 
     SWITCH(next()) {
         CASE("compress")
-                if(argc == 1){
-                    auto [density, size] = LoadVolume(files()[0]);
-                    CompressVolume(ChangeFileExtension(files()[0], "compressed"), density, size);
-                }
-                else{
-                    LOG("Usage: compress [from] [to]");
-                }       
+            if(argc == 1){
+                auto [density, size] = LoadVolume(files()[0]);
+                CompressVolume(ChangeFileExtension(files()[0], "compressed"), density, size);
+            }
+            else{
+                LOG("Usage: compress [from] [to]");
+            }       
         DEFAULT
             LOG("Usage: voltool [compress] [filename]");
     }

@@ -17,7 +17,6 @@ int main(int argc, char* argv[]) {
     {
         Profiler _("Main");
         SampledProfiler::Initialize();
-
         SampledSpectrum::Initialize();
 
         std::shared_ptr<Scene> scene = std::make_shared<Scene>();
@@ -26,8 +25,8 @@ int main(int argc, char* argv[]) {
         scene->integrator->Render();
     }
 
-    SampledProfiler::ReportStat();
-    Profiler::ReportStat();
+    SampledProfiler::Finalize();
+    Profiler::Finalize();
 
     return 0;
 }

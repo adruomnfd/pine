@@ -4,8 +4,7 @@
 
 namespace pine {
 
-std::optional<BSDFSample> DiffuseBSDF::Sample(vec3 wi, float, vec2 u,
-                                              const NodeEvalContext& nc) const {
+std::optional<BSDFSample> DiffuseBSDF::Sample(vec3 wi, float, vec2 u, const NodeEvalCtx& nc) const {
     BSDFSample bs;
 
     vec3 wo = CosineWeightedSampling(u);
@@ -19,22 +18,23 @@ std::optional<BSDFSample> DiffuseBSDF::Sample(vec3 wi, float, vec2 u,
     return bs;
 }
 
-vec3 DiffuseBSDF::F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
+vec3 DiffuseBSDF::F(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
     if (!SameHemisphere(wi, wo))
         return vec3(0.0f);
     return albedo.EvalVec3(nc) / Pi;
 }
-float DiffuseBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalContext&) const {
+float DiffuseBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalCtx&) const {
     if (!SameHemisphere(wi, wo))
         return Epsilon;
     return AbsCosTheta(wo) / Pi;
 }
 
 std::optional<BSDFSample> ConductorBSDF::Sample(vec3 wi, float, vec2 u2,
-                                                const NodeEvalContext& nc) const {
+                                                const NodeEvalCtx& nc) const {
     BSDFSample bs;
 
     float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
+    bs.isSpecular = alpha < 0.2f;
     TrowbridgeReitzDistribution distrib(alpha, alpha);
     vec3 wm = distrib.SampleWm(wi, u2);
 
@@ -51,7 +51,7 @@ std::optional<BSDFSample> ConductorBSDF::Sample(vec3 wi, float, vec2 u2,
     return bs;
 }
 
-vec3 ConductorBSDF::F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
+vec3 ConductorBSDF::F(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
     if (!SameHemisphere(wi, wo))
         return {};
 
@@ -64,7 +64,7 @@ vec3 ConductorBSDF::F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
 
     return fr * distrib.D(wh) * distrib.G(wo, wi) / (4 * AbsCosTheta(wo) * AbsCosTheta(wi));
 }
-float ConductorBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
+float ConductorBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
     if (!SameHemisphere(wi, wo))
         return {};
 
@@ -77,7 +77,7 @@ float ConductorBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
 }
 
 std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
-                                                 const NodeEvalContext& nc) const {
+                                                 const NodeEvalCtx& nc) const {
     BSDFSample bs;
     float etap = eta.EvalFloat(nc);
     if (CosTheta(wi) < 0)
@@ -85,6 +85,7 @@ std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
     float fr = FrDielectric(AbsCosTheta(wi), etap);
 
     float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
+    bs.isSpecular = alpha < 0.2f;
     TrowbridgeReitzDistribution distrib(alpha, alpha);
     vec3 wm = distrib.SampleWm(wi, u2);
 
@@ -95,7 +96,8 @@ std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
 
         bs.wo = wo;
         bs.pdf = fr * distrib.PDF(wi, wm) / (4 * AbsDot(wi, wm));
-        bs.f = fr * distrib.D(wm) * distrib.G(wo, wi) / (4 * CosTheta(wi) * CosTheta(wo));
+        bs.f = albedo.EvalVec3(nc) * fr * distrib.D(wm) * distrib.G(wo, wi) /
+               (4 * CosTheta(wi) * CosTheta(wo));
     } else {
         vec3 wo;
         if (!Refract(wi, wm, etap, wo))
@@ -105,13 +107,13 @@ std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
         float denom = Sqr(Dot(wo, wm) + Dot(wi, wm) / etap);
         float dwm_dwo = AbsDot(wo, wm) / denom;
         bs.pdf = (1.0f - fr) * distrib.PDF(wi, wm) * dwm_dwo;
-        bs.f = (1.0f - fr) * distrib.D(wm) * distrib.G(wi, wo) *
+        bs.f = albedo.EvalVec3(nc) * (1.0f - fr) * distrib.D(wm) * distrib.G(wi, wo) *
                fabsf(Dot(wo, wm) * Dot(wi, wm) / denom / cosThetaI / cosThetaO);
     }
     return bs;
 }
 
-vec3 DielectricBSDF::F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
+vec3 DielectricBSDF::F(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
     float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
     TrowbridgeReitzDistribution distrib(alpha, alpha);
 
@@ -128,14 +130,15 @@ vec3 DielectricBSDF::F(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
     float fr = FrDielectric(AbsCosTheta(wi), eta.EvalFloat(nc));
 
     if (reflect) {
-        return (vec3)fr * distrib.D(wm) * distrib.G(wo, wi) / (4 * cosThetaI * cosThetaO);
+        return albedo.EvalVec3(nc) * fr * distrib.D(wm) * distrib.G(wo, wi) /
+               (4 * cosThetaI * cosThetaO);
     } else {
         float denom = Sqr(Dot(wo, wm) + Dot(wi, wm) / etap) * cosThetaI * cosThetaO;
-        return (vec3)(1.0f - fr) * distrib.D(wm) * distrib.G(wi, wo) *
+        return albedo.EvalVec3(nc) * (1.0f - fr) * distrib.D(wm) * distrib.G(wi, wo) *
                fabsf(Dot(wo, wm) * Dot(wi, wm) / denom);
     }
 }
-float DielectricBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalContext& nc) const {
+float DielectricBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
     float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
     TrowbridgeReitzDistribution distrib(alpha, alpha);
 
@@ -169,7 +172,12 @@ ConductorBSDF ConductorBSDF::Create(const Parameters& params) {
 }
 
 DielectricBSDF DielectricBSDF::Create(const Parameters& params) {
-    return DielectricBSDF(Node::Create(params["roughness"]), Node::Create(params["eta"]));
+    NodeInput albedo;
+    if (params.HasSubset("albedo"))
+        albedo = Node::Create(params["albedo"]);
+    else
+        albedo = new nodes::Constant(1.0f, vec3(1.0f));
+    return DielectricBSDF(albedo, Node::Create(params["roughness"]), Node::Create(params["eta"]));
 }
 
 BSDF BSDF::Create(const Parameters& params) {

@@ -7,11 +7,17 @@ namespace pine {
 
 Film Film::Create(const Parameters& params) {
     return Film(params.GetVec2i("size", vec2i(720, 480)), Filter::Create(params["filter"]),
-                params.GetString("outputFileName", "result.png"));
+                params.GetString("outputFileName", "result.png"),
+                params.GetBool("applyToneMapping", true), params.GetBool("reportAverage", false));
 }
 
-Film::Film(vec2i size, Filter filter, std::string outputFileName)
-    : size(size), filter(filter), outputFileName(outputFileName) {
+Film::Film(vec2i size, Filter filter, std::string outputFileName, bool applyToneMapping,
+           bool reportAverage)
+    : size(size),
+      filter(filter),
+      outputFileName(outputFileName),
+      applyToneMapping(applyToneMapping),
+      reportAverage(reportAverage) {
     int offset = 0;
     for (int y = 0; y < filterTableWidth; y++)
         for (int x = 0; x < filterTableWidth; x++) {
@@ -23,6 +29,40 @@ Film::Film(vec2i size, Filter filter, std::string outputFileName)
     rgba = std::shared_ptr<vec4[]>(new vec4[Area(size)]);
 }
 
+void Film::Clear() {
+    for (int i = 0; i < Area(size); i++) {
+        pixels[i].rgb[0] = 0.0f;
+        pixels[i].rgb[1] = 0.0f;
+        pixels[i].rgb[2] = 0.0f;
+        pixels[i].splatXYZ[0] = {};
+        pixels[i].splatXYZ[1] = {};
+        pixels[i].splatXYZ[2] = {};
+        pixels[i].weight = 0.0f;
+        rgba[i] = {};
+    }
+}
+void Film::Finalize(float splatMultiplier) {
+    CopyToRGBArray(splatMultiplier);
+    
+    if (reportAverage) {
+        vec4 avg;
+        for (int i = 0; i < Area(size); i++)
+            avg += rgba[i];
+        avg /= Area(size);
+        LOG("[Film]Average RGB color: &", avg);
+    }
+
+    if (applyToneMapping)
+        ApplyToneMapping();
+
+    ApplyGammaCorrection();
+
+    if (frameId == 0)
+        WriteToDisk(outputFileName);
+    else
+        WriteToDisk(AppendFileName(outputFileName, ToString("_frame_", frameId)));
+    frameId++;
+}
 void Film::WriteToDisk(std::string filename) const {
     std::unique_ptr<vec4u8[]> rgba8 = std::unique_ptr<vec4u8[]>(new vec4u8[Area(size)]);
     for (int i = 0; i < Area(size); i++)
@@ -30,13 +70,22 @@ void Film::WriteToDisk(std::string filename) const {
     SaveImage(filename, size, 4, (float*)&rgba[0]);
 }
 
-void Film::CopyToRGBArray(float multiplier, bool cumulative) {
+void Film::CopyToRGBArray(float splatMultiplier) {
     for (int i = 0; i < Area(size); i++) {
-        float weight = multiplier / (float)pixels[i].weight;
-        if (cumulative)
-            weight *= pixels[i].nsamples;
-        for (int c = 0; c < 3; c++)
-            rgba[i][c] = float(pixels[i].rgb[c]) * weight;
+        auto& pixel = pixels[i];
+        if (pixel.weight != 0.0f)
+            for (int c = 0; c < 3; c++)
+                rgba[i][c] = float(pixel.rgb[c]) / (float)pixel.weight;
+        else
+            rgba[i] = {};
+
+        float splatXYZ[3] = {pixel.splatXYZ[0], pixel.splatXYZ[1], pixel.splatXYZ[2]};
+        float splatRGB[3];
+        XYZToRGB(splatXYZ, splatRGB);
+        rgba[i][0] += splatRGB[0] * splatMultiplier;
+        rgba[i][1] += splatRGB[1] * splatMultiplier;
+        rgba[i][2] += splatRGB[2] * splatMultiplier;
+
         rgba[i][3] = 1.0f;
     }
 }

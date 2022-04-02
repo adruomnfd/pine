@@ -3,9 +3,9 @@
 
 namespace pine {
 
-MltIntegrator::MltIntegrator(const Parameters& parameters,  Scene* scene)
-    : PathIntegrator(parameters, scene) {
-    nMutations = (int64_t)Area(filmSize) * parameters.GetInt("mutationsPerPixel", samplesPerPixel);
+MltIntegrator::MltIntegrator(const Parameters& params, Scene* scene)
+    : PathIntegrator(params, scene) {
+    nMutations = (int64_t)Area(filmSize) * params.GetInt("mutationsPerPixel", samplesPerPixel);
 };
 
 void MltIntegrator::Render() {
@@ -26,8 +26,8 @@ void MltIntegrator::Render() {
     });
     float I = (float)atomicI / nBootstrapSamples;
 
-    ThreadIdParallelFor(nMarkovChains, [&](int threadId, int chainIndex) {
-        ScopedPR(pr, chainIndex, chainIndex == nMarkovChains - 1, threadId == 0);
+    ParallelFor(nMarkovChains, [&](int chainIndex) {
+        ScopedPR(pr, chainIndex, chainIndex == nMarkovChains - 1, threadIdx == 0);
         RNG rng(chainIndex);
         Sampler sampler = MltSampler(0.01f, 0.3f, chainIndex);
 
@@ -46,8 +46,8 @@ void MltIntegrator::Render() {
 
             Spectrum wCurrent = (1.0f - pAccept) * Lcurrent * SafeRcp(Lcurrent.y());
             Spectrum wProposed = pAccept * Lproposed * SafeRcp(Lproposed.y());
-            film->AddSample(pFilmCurrent, wCurrent);
-            film->AddSample(pFilmProposed, wProposed);
+            film->AddSplat(pFilmCurrent, wCurrent);
+            film->AddSplat(pFilmProposed, wProposed);
 
             if (rng.Uniformf() < pAccept) {
                 pFilmCurrent = pFilmProposed;
@@ -59,7 +59,9 @@ void MltIntegrator::Render() {
         }
     });
 
-    film->Finalize(I * (float)Area(filmSize) / nMutations, true);
+    float pdfFilm = 1.0f / Area(filmSize);
+    float N = nMutations;
+    film->Finalize(I / pdfFilm / N);
 }
 
 }  // namespace pine

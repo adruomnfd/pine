@@ -37,9 +37,12 @@ struct HomogeneousMedium {
 };
 
 struct GridMedium {
+    enum class SamplingMethod { RayMarching, DeltaTracking };
+
     static GridMedium Create(const Parameters& params);
     GridMedium(Spectrum sigma_a, Spectrum sigma_s, PhaseFunction phaseFunction, vec3i size,
-               vec3 position, float scale, std::vector<float> density, bool interpolate);
+               vec3 position, float scale, std::vector<float> density, bool interpolate,
+               SamplingMethod method, float rayMarchingStepSize);
 
     Spectrum Tr(const Ray& ray, Sampler& sampler) const;
     Spectrum Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const;
@@ -55,7 +58,9 @@ struct GridMedium {
     mat4 m2w;
     mat4 w2m;
     std::vector<float> density;
-    bool interpolate = false;
+    bool interpolate;
+    SamplingMethod method;
+    float rayMarchingStepSize;
 };
 
 struct Medium : TaggedVariant<HomogeneousMedium, GridMedium> {
@@ -70,18 +75,6 @@ struct Medium : TaggedVariant<HomogeneousMedium, GridMedium> {
         SampledProfiler _(ProfilePhase::MediumSample);
         return Dispatch([&](auto&& x) { return x.Sample(ray, mi, sampler); });
     }
-};
-
-template <typename T>
-struct MediumInterface {
-    MediumInterface() = default;
-    MediumInterface(const T& medium) : inside(medium), outside(medium){};
-    MediumInterface(const T& inside, const T& outside) : inside(inside), outside(outside){};
-    bool IsMediumTransition() const {
-        return inside != outside;
-    }
-
-    T inside = {}, outside = {};
 };
 
 }  // namespace pine

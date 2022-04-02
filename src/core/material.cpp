@@ -8,7 +8,7 @@
 
 namespace pine {
 
-std::optional<BSDFSample> LayeredMaterial::Sample(const MaterialEvalContext& c) const {
+std::optional<BSDFSample> LayeredMaterial::Sample(const MaterialEvalCtx& c) const {
     std::optional<BSDFSample> bs;
     for (auto&& bsdf : bsdfs) {
         bs = bsdf.Sample(c.wi, c.u1, c.u2, c);
@@ -19,13 +19,13 @@ std::optional<BSDFSample> LayeredMaterial::Sample(const MaterialEvalContext& c) 
     return bs;
 }
 
-Spectrum LayeredMaterial::F(const MaterialEvalContext& c) const {
+Spectrum LayeredMaterial::F(const MaterialEvalCtx& c) const {
     vec3 f;
     for (auto&& bsdf : bsdfs)
         f += bsdf.F(c.wi, c.wo, c);
     return f;
 }
-float LayeredMaterial::PDF(const MaterialEvalContext& c) const {
+float LayeredMaterial::PDF(const MaterialEvalCtx& c) const {
     float pdf = 0.0f;
     for (auto&& bsdf : bsdfs)
         pdf += bsdf.PDF(c.wi, c.wo, c);
@@ -49,10 +49,10 @@ EmissiveMaterial::EmissiveMaterial(const Parameters& params) {
     color = Node::Create(params["color"]);
 }
 
-vec3 Material::BumpNormal(const MaterialEvalContext& c) const {
+vec3 Material::BumpNormal(const MaterialEvalCtx& c) const {
     if (!bumpMap)
         return c.n;
-    NodeEvalContext c0 = c, c1 = c;
+    NodeEvalCtx c0 = c, c1 = c;
     const float delta = 0.01f;
     c0.uv += vec2(delta, 0.0f);
     c1.uv += vec2(0.0f, delta);
@@ -62,7 +62,7 @@ vec3 Material::BumpNormal(const MaterialEvalContext& c) const {
     float dddv = (bumpMap->EvalFloat(c1) - bumpMap->EvalFloat(c)) / delta;
     vec3 dpdu = c.dpdu + dddu * c.n;
     vec3 dpdv = c.dpdv + dddv * c.n;
-    return Normalize(Cross(dpdu, dpdv));
+    return FaceSameHemisphere(Normalize(Cross(dpdu, dpdv)), c.n);
 }
 
 Material Material::Create(const Parameters& params) {

@@ -13,7 +13,7 @@ namespace pine {
 
 static std::shared_ptr<Profiler::Record> profilerRecord = std::make_shared<Profiler::Record>();
 
-void Profiler::ReportStat() {
+void Profiler::Finalize() {
     if (verbose == false)
         return;
     LOG("[Profiler]==================Results==================");
@@ -75,7 +75,6 @@ void Profiler::ReportStat() {
                 rec.name.c_str(), rec.sampleCount, rec.time / (double)rec.sampleCount, rec.time,
                 100.0 * rec.time / totalTime);
 
-    profilerRecord = std::make_shared<Record>();
     LOG("\n");
 }
 Profiler::Profiler(std::string description) {
@@ -126,7 +125,13 @@ void SampledProfiler::Initialize() {
 
     CHECK_EQ(setitimer(ITIMER_PROF, &timer, NULL), 0);
 }
-void SampledProfiler::ReportStat() {
+void SampledProfiler::Finalize() {
+    static struct itimerval timer;
+    timer.it_interval.tv_sec = 0;
+    timer.it_interval.tv_usec = 0;
+    timer.it_value = timer.it_interval;
+    CHECK_EQ(setitimer(ITIMER_PROF, &timer, NULL), 0);
+
     std::vector<std::pair<std::string, uint64_t>> phaseStat((int)ProfilePhase::NumPhase);
     for (int i = 0; i < (int)ProfilePhase::NumPhase; i++)
         phaseStat[i].first = profilePhaseName[i];

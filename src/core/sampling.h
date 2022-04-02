@@ -6,6 +6,9 @@
 namespace pine {
 
 struct SpatialPdf {
+    operator float() const {
+        return pos * dir;
+    }
     float pos = 0.0f;
     float dir = 0.0f;
 };

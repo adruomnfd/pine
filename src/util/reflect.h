@@ -101,7 +101,8 @@ constexpr size_t NumFieldsImpl(std::index_sequence<Is...>) {
     else
         return NumFieldsImpl<T>(std::make_index_sequence<sizeof...(Is) - 1>());
 }
-template <typename Ty>
+template <typename Ty,
+          typename = typename std::enable_if_t<std::is_standard_layout<std::decay_t<Ty>>::value>>
 constexpr size_t NumFields() {
     using T = std::decay_t<Ty>;
     return NumFieldsImpl<T>(std::make_index_sequence<sizeof(T) / sizeof(char)>());
@@ -165,7 +166,8 @@ constexpr auto&& Get(T&& x) {
     return std::get<I>(TieAsTuple(std::forward<T>(x)));
 }
 
-template <typename T, typename F, int Index = 0>
+template <typename T, typename F, int Index = 0,
+          typename = typename std::enable_if_t<std::is_standard_layout<std::decay_t<T>>::value>>
 constexpr void ForEachField(T&& x, F&& f) {
     if constexpr (Index != NumFields<T>()) {
         f(Get<Index>(x));
@@ -205,12 +207,34 @@ template <typename T>
 struct IsDecomposable {
     template <typename U>
     static constexpr std::true_type Check(
-        std::enable_if_t<std::is_pod<U>::value || HasArchiveMethod<U>::value>*);
+        std::enable_if_t<std::is_standard_layout<U>::value || HasArchiveMethod<U>::value>*);
     template <typename U>
     static constexpr std::false_type Check(...);
 
     static constexpr bool value = decltype(Check<T>(0))::value;
 };
+
+template <typename F, typename... Args,
+          typename = decltype((*(std::decay_t<F>*)0)((*(std::decay_t<Args>*)0)...))>
+decltype(auto) InvokeImpl(PriorityTag<2>, F&& f, Args&&... args) {
+    return f(std::forward<Args>(args)...);
+}
+
+template <typename F, typename... Args,
+          typename = decltype((*(std::decay_t<F>*)0)(std::move(*(std::decay_t<Args>*)0)...))>
+decltype(auto) InvokeImpl(PriorityTag<1>, F&& f, Args&&... args) {
+    return f(std::forward<Args>(args)...);
+}
+
+template <typename F, typename First, typename... Rest>
+decltype(auto) InvokeImpl(PriorityTag<0>, F&& f, First&&, Rest&&... rest) {
+    return InvokeImpl(PriorityTag<2>{}, std::forward<F>(f), std::forward<Rest>(rest)...);
+}
+
+template <typename F, typename... Args>
+decltype(auto) Invoke(F&& f, Args&&... args) {
+    return InvokeImpl(PriorityTag<2>{}, std::forward<F>(f), std::forward<Args>(args)...);
+}
 
 }  // namespace pine
 

@@ -1,6 +1,7 @@
 #ifndef PINE_CORE_MATERIAL_H
 #define PINE_CORE_MATERIAL_H
 
+#include <core/interaction.h>
 #include <core/node.h>
 #include <core/bxdf.h>
 #include <util/taggedvariant.h>
@@ -10,20 +11,18 @@
 
 namespace pine {
 
-struct MaterialEvalContext : NodeEvalContext {
-    MaterialEvalContext(vec3 p, vec3 n, vec2 uv, vec3 dpdu, vec3 dpdv, vec3 wi,
-                        vec3 wo = vec3(0.0f), vec2 u2 = vec2(0.0f), float u1 = 0.0f)
-        : NodeEvalContext(p, n, uv),
-          dpdu(dpdu),
-          dpdv(dpdv),
-          n2w(CoordinateSystem(n)),
-          u2(u2),
-          u1(u1) {
+struct MaterialEvalCtx : NodeEvalCtx {
+    MaterialEvalCtx(vec3 p, vec3 n, vec2 uv, vec3 dpdu, vec3 dpdv, vec3 wi, vec3 wo = vec3(0.0f),
+                    vec2 u2 = vec2(0.0f), float u1 = 0.0f)
+        : NodeEvalCtx(p, n, uv), dpdu(dpdu), dpdv(dpdv), n2w(CoordinateSystem(n)), u2(u2), u1(u1) {
         mat3 w2n = Inverse(n2w);
         this->wi = w2n * wi;
         if (wo != vec3(0.0f))
             this->wo = w2n * wo;
     };
+    MaterialEvalCtx(const Interaction& it, vec3 wi, vec3 wo = vec3(0.0f), vec2 u2 = vec2(0.0f),
+                    float u1 = 0.0f)
+        : MaterialEvalCtx(it.p, it.n, it.uv, it.dpdu, it.dpdv, wi, wo, u2, u1){};
 
     vec3 wi;
     vec3 wo;
@@ -36,10 +35,10 @@ struct MaterialEvalContext : NodeEvalContext {
 struct LayeredMaterial {
     LayeredMaterial(const Parameters& params);
 
-    std::optional<BSDFSample> Sample(const MaterialEvalContext& c) const;
-    Spectrum F(const MaterialEvalContext& c) const;
-    float PDF(const MaterialEvalContext& c) const;
-    Spectrum Le(const MaterialEvalContext&) const {
+    std::optional<BSDFSample> Sample(const MaterialEvalCtx& c) const;
+    Spectrum F(const MaterialEvalCtx& c) const;
+    float PDF(const MaterialEvalCtx& c) const;
+    Spectrum Le(const MaterialEvalCtx&) const {
         return {};
     }
 
@@ -49,16 +48,16 @@ struct LayeredMaterial {
 struct EmissiveMaterial {
     EmissiveMaterial(const Parameters& params);
 
-    std::optional<BSDFSample> Sample(const MaterialEvalContext&) const {
+    std::optional<BSDFSample> Sample(const MaterialEvalCtx&) const {
         return std::nullopt;
     }
-    Spectrum F(const MaterialEvalContext&) const {
+    Spectrum F(const MaterialEvalCtx&) const {
         return {};
     }
-    float PDF(const MaterialEvalContext&) const {
+    float PDF(const MaterialEvalCtx&) const {
         return {};
     }
-    Spectrum Le(const MaterialEvalContext& c) const {
+    Spectrum Le(const MaterialEvalCtx& c) const {
         if (CosTheta(c.wi) > 0.0f)
             return color.EvalVec3(c);
         else
@@ -73,9 +72,9 @@ struct Material : public TaggedVariant<LayeredMaterial, EmissiveMaterial> {
     using TaggedVariant::TaggedVariant;
     static Material Create(const Parameters& params);
 
-    vec3 BumpNormal(const MaterialEvalContext& c) const;
+    vec3 BumpNormal(const MaterialEvalCtx& c) const;
 
-    std::optional<BSDFSample> Sample(const MaterialEvalContext& c) const {
+    std::optional<BSDFSample> Sample(const MaterialEvalCtx& c) const {
         SampledProfiler _(ProfilePhase::MaterialSample);
         return Dispatch([&](auto&& x) {
             std::optional<BSDFSample> bs = x.Sample(c);
@@ -85,17 +84,17 @@ struct Material : public TaggedVariant<LayeredMaterial, EmissiveMaterial> {
         });
     }
 
-    Spectrum F(const MaterialEvalContext& c) const {
+    Spectrum F(const MaterialEvalCtx& c) const {
         SampledProfiler _(ProfilePhase::MaterialSample);
         return Dispatch([&](auto&& x) { return x.F(c); });
     }
 
-    float PDF(const MaterialEvalContext& c) const {
+    float PDF(const MaterialEvalCtx& c) const {
         SampledProfiler _(ProfilePhase::MaterialSample);
         return Dispatch([&](auto&& x) { return x.PDF(c); });
     }
 
-    Spectrum Le(const MaterialEvalContext& c) const {
+    Spectrum Le(const MaterialEvalCtx& c) const {
         SampledProfiler _(ProfilePhase::MaterialSample);
 
         return Dispatch([&](auto&& x) { return x.Le(c); });

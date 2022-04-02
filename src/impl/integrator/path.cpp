@@ -5,10 +5,9 @@
 
 namespace pine {
 
-PathIntegrator::PathIntegrator(const Parameters& parameters, Scene* scene)
-    : SinglePassIntegrator(parameters, scene) {
-    maxDepth = parameters.GetInt("maxDepth", 4);
-    clamp = parameters.GetFloat("clamp", FloatMax);
+PathIntegrator::PathIntegrator(const Parameters& params, Scene* scene)
+    : RadianceIntegrator(params, scene) {
+    clamp = params.GetFloat("clamp", FloatMax);
 }
 
 Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
@@ -57,9 +56,8 @@ Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
             continue;
         }
 
-        MaterialEvalContext mc(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d);
-        it.n = it.material->BumpNormal(mc);
-        mc = MaterialEvalContext(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d);
+        it.n = it.material->BumpNormal(MaterialEvalCtx(it, -ray.d));
+        auto mc = MaterialEvalCtx(it, -ray.d);
 
         // Accounting for visible emssive surface
         if (it.material->Is<EmissiveMaterial>()) {

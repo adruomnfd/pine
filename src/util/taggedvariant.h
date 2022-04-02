@@ -212,7 +212,7 @@ struct TaggedVariant {
                     if constexpr (HasOpEq<std::decay_t<decltype(ax)>>::value) {
                         return ax == bx;
                     } else {
-                        LOG_FATAL("Try to compare type that didn't define operator==");
+                        LOG_FATAL("Try to compare type that don't have operator==()");
                         return false;
                     }
                 } else {

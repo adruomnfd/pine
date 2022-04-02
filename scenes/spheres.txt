@@ -1,8 +1,8 @@
 Integrator: Path{
     maxDepth: 6
-        
+
     sampler: Halton{
-        samplesPerPixel: 128
+        samplesPerPixel: 32
     }
 }
 
@@ -19,6 +19,7 @@ Camera: ThinLen{
     to:   0 0 0
     fov:  0.24
 }
+
 Shape: Rect{
     position: 8 16 4
     ex: 4 0 0

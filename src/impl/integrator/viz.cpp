@@ -1,11 +1,12 @@
 #include <impl/integrator/viz.h>
 #include <core/color.h>
+#include <util/parameters.h>
 
 namespace pine {
 
-VizIntegrator::VizIntegrator(const Parameters& parameters, Scene* scene)
-    : PixelSampleIntegrator(parameters, scene) {
-    std::string viztype = parameters.GetString("viztype");
+VizIntegrator::VizIntegrator(const Parameters& params, Scene* scene)
+    : RadianceIntegrator(params, scene) {
+    std::string viztype = params.GetString("viztype");
     SWITCH(viztype) {
         CASE("Bvh") type = Type::Bvh;
         CASE("Position") type = Type::Position;

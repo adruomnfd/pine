@@ -14,14 +14,15 @@ namespace pine {
 
 struct Pixel {
     AtomicFloat rgb[3];
+    AtomicFloat splatXYZ[3];
     AtomicFloat weight;
-    std::atomic<int> nsamples{0};
 };
 
 struct Film {
     static Film Create(const Parameters& params);
     Film() = default;
-    Film(vec2i size, Filter filter, std::string outputFileName);
+    Film(vec2i size, Filter filter, std::string outputFileName, bool applyToneMapping,
+         bool reportAverage);
 
     void AddSample(vec2 pFilm, const Spectrum& sL) {
         SampledProfiler _(ProfilePhase::FilmAddSample);
@@ -41,8 +42,20 @@ struct Film {
                 pixel.rgb[1].Add(L[1] * weight);
                 pixel.rgb[2].Add(L[2] * weight);
                 pixel.weight.Add(weight);
-                ++pixel.nsamples;
             }
+    }
+    void AddSplat(vec2 pFilm, const Spectrum& sL) {
+        SampledProfiler _(ProfilePhase::FilmAddSample);
+        vec2i p = pFilm * size;
+        if (!Inside(p, vec2i(0), size))
+            return;
+        float xyz[3];
+        sL.ToXYZ(xyz);
+
+        auto& pixel = GetPixel(p);
+        pixel.splatXYZ[0].Add(xyz[0]);
+        pixel.splatXYZ[1].Add(xyz[1]);
+        pixel.splatXYZ[2].Add(xyz[2]);
     }
 
     Pixel& GetPixel(vec2i p) {
@@ -55,21 +68,8 @@ struct Film {
     float Aspect() const {
         return (float)size.x / size.y;
     }
-    void Clear() {
-        for (int i = 0; i < Area(size); i++) {
-            pixels[i].rgb[0] = 0.0f;
-            pixels[i].rgb[1] = 0.0f;
-            pixels[i].rgb[2] = 0.0f;
-            pixels[i].weight = 0.0f;
-            rgba[i] = {};
-        }
-    }
-    void Finalize(float multiplier = 1.0f, bool cumulative = false) {
-        CopyToRGBArray(multiplier, cumulative);
-        ApplyToneMapping();
-        ApplyGammaCorrection();
-        WriteToDisk(outputFileName);
-    }
+    void Clear();
+    void Finalize(float splatMultiplier = 1.0f);
     void WriteToDisk(std::string filename) const;
 
   private:
@@ -77,7 +77,7 @@ struct Film {
         vec2i pi = filterTableWidth * Min(Abs(p) / filter.Radius(), vec2(OneMinusEpsilon));
         return filterTable[pi.y * filterTableWidth + pi.x];
     }
-    void CopyToRGBArray(float multiplier, bool cumulative);
+    void CopyToRGBArray(float splatMultiplier);
     void ApplyToneMapping();
     void ApplyGammaCorrection();
 
@@ -90,6 +90,9 @@ struct Film {
     float filterTable[filterTableWidth * filterTableWidth];
 
     std::string outputFileName;
+    bool applyToneMapping = true;
+    bool reportAverage = false;
+    int frameId = 0;
 };
 
 }  // namespace pine

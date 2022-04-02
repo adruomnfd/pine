@@ -190,21 +190,6 @@ RGBSpectrum SampledSpectrum::ToRGBSpectrum() const {
     return RGBSpectrum::FromRGB(rgb);
 }
 
-template <typename Predicate>
-static int FindInterval(int size, const Predicate& pred) {
-    int first = 0, len = size;
-    while (len > 0) {
-        int half = len / 2, middle = first + half;
-        if (pred(middle)) {
-            first = middle + 1;
-            len -= half + 1;
-        } else {
-            len = half;
-        }
-    }
-
-    return Clamp(first - 1, 0, size - 2);
-}
 static float InterpolateSpectrumSamples(const float* lambda, const float* vals, int n, float l) {
     if (l <= lambda[0])
         return vals[0];

@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast)
+# add_link_options(-fsanitize=address)
 
 include_directories(
     ./
@@ -44,6 +45,8 @@ src/impl/integrator/ao.cpp
 src/impl/integrator/viz.cpp
 src/impl/integrator/mlt.cpp
 src/impl/integrator/path.cpp
+src/impl/integrator/sppm.cpp
+src/impl/integrator/bdpt.cpp
 src/impl/integrator/lightpath.cpp
 src/impl/accel/bvh.cpp
 src/impl/accel/cwbvh.cpp

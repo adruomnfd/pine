@@ -9,7 +9,7 @@
 namespace pine {
 
 struct Profiler {
-    static void ReportStat();
+    static void Finalize();
 
     Profiler(std::string description);
     ~Profiler();
@@ -57,7 +57,7 @@ static const char* profilePhaseName[] = {
 
 struct SampledProfiler {
     static void Initialize();
-    static void ReportStat();
+    static void Finalize();
 
     SampledProfiler(ProfilePhase phase);
     ~SampledProfiler();

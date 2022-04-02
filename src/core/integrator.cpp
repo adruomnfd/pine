@@ -9,31 +9,35 @@
 #include <impl/integrator/viz.h>
 #include <impl/integrator/mlt.h>
 #include <impl/integrator/path.h>
+#include <impl/integrator/sppm.h>
+#include <impl/integrator/bdpt.h>
 #include <impl/integrator/lightpath.h>
 
 namespace pine {
 
-std::shared_ptr<Integrator> Integrator::Create(const Parameters& parameters, Scene* scene) {
-    std::string type = parameters.GetString("type");
+std::shared_ptr<Integrator> Integrator::Create(const Parameters& params, Scene* scene) {
+    std::string type = params.GetString("type");
     SWITCH(type) {
-        CASE("AO") return std::make_shared<AOIntegrator>(parameters, scene);
-        CASE("Viz") return std::make_shared<VizIntegrator>(parameters, scene);
-        CASE("Mlt") return std::make_shared<MltIntegrator>(parameters, scene);
-        CASE("Path") return std::make_shared<PathIntegrator>(parameters, scene);
-        CASE("LightPath") return std::make_shared<LightPathIntegrator>(parameters, scene);
+        CASE("AO") return std::make_shared<AOIntegrator>(params, scene);
+        CASE("Viz") return std::make_shared<VizIntegrator>(params, scene);
+        CASE("Mlt") return std::make_shared<MltIntegrator>(params, scene);
+        CASE("Path") return std::make_shared<PathIntegrator>(params, scene);
+        CASE("Sppm") return std::make_shared<SPPMIntegrator>(params, scene);
+        CASE("Bdpt") return std::make_shared<BDPTIntegrator>(params, scene);
+        CASE("LightPath") return std::make_shared<LightPathIntegrator>(params, scene);
         DEFAULT {
             LOG_WARNING("[Integrator][Create]Unknown type \"&\"", type);
-            return std::make_shared<PathIntegrator>(parameters, scene);
+            return std::make_shared<PathIntegrator>(params, scene);
         }
     }
 }
-Integrator::Integrator(const Parameters& parameters, Scene* scene) : scene(scene) {
+Integrator::Integrator(const Parameters& params, Scene* scene) : scene(scene) {
     film = &scene->camera.GetFilm();
     filmSize = scene->camera.GetFilm().Size();
 
-    lightSampler = LightSampler::Create(parameters["lightSampler"], scene->lights);
+    lightSampler = LightSampler::Create(params["lightSampler"], scene->lights);
 
-    Parameters samplerParams = parameters["sampler"];
+    Parameters samplerParams = params["sampler"];
     samplerParams.Set("filmSize", filmSize);
     samplers = {Sampler::Create(samplerParams)};
     for (int i = 0; i < NumThreads() - 1; i++)
@@ -41,22 +45,24 @@ Integrator::Integrator(const Parameters& parameters, Scene* scene) : scene(scene
     samplesPerPixel = samplers[0].SamplesPerPixel();
 }
 
-RayIntegrator::RayIntegrator(const Parameters& parameters, Scene* scene)
-    : Integrator(parameters, scene), accel(Accel::Create(parameters["accel"])) {
+RayIntegrator::RayIntegrator(const Parameters& params, Scene* scene)
+    : Integrator(params, scene), accel(Accel::Create(params["accel"])) {
     accel->Initialize(scene);
+    maxDepth = params.GetInt("maxDepth", 4);
 }
-bool RayIntegrator::Hit(Ray ray) {
+bool RayIntegrator::Hit(Ray ray) const {
     SampledProfiler _(ProfilePhase::IntersectShadow);
 
     Interaction it;
     return accel->Intersect(ray, it);
 }
-bool RayIntegrator::Intersect(Ray& ray, Interaction& it) {
+bool RayIntegrator::Intersect(Ray& ray, Interaction& it) const {
     SampledProfiler _(ProfilePhase::IntersectClosest);
 
+    it.wi = -ray.d;
     return accel->Intersect(ray, it);
 }
-Spectrum RayIntegrator::IntersectTr(Ray ray, Sampler& sampler) {
+Spectrum RayIntegrator::IntersectTr(Ray ray, Sampler& sampler) const {
     SampledProfiler _(ProfilePhase::IntersectTr);
 
     vec3 p2 = ray(ray.tmax);
@@ -76,7 +82,7 @@ Spectrum RayIntegrator::IntersectTr(Ray ray, Sampler& sampler) {
 
     return tr;
 }
-Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler) {
+Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler) const {
     SampledProfiler _(ProfilePhase::EstimateDirect);
 
     auto [light, slPdf] = lightSampler.SampleLight(it.p, it.n, sampler.Get1D());
@@ -92,7 +98,7 @@ Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler
     Spectrum f;
     float scatteringPdf;
     if (it.IsSurfaceInteraction()) {
-        MaterialEvalContext mc(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d, ls.wo);
+        MaterialEvalCtx mc(it, -ray.d, ls.wo);
         f = it.material->F(mc) * AbsDot(ls.wo, it.n);
         scatteringPdf = it.material->PDF(mc);
     } else {
@@ -108,31 +114,8 @@ Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler
         return tr * f * w * ls.Le / ls.pdf;
 }
 
-void PixelSampleIntegrator::Render() {
-    Profiler _("Render");
-    film->Clear();
-
-    ProgressReporter pr("Rendering", "Samples", "Samples", samplesPerPixel, Area(filmSize));
-
-    for (int sampleIndex = 0; sampleIndex < samplesPerPixel; sampleIndex++) {
-        ScopedPR(pr, sampleIndex, sampleIndex + 1 == samplesPerPixel);
-
-        ThreadIdParallelFor(filmSize, [&](int id, vec2i p) {
-            Sampler& sampler = samplers[id];
-            sampler.StartPixel(p, sampleIndex);
-
-            vec2 pFilm = (p + sampler.Get2D()) / film->Size();
-            Ray ray = scene->camera.GenRay(pFilm, sampler.Get2D());
-
-            film->AddSample(pFilm, Li(ray, sampler));
-        });
-    }
-
-    film->Finalize();
-}
-
-void SinglePassIntegrator::Render() {
-    Profiler _("Render");
+void PixelIntegrator::Render() {
+    Profiler _("Rendering");
     film->Clear();
 
     int total = Area(filmSize);
@@ -144,25 +127,28 @@ void SinglePassIntegrator::Render() {
     for (int i = 0; i < nGroups; i++) {
         ScopedPR(pr, i * groupSize, i + 1 == nGroups);
 
-        ThreadIdParallelFor(groupSize, [&](int id, int index) {
+        ParallelFor(groupSize, [&](int index) {
             index += i * groupSize;
             if (index >= total)
                 return;
             vec2i p = {index % filmSize.x, index / filmSize.x};
-
-            Sampler& sampler = samplers[id];
+            Sampler& sampler = samplers[threadIdx];
             sampler.StartPixel(p, 0);
 
             for (int sampleIndex = 0; sampleIndex < samplesPerPixel; sampleIndex++) {
-                vec2 pFilm = (p + sampler.Get2D()) / film->Size();
-                Ray ray = scene->camera.GenRay(pFilm, sampler.Get2D());
-                film->AddSample(pFilm, Li(ray, sampler));
+                Compute(p, sampler);
                 sampler.StartNextSample();
             }
         });
     }
 
-    film->Finalize();
+    film->Finalize(1.0f / samplesPerPixel);
+}
+
+void RadianceIntegrator::Compute(vec2i p, Sampler& sampler) {
+    vec2 pFilm = (p + sampler.Get2D()) / film->Size();
+    Ray ray = scene->camera.GenRay(pFilm, sampler.Get2D());
+    film->AddSample(pFilm, Li(ray, sampler));
 }
 
 }  // namespace pine

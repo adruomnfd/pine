@@ -1,6 +1,7 @@
 #ifndef PINE_CORE_GEOMETRY_H
 #define PINE_CORE_GEOMETRY_H
 
+#include <core/interaction.h>
 #include <core/material.h>
 #include <core/medium.h>
 #include <core/light.h>
@@ -11,73 +12,6 @@
 #include <vector>
 
 namespace pine {
-
-inline vec3 OffsetRayOrigin(vec3 p, vec3 n) {
-    float origin = 1.0f / 32.0f;
-    float floatScale = 1.0f / 65536.0f;
-    float intScale = 256.0f;
-    vec3i of_i = intScale * n;
-    vec3 p_i = Bitcast<vec3>(Bitcast<vec3i>(p) + vec3i(p.x < 0 ? -of_i.x : of_i.x,
-                                                       p.y < 0 ? -of_i.y : of_i.y,
-                                                       p.z < 0 ? -of_i.z : of_i.z));
-    return {std::abs(p.x) < origin ? p.x + n.x * floatScale : p_i.x,
-            std::abs(p.y) < origin ? p.y + n.y * floatScale : p_i.y,
-            std::abs(p.z) < origin ? p.z + n.z * floatScale : p_i.z};
-}
-
-struct Interaction {
-    bool IsSurfaceInteraction() const {
-        return phaseFunction == nullptr;
-    }
-    bool IsMediumInteraction() const {
-        return phaseFunction != nullptr;
-    }
-    Ray SpawnRayTo(vec3 p2) {
-        Ray ray;
-        ray.d = Normalize(p2 - p, ray.tmax);
-        ray.o = OffsetRayOrigin(p, FaceSameHemisphere(n, ray.d));
-        ray.tmin = 0.0f;
-        ray.tmax *= 1.0f - 1e-3f;
-        ray.medium = GetMedium(ray.d);
-        return ray;
-    }
-    Ray SpawnRay(vec3 wo, float distance) {
-        Ray ray;
-        ray.d = wo;
-        ray.o = OffsetRayOrigin(p, FaceSameHemisphere(n, ray.d));
-        ray.tmin = 0.0f;
-        ray.tmax = distance * (1.0f - 1e-3f);
-        ray.medium = GetMedium(ray.d);
-        return ray;
-    }
-    Ray SpawnRay(vec3 w) {
-        Ray ray;
-        ray.d = w;
-        ray.o = OffsetRayOrigin(p, FaceSameHemisphere(n, ray.d));
-        ray.tmin = 0.0f;
-        ray.tmax = FloatMax;
-        ray.medium = GetMedium(ray.d);
-        return ray;
-    }
-    const Medium* GetMedium(vec3 w) const {
-        return Dot(w, n) > 0 ? mediumInterface.outside : mediumInterface.inside;
-    }
-
-    Fstring Formatting(Format fmt) const {
-        return Fstring(fmt, "[Interaction]p & n & uv &", p, n, uv);
-    }
-
-    vec3 p;
-    vec3 n;
-    vec2 uv;
-    vec3 dpdu, dpdv;
-
-    const Material* material = nullptr;
-    const Shape* shape = nullptr;
-    MediumInterface<const Medium*> mediumInterface;
-    const PhaseFunction* phaseFunction = nullptr;
-    float bvh = 0.0f;
-};
 
 struct RayOctant {
     RayOctant(const Ray& ray)
@@ -94,6 +28,7 @@ struct RayOctant {
 struct AABB {
     AABB() = default;
     AABB(vec3 lower, vec3 upper) : lower(lower), upper(upper){};
+    AABB(vec3 p) : lower(p), upper(p){};
     int MaxDim() const {
         vec3 diagonal = upper - lower;
         if (diagonal.x > diagonal.y)
@@ -115,6 +50,10 @@ struct AABB {
     float SurfaceArea() const;
     void Extend(vec3 p);
     void Extend(const AABB& aabb);
+    friend AABB Extend(AABB l, vec3 r) {
+        l.Extend(r);
+        return l;
+    }
     friend AABB Union(AABB l, const AABB& r) {
         l.Extend(r);
         return l;
@@ -132,8 +71,8 @@ struct AABB {
         return upper[dim] > lower[dim];
     }
     bool IsInside(const AABB& it) {
-        return it.lower[0] >= lower[0] && it.lower[1] >= lower[1] && it.lower[2] >= lower[2] &&
-               it.upper[0] <= upper[0] && it.upper[1] <= lower[1] && it.upper[2] <= upper[2];
+        return it.lower[0] > lower[0] && it.lower[1] > lower[1] && it.lower[2] > lower[2] &&
+               it.upper[0] < upper[0] && it.upper[1] < lower[1] && it.upper[2] < upper[2];
     }
     void CheckIsInside(const AABB& it) {
         CHECK_GE(it.lower[0], lower[0]);
@@ -150,44 +89,8 @@ struct AABB {
     bool Hit(const Ray& ray) const;
     bool Hit(Ray ray, float& tmin, float& tmax) const;
 
-    bool Hit(vec3 negOrgDivDir, vec3 invdir, float tmin, float tmax) const {
-#pragma unroll
-        for (int i = 0; i < 3; i++) {
-            float t0 = lower[i] * invdir[i] + negOrgDivDir[i];
-            float t1 = upper[i] * invdir[i] + negOrgDivDir[i];
-            tmin = max(tmin, min(t0, t1));
-            tmax = min(tmax, max(t0, t1));
-            if (tmin > tmax)
-                return false;
-        }
-        return true;
-    }
-    bool Hit(vec3 negOrgDivDir, vec3 invdir, float tmin, float* tmax) const {
-#pragma unroll
-        for (int i = 0; i < 3; i++) {
-            float t0 = lower[i] * invdir[i] + negOrgDivDir[i];
-            float t1 = upper[i] * invdir[i] + negOrgDivDir[i];
-            tmin = max(tmin, min(t0, t1));
-            *tmax = min(*tmax, max(t0, t1));
-            if (tmin > *tmax)
-                return false;
-        }
-        return true;
-    }
-
     PINE_ALWAYS_INLINE bool Hit(const RayOctant& r, float tmin, float tmax) const {
-        const float* p = &lower[0];
-        float tmin0 = p[0 + r.octantx3[0]] * r.invDir[0] + r.negOrgDivDir[0];
-        float tmin1 = p[1 + r.octantx3[1]] * r.invDir[1] + r.negOrgDivDir[1];
-        float tmin2 = p[2 + r.octantx3[2]] * r.invDir[2] + r.negOrgDivDir[2];
-
-        float tmax0 = p[3 - r.octantx3[0]] * r.invDir[0] + r.negOrgDivDir[0];
-        float tmax1 = p[4 - r.octantx3[1]] * r.invDir[1] + r.negOrgDivDir[1];
-        float tmax2 = p[5 - r.octantx3[2]] * r.invDir[2] + r.negOrgDivDir[2];
-
-        tmin = max(max(max(tmin0, tmin1), tmin2), tmin);
-        tmax = min(min(min(tmax0, tmax1), tmax2), tmax);
-        return tmin <= tmax;
+        return Hit(r, tmin, &tmax);
     }
     PINE_ALWAYS_INLINE bool Hit(const RayOctant& r, float tmin, float* tmax) const {
         const float* p = &lower[0];
@@ -256,6 +159,7 @@ struct Sphere {
         ss.n = UniformSphereSampling(u);
         ss.p = c + r * ss.n;
         ss.uv = u * vec2(Pi * 2, Pi);
+        ss.p = OffsetRayOrigin(ss.p, ss.n);
         return ss;
     }
 
@@ -423,6 +327,7 @@ struct Triangle {
         ss.p = InterpolatePosition(u);
         ss.n = Normal();
         ss.uv = u;
+        ss.p = OffsetRayOrigin(ss.p, ss.n);
         return ss;
     }
 
@@ -453,6 +358,7 @@ struct Rect {
         ss.p = position + ex * lx * (u.x - 0.5f) + ey * ly * (u.y - 0.5f);
         ss.n = n;
         ss.uv = u;
+        ss.p = OffsetRayOrigin(ss.p, n);
         return ss;
     }
 
@@ -531,7 +437,7 @@ struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line
         CHECK(material);
         ShapeSample ss = Dispatch([&](auto&& x) { return x.Sample(p, u); });
         ss.wo = Normalize(ss.p - p, ss.distance);
-        MaterialEvalContext mc(ss.p, ss.n, ss.uv, vec3(), vec3(), -ss.wo);
+        MaterialEvalCtx mc(ss.p, ss.n, ss.uv, vec3(), vec3(), -ss.wo);
         ss.Le = material->Le(mc);
         ss.pdf = Sqr(ss.distance) / (AbsDot(-ss.wo, ss.n) * Area());
         return ss;

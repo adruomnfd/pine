@@ -2,7 +2,7 @@ Integrator: Path{
     maxDepth: 64
     
     sampler: Halton{
-        samplesPerPixel: 128
+        samplesPerPixel: 32
     }
 }
 

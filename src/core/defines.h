@@ -31,11 +31,9 @@
     ClassName(ClassName&&) = delete;                 \
     ClassName& operator=(ClassName&&) = delete;
 
-#define PINE_DELETE_COPY(ClassName)                  \
-    ClassName(const ClassName&) = delete;            \
-    ClassName& operator=(const ClassName&) = delete; \
-    ClassName(ClassName&&) = default;                \
-    ClassName& operator=(ClassName&&) = default;
+#define PINE_DELETE_COPY(ClassName)       \
+    ClassName(const ClassName&) = delete; \
+    ClassName& operator=(const ClassName&) = delete;
 
 #define SWITCH(x)                    \
     const auto& _switchVariable = x; \
@@ -75,15 +73,18 @@
 
 namespace pine {
 
-struct Scene;
-struct Ray;
-struct AABB;
-struct Shape;
-struct Medium;
+struct PhaseFunction;
 struct TriangleMesh;
 struct Interaction;
-struct RNG;
 struct Parameters;
+struct Material;
+struct Camera;
+struct Medium;
+struct Scene;
+struct Shape;
+struct AABB;
+struct Ray;
+struct RNG;
 
 class Integrator;
 class Accel;

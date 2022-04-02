@@ -5,13 +5,10 @@
 
 namespace pine {
 
-class LightPathIntegrator : public RayIntegrator {
+class LightPathIntegrator : public PixelIntegrator {
   public:
-    LightPathIntegrator(const Parameters& params, Scene* scene);
-    void Render();
-
-  private:
-    int maxDepth = 0;
+    using PixelIntegrator::PixelIntegrator;
+    void Compute(vec2i p, Sampler& sampler) override;
 };
 
 }  // namespace pine

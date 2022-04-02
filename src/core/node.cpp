@@ -4,13 +4,13 @@
 
 namespace pine {
 
-float NodeInput::EvalFloat(const NodeEvalContext& c) const {
+float NodeInput::EvalFloat(const NodeEvalCtx& c) const {
     if (link)
         return link->EvalFloat(c);
     else
         return defaultFloat;
 }
-vec3 NodeInput::EvalVec3(const NodeEvalContext& c) const {
+vec3 NodeInput::EvalVec3(const NodeEvalCtx& c) const {
     if (link)
         return link->EvalVec3(c);
     else
@@ -23,7 +23,7 @@ nodes::Texture::Texture(NodeInput texcoord, std::string filename) : texcoord(tex
     texels.assign(ptr.get(), ptr.get() + Area(size));
 }
 
-vec3 nodes::Texture::EvalVec3(const NodeEvalContext& c) const {
+vec3 nodes::Texture::EvalVec3(const NodeEvalCtx& c) const {
     if (size == vec2i(0) || texels.size() == 0)
         return vec3(0.0f, 0.0f, 1.0f);
     vec2i co = size * pine::Fract(texcoord.EvalVec3(c));

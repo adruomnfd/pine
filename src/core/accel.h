@@ -10,7 +10,7 @@ namespace pine {
 
 class Accel {
   public:
-    static std::shared_ptr<Accel> Create(const Parameters& parameters);
+    static std::shared_ptr<Accel> Create(const Parameters& params);
 
     virtual ~Accel() = default;
     virtual void Initialize(const Scene* scene) = 0;

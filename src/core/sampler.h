@@ -84,7 +84,8 @@ struct HaltonSampler {
     enum class RandomizeStrategy { None, PermuteDigits };
 
     static HaltonSampler Create(const Parameters& params);
-    HaltonSampler(int samplesPerPixel, vec2i filmSize, RandomizeStrategy randomizeStrategy);
+    HaltonSampler(int samplesPerPixel, vec2i filmSize,
+                  RandomizeStrategy randomizeStrategy = RandomizeStrategy::PermuteDigits);
 
     int SamplesPerPixel() const {
         return samplesPerPixel;
@@ -142,7 +143,8 @@ struct SobolSampler {
     enum class RandomizeStrategy { None, BinaryPermutate, FastOwen, Owen };
 
     static SobolSampler Create(const Parameters& params);
-    SobolSampler(int samplesPerPixel, vec2i filmSize, RandomizeStrategy randomizeStrategy);
+    SobolSampler(int samplesPerPixel, vec2i filmSize,
+                 RandomizeStrategy randomizeStrategy = RandomizeStrategy::FastOwen);
 
     int SamplesPerPixel() const {
         return samplesPerPixel;

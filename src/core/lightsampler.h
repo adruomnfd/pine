@@ -3,6 +3,7 @@
 
 #include <core/light.h>
 #include <util/taggedvariant.h>
+#include <util/distribution.h>
 
 #include <vector>
 
@@ -20,16 +21,22 @@ struct UniformLightSampler {
 
     SampledLight SampleLight(vec3 p, vec3 n, float ul) const;
     SampledLight SampleLight(float ul) const;
-    float Pdf() const {
-        if (!lights.size())
-            return 0.0f;
-        return 1.0f / (float)lights.size();
-    }
 
     std::vector<Light> lights;
 };
 
-struct LightSampler : TaggedVariant<UniformLightSampler> {
+struct PowerLightSampler {
+    static PowerLightSampler Create(const Parameters& params, const std::vector<Light>& lights);
+    PowerLightSampler(const std::vector<Light>& lights);
+
+    SampledLight SampleLight(vec3 p, vec3 n, float ul) const;
+    SampledLight SampleLight(float ul) const;
+
+    std::vector<Light> lights;
+    Distribution1D powerDistr;
+};
+
+struct LightSampler : TaggedVariant<UniformLightSampler, PowerLightSampler> {
     using TaggedVariant::TaggedVariant;
     static LightSampler Create(const Parameters& params, const std::vector<Light>& lights);
 

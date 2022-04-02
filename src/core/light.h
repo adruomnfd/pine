@@ -33,6 +33,12 @@ struct PointLight {
     LightSample Sample(vec3 p, vec2 u2) const;
     LightLeSample SampleLe(vec2, vec2 ud) const;
     SpatialPdf PdfLe(const Ray&) const;
+    Spectrum Power() const {
+        return color * Pi4;
+    }
+    bool IsDelta() const {
+        return true;
+    }
 
     vec3 position;
     Spectrum color;
@@ -50,6 +56,12 @@ struct DirectionalLight {
     SpatialPdf PdfLe(const Ray&) const {
         return {};
     }
+    Spectrum Power() const {
+        return {};
+    }
+    bool IsDelta() const {
+        return true;
+    }
 
     vec3 direction;
     Spectrum color;
@@ -57,11 +69,11 @@ struct DirectionalLight {
 
 struct AreaLight {
     LightSample Sample(vec3 p, vec2 u2) const;
-    LightLeSample SampleLe(vec2, vec2) const {
-        return {};
-    }
-    SpatialPdf PdfLe(const Ray&) const {
-        return {};
+    LightLeSample SampleLe(vec2, vec2) const;
+    SpatialPdf PdfLe(const Ray&) const;
+    Spectrum Power() const;
+    bool IsDelta() const {
+        return false;
     }
 
     const Shape* shape = nullptr;
@@ -76,6 +88,18 @@ struct Sky {
     LightSample Sample(vec3 p, vec2 u2) const;
     Spectrum Color(vec3 wo) const;
     float Pdf(vec3 wo) const;
+    LightLeSample SampleLe(vec2, vec2) const {
+        return {};
+    }
+    SpatialPdf PdfLe(const Ray&) const {
+        return {};
+    }
+    Spectrum Power() const {
+        return {};
+    }
+    bool IsDelta() const {
+        return false;
+    }
 
     vec3 sunDirection;
     Spectrum sunColor;
@@ -88,6 +112,18 @@ struct Atmosphere {
     LightSample Sample(vec3 p, vec2 u2) const;
     Spectrum Color(vec3 wo) const;
     float Pdf(vec3 wo) const;
+    LightLeSample SampleLe(vec2, vec2) const {
+        return {};
+    }
+    SpatialPdf PdfLe(const Ray&) const {
+        return {};
+    }
+    Spectrum Power() const {
+        return {};
+    }
+    bool IsDelta() const {
+        return false;
+    }
 
     vec3 sunDirection;
     Spectrum sunColor;
@@ -113,11 +149,20 @@ struct EnvironmentLight : TaggedVariant<Atmosphere, Sky> {
         SampledProfiler _(ProfilePhase::SampleEnvLight);
         return Dispatch([&](auto&& x) { return x.Pdf(wo); });
     }
-    LightLeSample SampleLe(vec2, vec2) const {
-        return {};
+    LightLeSample SampleLe(vec2 up, vec2 ud) const {
+        SampledProfiler _(ProfilePhase::SampleEnvLight);
+        return Dispatch([&](auto&& x) { return x.SampleLe(up, ud); });
     }
-    SpatialPdf PdfLe(const Ray&) const {
-        return {};
+    SpatialPdf PdfLe(const Ray& ray) const {
+        SampledProfiler _(ProfilePhase::SampleEnvLight);
+        return Dispatch([&](auto&& x) { return x.PdfLe(ray); });
+    }
+    Spectrum Power() const {
+        SampledProfiler _(ProfilePhase::SampleEnvLight);
+        return Dispatch([&](auto&& x) { return x.Power(); });
+    }
+    bool IsDelta() const {
+        return false;
     }
 };
 
@@ -133,6 +178,12 @@ struct Light : TaggedVariant<PointLight, DirectionalLight, AreaLight, Environmen
     }
     SpatialPdf PdfLe(const Ray& ray) const {
         return Dispatch([&](auto&& x) { return x.PdfLe(ray); });
+    }
+    Spectrum Power() const {
+        return Dispatch([&](auto&& x) { return x.Power(); });
+    }
+    bool IsDelta() const {
+        return Dispatch([&](auto&& x) { return x.IsDelta(); });
     }
 };
 

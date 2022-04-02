@@ -24,9 +24,13 @@ struct ThinLenCamera {
         : c2w(LookAt(from, to)),
           w2c(Inverse(c2w)),
           film(film),
+          nLens(Normalize(to - from)),
           fov(std::tan(fov / 2)),
+          fov2d(fov * film.Aspect(), fov),
           lensRadius(lensRadius),
-          focalDistance(focalDistance){};
+          focalDistance(focalDistance),
+          lensArea(lensRadius ? Pi * Sqr(lensRadius) : 1.0f),
+          area(Sqr(2 * this->fov) * film.Aspect()){};
 
     Ray GenRay(vec2 pFilm, vec2 u2) const;
     Spectrum We(const Ray& ray, vec2& pFilm) const;
@@ -39,9 +43,13 @@ struct ThinLenCamera {
     mat4 c2w;
     mat4 w2c;
     Film film;
+    vec3 nLens;
     float fov;
+    vec2 fov2d;
     float lensRadius;
     float focalDistance;
+    float lensArea;
+    float area;
 };
 
 struct Camera : public TaggedVariant<ThinLenCamera> {

@@ -53,58 +53,89 @@ Spectrum HomogeneousMedium::Sample(const Ray& ray, Interaction& mi, Sampler& sam
 }
 
 Spectrum GridMedium::Tr(const Ray& r, Sampler& sampler) const {
-    Ray ray = r;
-    ray.o = w2m * vec4(ray.o, 1.0f);
-    ray.d = Normalize((mat3)w2m * ray.d);
-    AABB bound(vec3(0), vec3(1));
+    Ray ray = TransformRayOD(w2m, r);
     float tmin, tmax;
-    if (!bound.Hit(ray, tmin, tmax))
-        return Spectrum(1.0f);
-    float tr = 1.0f;
-
-    float t = tmin;
-    while (true) {
-        t -= std::log(1.0f - sampler.Get1D()) * invMaxDensity / sigma_t;
-        if (t >= tmax)
-            break;
-        float density = Density(ray(t));
-        tr *= 1.0f - std::max(0.0f, density * invMaxDensity);
-
-        const float rrThreshold = 0.1f;
-        if (tr < rrThreshold) {
-            float q = std::max(0.05f, 1.0f - tr);
-            if (sampler.Get1D() < q)
-                return 0.0f;
-            else
-                tr /= 1.0f - q;
-        }
-    }
-
-    return Spectrum(tr);
-}
-Spectrum GridMedium::Sample(const Ray& r, Interaction& mi, Sampler& sampler) const {
-    Ray ray = r;
-    ray.o = w2m * vec4(ray.o, 1.0f);
-    ray.d = Normalize((mat3)w2m * ray.d);
-    AABB bound(vec3(0), vec3(1));
-    float tmin, tmax;
-    if (!bound.Hit(ray, tmin, tmax))
+    if (!AABB(vec3(0), vec3(1)).Hit(ray, tmin, tmax))
         return Spectrum(1.0f);
 
-    float t = tmin;
-    while (true) {
-        t -= std::log(1.0f - sampler.Get1D()) * invMaxDensity / sigma_t;
-        if (t >= tmax)
-            break;
-        if (Density(ray(t)) * invMaxDensity > sampler.Get1D()) {
-            mi.p = m2w * vec4(ray(t), 1.0f);
-            mi.mediumInterface = MediumInterface<const Medium*>((const Medium*)this);
-            mi.phaseFunction = &phaseFunction;
-            return sigma_s / sigma_t;
+    if (method == SamplingMethod::DeltaTracking) {
+        float tr = 1.0f;
+        float t = tmin;
+        while (true) {
+            t -= std::log(1.0f - sampler.Get1D()) * invMaxDensity / sigma_t;
+            if (t >= tmax)
+                break;
+            float density = Density(ray(t));
+            tr *= 1.0f - std::max(0.0f, density * invMaxDensity);
+
+            const float rrThreshold = 0.1f;
+            if (tr < rrThreshold) {
+                float q = std::max(0.05f, 1.0f - tr);
+                if (sampler.Get1D() < q)
+                    return 0.0f;
+                else
+                    tr /= 1.0f - q;
+            }
         }
+        return Spectrum(tr);
+
+    } else if (method == SamplingMethod::RayMarching) {
+        float tr = 0.0f;
+        float stepSize = rayMarchingStepSize;
+        float jitter = stepSize * (sampler.Get1D() - 0.5f);
+        float t = tmin;
+        while (t < tmax) {
+            tr += Density(ray(t + jitter)) * sigma_t * stepSize;
+            t += stepSize;
+        }
+
+        return std::exp(-tr);
     }
 
     return Spectrum(1.0f);
+}
+
+Spectrum GridMedium::Sample(const Ray& r, Interaction& mi, Sampler& sampler) const {
+    Ray ray = TransformRayOD(w2m, r);
+    float tmin, tmax;
+    if (!AABB(vec3(0), vec3(1)).Hit(ray, tmin, tmax))
+        return Spectrum(1.0f);
+
+    if (method == SamplingMethod::DeltaTracking) {
+        float t = tmin;
+        while (true) {
+            t -= std::log(1.0f - sampler.Get1D()) * invMaxDensity / sigma_t;
+            if (t >= tmax)
+                return Spectrum(1.0f);
+            if (Density(ray(t)) * invMaxDensity > sampler.Get1D()) {
+                mi.p = m2w * vec4(ray(t), 1.0f);
+                mi.mediumInterface = MediumInterface<const Medium*>((const Medium*)this);
+                mi.phaseFunction = &phaseFunction;
+                return sigma_s / sigma_t;
+            }
+        }
+
+    } else if (method == SamplingMethod::RayMarching) {
+        float lnXi = -log(1.0f - sampler.Get1D());
+        float stepSize = rayMarchingStepSize;
+        float jitter = stepSize * (sampler.Get1D() - 0.5f);
+        float t = tmin;
+        float sum = 0.0f;
+        while (t < tmax) {
+            sum += Density(ray(t)) * sigma_t * stepSize;
+            if (sum >= lnXi) {
+                mi.p = m2w * vec4(ray(t + jitter), 1.0f);
+                mi.mediumInterface = MediumInterface<const Medium*>((const Medium*)this);
+                mi.phaseFunction = &phaseFunction;
+                return sigma_s / sigma_t;
+            }
+            t += stepSize;
+        }
+
+        return Spectrum(1.0f);
+    }
+
+    return Spectrum(0.0f);
 }
 
 float GridMedium::Density(vec3 p) const {
@@ -129,14 +160,17 @@ float GridMedium::D(vec3i p) const {
 }
 
 GridMedium::GridMedium(Spectrum sigma_a, Spectrum sigma_s, PhaseFunction phaseFunction, vec3i size,
-                       vec3 position, float scale, std::vector<float> density, bool interpolate)
+                       vec3 position, float scale, std::vector<float> density, bool interpolate,
+                       SamplingMethod method, float rayMarchingStepSize)
     : sigma_a(sigma_a),
       sigma_s(sigma_s),
       sigma_t((sigma_a + sigma_s)[0]),
       phaseFunction(phaseFunction),
       size(size),
       density(std::move(density)),
-      interpolate(interpolate) {
+      interpolate(interpolate),
+      method(method),
+      rayMarchingStepSize(rayMarchingStepSize / max(size.x, size.y, size.z)) {
     float maxDensity = 0.0f;
     for (int x = 0; x < size.x; x++)
         for (int y = 0; y < size.y; y++)
@@ -155,13 +189,26 @@ HomogeneousMedium HomogeneousMedium::Create(const Parameters& params) {
 
 GridMedium GridMedium::Create(const Parameters& params) {
     auto [density, size] = LoadVolume(params.GetString("file"));
-
     LOG("[GridMedium]Grid size: &", size);
     LOG("[GridMedium]Memory usage: & MB", sizeof(density[0]) * density.size() / 1000000.0);
+    SamplingMethod method = SamplingMethod::DeltaTracking;
+    std::string samplingMethod = params.GetString("samplingMethod", "deltaTracking");
+    SWITCH(samplingMethod) {
+        CASE("rayMarching") method = SamplingMethod::RayMarching;
+        CASE("deltaTracking") method = SamplingMethod::DeltaTracking;
+        DEFAULT LOG_WARNING("[GridMedium]Unknown sampling method \"&\"", samplingMethod);
+    }
+
+    float rayMarchingStepSize = params.GetFloat("rayMarchingStepSize", 2.0f);
+    if (rayMarchingStepSize < 1.0f) {
+        LOG_WARNING("[GridMedium][Create]\"rayMarchingStepSize\" will be clamped to [1 inf]");
+        rayMarchingStepSize = 1.0f;
+    }
+
     return GridMedium(params.GetVec3("sigma_a"), params.GetVec3("sigma_s"),
                       PhaseFunction(params.GetFloat("g", 0.0f)), size, params.GetVec3("position"),
                       params.GetFloat("scale", 1.0f), std::move(density),
-                      params.GetBool("interpolate", true));
+                      params.GetBool("interpolate", true), method, rayMarchingStepSize);
 }
 
 Medium Medium::Create(const Parameters& params) {

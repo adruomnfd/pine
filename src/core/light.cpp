@@ -10,7 +10,7 @@ LightSample PointLight::Sample(vec3 p, vec2) const {
     LightSample ls;
     ls.wo = Normalize(position - p, ls.distance);
     ls.pdf = 1.0f;
-    ls.Le = color;
+    ls.Le = color / Sqr(ls.distance);
     ls.isDelta = true;
     return ls;
 }
@@ -42,6 +42,24 @@ LightSample DirectionalLight::Sample(vec3, vec2) const {
 
 LightSample AreaLight::Sample(vec3 p, vec2 u) const {
     return shape->Sample(p, u);
+}
+LightLeSample AreaLight::SampleLe(vec2 up, vec2 ud) const {
+    LightLeSample les;
+    auto ss = shape->Sample({}, up);
+    les.ray = Ray(ss.p, CoordinateSystem(ss.n) * CosineWeightedSampling(ud));
+    les.pdf.dir = AbsDot(les.ray.d, ss.n) / Pi;
+    les.pdf.pos = 1.0f / shape->Area();
+    les.Le = ss.Le * AbsDot(les.ray.d, ss.n);
+    return les;
+}
+SpatialPdf AreaLight::PdfLe(const Ray&) const {
+    SpatialPdf pdf;
+    pdf.dir = 1.0f / Pi2;
+    pdf.pos = 1.0f / shape->Area();
+    return pdf;
+}
+Spectrum AreaLight::Power() const {
+    return shape->Area() * shape->material->Le(MaterialEvalCtx({}, {}, {}, {}, {}, {}));
 }
 
 LightSample Sky::Sample(vec3, vec2) const {

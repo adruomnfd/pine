@@ -35,6 +35,16 @@ inline T min(T a, T b) {
     return a < b ? a : b;
 }
 
+template <typename T, typename... Ts>
+T max(T a, Ts... rest) {
+    return max(a, max(rest...));
+}
+
+template <typename T, typename... Ts>
+T min(T a, Ts... rest) {
+    return min(a, min(rest...));
+}
+
 template <typename T>
 inline T Mod(T a, T b) {
     T result = a - (a / b) * b;
@@ -147,6 +157,24 @@ inline float ErfInv(float x) {
         p = 2.83297682f + p * w;
     }
     return p * x;
+}
+
+template <typename Predicate>
+int FindInterval(int size, const Predicate& pred) {
+    if (size < 2)
+        return 0;
+    int first = 0, len = size;
+    while (len > 0) {
+        int half = len / 2, middle = first + half;
+        if (pred(middle)) {
+            first = middle + 1;
+            len -= half + 1;
+        } else {
+            len = half;
+        }
+    }
+
+    return Clamp(first - 1, 0, size - 2);
 }
 
 }  // namespace pine

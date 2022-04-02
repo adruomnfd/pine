@@ -5,9 +5,9 @@
 
 namespace pine {
 
-class AOIntegrator : public SinglePassIntegrator {
+class AOIntegrator : public RadianceIntegrator {
   public:
-    using SinglePassIntegrator::SinglePassIntegrator;
+    using RadianceIntegrator::RadianceIntegrator;
 
     Spectrum Li(Ray ray, Sampler& sampler) override;
 };

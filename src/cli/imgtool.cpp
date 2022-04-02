@@ -47,6 +47,12 @@ int main(int argc, char* argv[]) {
     --argc;
     ++argv;
 
+    auto lookahead = [&]() -> std::string {
+        if (argc == 0)
+            return "";
+        else
+            return *argv;
+    };
     auto next = [&]() -> std::string {
         if (argc == 0)
             return "";
@@ -58,6 +64,14 @@ int main(int argc, char* argv[]) {
     auto putback = [&]() {
         ++argc;
         --argv;
+    };
+    auto isnumber = [&]() {
+        try {
+            std::stof(lookahead());
+        } catch (...) {
+            return false;
+        }
+        return true;
     };
     auto files = [&]() { return std::vector<std::string>(argv, argv + argc); };
 
@@ -76,6 +90,8 @@ int main(int argc, char* argv[]) {
                     ConvertFormat(files(), fmt, false);
             }
         CASE("scaling")
+            if(!isnumber())
+                LOG("scaling [scale] [--inplace] [filename]...");
             float scale = std::stof(next());
             SWITCH(next()){
                 CASE("--inplace") 

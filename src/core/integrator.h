@@ -6,7 +6,6 @@
 #include <core/sampler.h>
 #include <core/accel.h>
 #include <core/film.h>
-#include <util/parameters.h>
 
 #include <memory>
 #include <map>
@@ -15,11 +14,13 @@ namespace pine {
 
 class Integrator {
   public:
-    static std::shared_ptr<Integrator> Create(const Parameters& parameters, Scene* scene);
-    Integrator(const Parameters& parameters, Scene* scene);
+    static std::shared_ptr<Integrator> Create(const Parameters& params, Scene* scene);
+    Integrator(const Parameters& params, Scene* scene);
     virtual ~Integrator() = default;
 
     virtual void Render() = 0;
+
+    LightSampler lightSampler;
 
   protected:
     Scene* scene = nullptr;
@@ -28,35 +29,34 @@ class Integrator {
 
     std::vector<Sampler> samplers;
     int samplesPerPixel;
-    LightSampler lightSampler;
 };
 
 class RayIntegrator : public Integrator {
   public:
-    RayIntegrator(const Parameters& parameters, Scene* scene);
+    RayIntegrator(const Parameters& params, Scene* scene);
 
-    bool Hit(Ray ray);
-    bool Intersect(Ray& ray, Interaction& it);
-    Spectrum IntersectTr(Ray ray, Sampler& sampler);
-    Spectrum EstimateDirect(Ray ray, Interaction it, Sampler& sampler);
+    bool Hit(Ray ray) const;
+    bool Intersect(Ray& ray, Interaction& it) const;
+    Spectrum IntersectTr(Ray ray, Sampler& sampler) const;
+    Spectrum EstimateDirect(Ray ray, Interaction it, Sampler& sampler) const;
 
     std::shared_ptr<Accel> accel;
-    std::vector<int> meshIndices;
+    int maxDepth;
 };
 
-class PixelSampleIntegrator : public RayIntegrator {
+class PixelIntegrator : public RayIntegrator {
   public:
     using RayIntegrator::RayIntegrator;
 
-    virtual void Render();
-    virtual Spectrum Li(Ray ray, Sampler& sampler) = 0;
+    virtual void Render() override;
+    virtual void Compute(vec2i p, Sampler& sampler) = 0;
 };
 
-class SinglePassIntegrator : public RayIntegrator {
+class RadianceIntegrator : public PixelIntegrator {
   public:
-    using RayIntegrator::RayIntegrator;
+    using PixelIntegrator::PixelIntegrator;
 
-    virtual void Render();
+    virtual void Compute(vec2i p, Sampler& sampler) override;
     virtual Spectrum Li(Ray ray, Sampler& sampler) = 0;
 };
 

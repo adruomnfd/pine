@@ -50,7 +50,7 @@ bool Parameters::HasValue(const std::string& name) const {
 }
 
 bool Parameters::HasSubset(const std::string& name) const {
-    return subset.find(name) != subset.end();
+    return subset.find(name) != subset.end() || HasValue(name);
 }
 
 std::optional<bool> Parameters::TryGetBool(const std::string& name) const {

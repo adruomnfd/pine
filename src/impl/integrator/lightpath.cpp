@@ -3,54 +3,49 @@
 
 namespace pine {
 
-LightPathIntegrator::LightPathIntegrator(const Parameters& params, Scene* scene)
-    : RayIntegrator(params, scene) {
-    maxDepth = params.GetInt("maxDepth", 4);
-}
+void LightPathIntegrator::Compute(vec2i, Sampler& sampler) {
+    auto [light, lightPdf] = lightSampler.SampleLight(sampler.Get1D());
+    if (!light)
+        return;
 
-void LightPathIntegrator::Render() {
-    film->Clear();
+    auto les = light->SampleLe(sampler.Get2D(), sampler.Get2D());
 
-    ThreadIdParallelFor(filmSize, [&](int threadId, vec2i p) {
-        Sampler& sampler = samplers[threadId];
-        sampler.StartPixel(p, 0);
+    Ray ray = les.ray;
+    Spectrum beta = les.Le / (lightPdf * les.pdf);
 
-        for (int sample = 0; sample < samplesPerPixel; sample++) {
-            sampler.StartNextSample();
-            auto [light, slPdf] = lightSampler.SampleLight(sampler.Get1D());
-            if (!light)
-                continue;
-            auto les = light->SampleLe(sampler.Get2D(), sampler.Get2D());
-            Ray ray = les.ray;
+    for (int depth = 0; depth < maxDepth; depth++) {
+        Interaction it;
+        if (!Intersect(ray, it))
+            continue;
 
-            Spectrum beta(1.0f);
-            for (int depth = 0; depth < maxDepth; depth++) {
-                Interaction it;
-                if (!Intersect(ray, it))
-                    continue;
-
-                auto cs = scene->camera.SampleWi(it.p, sampler.Get2D());
-
-                MaterialEvalContext mc(it.p, it.n, it.uv, it.dpdu, it.dpdv, -ray.d, cs.wo,
-                                       sampler.Get2D(), sampler.Get1D());
-                Spectrum f = it.material->F(mc);
-
-                if (!Hit(it.SpawnRayTo(cs.p))) {
-                    Spectrum L = beta * les.Le * AbsDot(cs.wo, it.n) * f * cs.we / cs.pdf;
-                    film->AddSample(cs.pFilm, L);
-                }
-
-                if (auto bs = it.material->Sample(mc)) {
-                    beta *= AbsDot(bs->wo, it.n) * bs->f / bs->pdf;
-                    ray = it.SpawnRay(bs->wo);
-                } else {
-                    break;
-                }
-            }
+        if (!it.material) {
+            ray = it.SpawnRay(ray.d);
+            --depth;
+            continue;
         }
-    });
 
-    film->Finalize();
+        auto cs = scene->camera.SampleWi(it.p, sampler.Get2D());
+        it.n = it.material->BumpNormal(MaterialEvalCtx(it, -ray.d));
+        MaterialEvalCtx mc(it, -ray.d, cs.wo);
+
+        if (!cs.we.IsBlack() && !Hit(it.SpawnRayTo(cs.p))) {
+            Spectrum f = it.material->F(mc);
+            Spectrum L = beta * f * AbsDot(cs.wo, it.n) * cs.we / cs.pdf;
+            film->AddSplat(cs.pFilm, L);
+        }
+
+        if (depth + 1 == maxDepth)
+            break;
+
+        mc.u1 = sampler.Get1D();
+        mc.u2 = sampler.Get2D();
+        if (auto bs = it.material->Sample(mc)) {
+            beta *= AbsDot(bs->wo, it.n) * bs->f / bs->pdf;
+            ray = it.SpawnRay(bs->wo);
+        } else {
+            break;
+        }
+    }
 }
 
 }  // namespace pine
