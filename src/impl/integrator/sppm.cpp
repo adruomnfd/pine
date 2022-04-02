@@ -114,7 +114,7 @@ void SPPMIntegrator::Render() {
                         break;
                     }
 
-                    if (depth == maxDepth - 1)
+                    if (depth + 1 == maxDepth)
                         break;
 
                     pixel.Ld += beta * EstimateDirect(ray, it, sampler);
@@ -232,8 +232,7 @@ void SPPMIntegrator::Render() {
                                 float radius = pixel.radius;
                                 if (DistanceSquared(pixel.vp.p, it.p) > radius * radius)
                                     continue;
-                                vec3 wi = -photonRay.d;
-                                MaterialEvalCtx mc(it, pixel.vp.wo, wi);
+                                MaterialEvalCtx mc(it, pixel.vp.wo, -photonRay.d);
                                 Spectrum phi = beta * pixel.vp.material->F(mc);
                                 for (int i = 0; i < Spectrum::nSamples; i++)
                                     pixel.phi[i].Add(phi[i]);
@@ -242,13 +241,12 @@ void SPPMIntegrator::Render() {
                         }
                     }
 
-                    vec3 wi = -photonRay.d;
                     vec2 ubsdf2;
                     float ubsdf1;
                     ubsdf2[0] = RadicalInverse(haltonDim++, haltonIndex);
                     ubsdf2[1] = RadicalInverse(haltonDim++, haltonIndex);
                     ubsdf1 = RadicalInverse(haltonDim++, haltonIndex);
-                    MaterialEvalCtx mc(it, wi, vec3(0.0f), ubsdf2, ubsdf1);
+                    MaterialEvalCtx mc(it, -photonRay.d, vec3(0.0f), ubsdf2, ubsdf1);
                     auto bs = it.material->Sample(mc);
                     if (!bs)
                         break;

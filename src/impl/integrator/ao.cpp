@@ -14,7 +14,7 @@ Spectrum AOIntegrator::Li(Ray ray, Sampler& sampler) {
         ray.o = it.p;
         it.n = FaceSameHemisphere(it.n, -ray.d);
         ray = it.SpawnRay(FaceSameHemisphere(UniformHemisphereMampling(sampler.Get2D()), it.n));
-        return Intersect(ray, it) ? Spectrum(0.0f) : Spectrum(1.0f);
+        return Hit(ray) ? Spectrum(0.0f) : Spectrum(1.0f);
     }
     return Spectrum(0.0f);
 }

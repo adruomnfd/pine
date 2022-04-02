@@ -48,6 +48,7 @@ src/impl/integrator/path.cpp
 src/impl/integrator/sppm.cpp
 src/impl/integrator/bdpt.cpp
 src/impl/integrator/lightpath.cpp
+src/impl/integrator/randomwalk.cpp
 src/impl/accel/bvh.cpp
 src/impl/accel/cwbvh.cpp
 ext/stb_image/stb_image.cpp

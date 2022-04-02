@@ -462,6 +462,72 @@ void BVHImpl::Optimize() {
     }
 }
 
+template <typename F>
+bool BVHImpl::Hit(const Ray& ray, F&& f) const {
+    RayOctant rayOctant = RayOctant(ray);
+    const Node* PINE_RESTRICT nodes = this->nodes.data();
+
+    int stack[32];
+    int ptr = 0;
+    int next = rootIndex;
+
+    if (PINE_UNLIKELY(nodes[next].primitiveIndices.size())) {
+        for (int index : nodes[next].primitiveIndices)
+            if (f(ray, index))
+                return true;
+    } else {
+        while (true) {
+            const Node& node = nodes[next];
+
+            int leftChildIndex = -1, rightChildIndex = -1;
+            float t0 = ray.tmax, t1 = ray.tmax;
+            if (node.aabbs[0].Hit(rayOctant, ray.tmin, &t0)) {
+                const Node& leftChild = nodes[node.children[0]];
+                if (PINE_LIKELY(!leftChild.primitiveIndices.size())) {
+                    leftChildIndex = node.children[0];
+                } else {
+                    for (int index : leftChild.primitiveIndices)
+                        if (f(ray, index))
+                            return true;
+                }
+            }
+            if (node.aabbs[1].Hit(rayOctant, ray.tmin, &t1)) {
+                const Node& rightChild = nodes[node.children[1]];
+                if (PINE_LIKELY(!rightChild.primitiveIndices.size())) {
+                    rightChildIndex = node.children[1];
+
+                } else {
+                    for (int index : rightChild.primitiveIndices)
+                        if (f(ray, index))
+                            return true;
+                }
+            }
+
+            if (leftChildIndex != -1) {
+                if (rightChildIndex != -1) {
+                    if (t0 > t1) {
+                        stack[ptr++] = leftChildIndex;
+                        next = rightChildIndex;
+                    } else {
+                        stack[ptr++] = rightChildIndex;
+                        next = leftChildIndex;
+                    }
+                } else {
+                    next = leftChildIndex;
+                }
+            } else if (rightChildIndex != -1) {
+                next = rightChildIndex;
+            } else {
+                if (PINE_UNLIKELY(ptr == 0))
+                    break;
+                next = stack[--ptr];
+            }
+        }
+    }
+
+    return false;
+}
+
 template <typename F, typename G>
 bool BVHImpl::Intersect(Ray& ray, Interaction& it, F&& f, G&& g) const {
     RayOctant rayOctant = RayOctant(ray);
@@ -583,8 +649,20 @@ void BVH::Initialize(const Scene* scene) {
 bool BVH::Hit(Ray ray) const {
     if (scene->shapes.size() == 0)
         return false;
-    return tbvh.Hit(ray);
+
+    return tbvh.Hit(ray, [&](const Ray& ray, int lbvhIndex) {
+        auto& shape = scene->shapes[indices[lbvhIndex]];
+
+        if (lbvhIndex < (int)lbvh.size()) {
+            return lbvh[lbvhIndex].Hit(ray, [&](const Ray& ray, int index) {
+                return shape.Be<TriangleMesh>().GetTriangle(index).Hit(ray);
+            });
+        } else {
+            return shape.Hit(ray);
+        }
+    });
 }
+
 bool BVH::Intersect(Ray& ray, Interaction& it) const {
     if (scene->shapes.size() == 0)
         return false;

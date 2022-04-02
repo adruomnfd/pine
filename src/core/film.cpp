@@ -8,16 +8,16 @@ namespace pine {
 Film Film::Create(const Parameters& params) {
     return Film(params.GetVec2i("size", vec2i(720, 480)), Filter::Create(params["filter"]),
                 params.GetString("outputFileName", "result.png"),
-                params.GetBool("applyToneMapping", true), params.GetBool("reportAverage", false));
+                params.GetBool("applyToneMapping", true), params.GetBool("reportAverageColor", false));
 }
 
 Film::Film(vec2i size, Filter filter, std::string outputFileName, bool applyToneMapping,
-           bool reportAverage)
+           bool reportAverageColor)
     : size(size),
       filter(filter),
       outputFileName(outputFileName),
       applyToneMapping(applyToneMapping),
-      reportAverage(reportAverage) {
+      reportAverageColor(reportAverageColor) {
     int offset = 0;
     for (int y = 0; y < filterTableWidth; y++)
         for (int x = 0; x < filterTableWidth; x++) {
@@ -44,7 +44,7 @@ void Film::Clear() {
 void Film::Finalize(float splatMultiplier) {
     CopyToRGBArray(splatMultiplier);
     
-    if (reportAverage) {
+    if (reportAverageColor) {
         vec4 avg;
         for (int i = 0; i < Area(size); i++)
             avg += rgba[i];

@@ -17,7 +17,7 @@ Camera: ThinLen{
 
     from: 0 4 16
     to:   0 0 0
-    fov:  0.24
+    fov:  0.12
 }
 
 Shape: Rect{

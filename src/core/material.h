@@ -78,8 +78,11 @@ struct Material : public TaggedVariant<LayeredMaterial, EmissiveMaterial> {
         SampledProfiler _(ProfilePhase::MaterialSample);
         return Dispatch([&](auto&& x) {
             std::optional<BSDFSample> bs = x.Sample(c);
-            if (bs)
+            if (bs) {
                 bs->wo = c.n2w * bs->wo;
+                if (bs->f.IsBlack() || bs->pdf == 0.0f)
+                    bs = std::nullopt;
+            }
             return bs;
         });
     }

@@ -17,10 +17,8 @@ static vec2 TransformToFilmSpace(vec2 up, vec2 fov2d) {
 }
 
 static vec2 TransformFromFilmSpace(vec2 pFilm, vec2 fov2d) {
-    pFilm /= fov2d;
-    return pFilm - vec2(0.5f);
-    // vec2 up = pFilm / fov2d;
-    // return up / 2.0f + vec2(0.5f);
+    vec2 up = pFilm / fov2d;
+    return up / 2.0f + vec2(0.5f);
 }
 
 static vec2 ProjectZPlane(vec3 p, const mat4& m) {
@@ -32,7 +30,7 @@ static vec2 ProjectZPlane(vec3 p, const mat4& m) {
 
 Ray ThinLenCamera::GenRay(vec2 up, vec2 u2) const {
     vec2 pFilm = TransformToFilmSpace(up, fov2d);
-    vec3 dir = Normalize(vec3(pFilm * fov, 1.0f));
+    vec3 dir = Normalize(vec3(pFilm, 1.0f));
     vec3 pFocus = focalDistance * dir / dir.z;
     vec3 pLen = lensRadius * vec3(SampleDiskPolar(u2), 0.0f);
     Ray ray;

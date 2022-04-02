@@ -26,7 +26,7 @@ struct ThinLenCamera {
           film(film),
           nLens(Normalize(to - from)),
           fov(std::tan(fov / 2)),
-          fov2d(fov * film.Aspect(), fov),
+          fov2d(this->fov * film.Aspect(), this->fov),
           lensRadius(lensRadius),
           focalDistance(focalDistance),
           lensArea(lensRadius ? Pi * Sqr(lensRadius) : 1.0f),

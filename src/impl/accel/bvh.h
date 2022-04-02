@@ -57,9 +57,8 @@ class BVHImpl {
     int BuildSAHFull(Primitive* begin, Primitive* end, AABB aabb);
     void Optimize();
 
-    bool Hit(Ray) const {
-        return false;
-    }
+    template <typename F>
+    bool Hit(const Ray& ray, F&& f) const;
     template <typename F, typename G>
     bool Intersect(Ray& ray, Interaction& it, F&& f, G&& g) const;
     AABB GetAABB() const {

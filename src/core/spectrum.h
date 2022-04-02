@@ -156,6 +156,13 @@ class CoefficientSpectrum {
         return false;
     }
 
+    bool HasInfs() const {
+        for (int i = 0; i < nSpectrumSamples; i++)
+            if (std::isinf(c[i]))
+                return true;
+        return false;
+    }
+
     float c[nSpectrumSamples];
 };
 

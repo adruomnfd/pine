@@ -12,6 +12,7 @@
 #include <impl/integrator/sppm.h>
 #include <impl/integrator/bdpt.h>
 #include <impl/integrator/lightpath.h>
+#include <impl/integrator/randomwalk.h>
 
 namespace pine {
 
@@ -25,6 +26,7 @@ std::shared_ptr<Integrator> Integrator::Create(const Parameters& params, Scene* 
         CASE("Sppm") return std::make_shared<SPPMIntegrator>(params, scene);
         CASE("Bdpt") return std::make_shared<BDPTIntegrator>(params, scene);
         CASE("LightPath") return std::make_shared<LightPathIntegrator>(params, scene);
+        CASE("RandomWalk") return std::make_shared<RandomWalkIntegrator>(params, scene);
         DEFAULT {
             LOG_WARNING("[Integrator][Create]Unknown type \"&\"", type);
             return std::make_shared<PathIntegrator>(params, scene);
@@ -53,8 +55,7 @@ RayIntegrator::RayIntegrator(const Parameters& params, Scene* scene)
 bool RayIntegrator::Hit(Ray ray) const {
     SampledProfiler _(ProfilePhase::IntersectShadow);
 
-    Interaction it;
-    return accel->Intersect(ray, it);
+    return accel->Hit(ray);
 }
 bool RayIntegrator::Intersect(Ray& ray, Interaction& it) const {
     SampledProfiler _(ProfilePhase::IntersectClosest);
@@ -85,22 +86,23 @@ Spectrum RayIntegrator::IntersectTr(Ray ray, Sampler& sampler) const {
 Spectrum RayIntegrator::EstimateDirect(Ray ray, Interaction it, Sampler& sampler) const {
     SampledProfiler _(ProfilePhase::EstimateDirect);
 
-    auto [light, slPdf] = lightSampler.SampleLight(it.p, it.n, sampler.Get1D());
+    auto [light, lightPdf] = lightSampler.SampleLight(it.p, it.n, sampler.Get1D());
     if (!light)
         return Spectrum(0.0f);
     LightSample ls = light->Sample(it.p, sampler.Get2D());
-    ls.pdf *= slPdf;
+    ls.pdf *= lightPdf;
 
     Spectrum tr = IntersectTr(it.SpawnRay(ls.wo, ls.distance), sampler);
     if (tr.IsBlack())
         return Spectrum(0.0f);
 
     Spectrum f;
-    float scatteringPdf;
+    float scatteringPdf = 0.0f;
     if (it.IsSurfaceInteraction()) {
         MaterialEvalCtx mc(it, -ray.d, ls.wo);
         f = it.material->F(mc) * AbsDot(ls.wo, it.n);
-        scatteringPdf = it.material->PDF(mc);
+        if (!ls.isDelta)
+            scatteringPdf = it.material->PDF(mc);
     } else {
         float p = it.phaseFunction->P(-ray.d, ls.wo);
         f = Spectrum(p);

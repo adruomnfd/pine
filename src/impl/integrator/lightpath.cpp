@@ -13,7 +13,7 @@ void LightPathIntegrator::Compute(vec2i, Sampler& sampler) {
     Ray ray = les.ray;
     Spectrum beta = les.Le / (lightPdf * les.pdf);
 
-    for (int depth = 0; depth < maxDepth; depth++) {
+    for (int depth = 1; depth < maxDepth; depth++) {
         Interaction it;
         if (!Intersect(ray, it))
             continue;
@@ -26,7 +26,7 @@ void LightPathIntegrator::Compute(vec2i, Sampler& sampler) {
 
         auto cs = scene->camera.SampleWi(it.p, sampler.Get2D());
         it.n = it.material->BumpNormal(MaterialEvalCtx(it, -ray.d));
-        MaterialEvalCtx mc(it, -ray.d, cs.wo);
+        auto mc = MaterialEvalCtx(it, -ray.d, cs.wo);
 
         if (!cs.we.IsBlack() && !Hit(it.SpawnRayTo(cs.p))) {
             Spectrum f = it.material->F(mc);

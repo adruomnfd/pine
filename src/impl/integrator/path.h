@@ -6,10 +6,8 @@
 namespace pine {
 
 struct PathIntegrator : RadianceIntegrator {
-    PathIntegrator(const Parameters& params, Scene* scene);
+    using RadianceIntegrator::RadianceIntegrator;
     Spectrum Li(Ray ray, Sampler& sampler) override;
-
-    float clamp;
 };
 
 }  // namespace pine

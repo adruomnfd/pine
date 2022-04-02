@@ -22,7 +22,7 @@ struct Film {
     static Film Create(const Parameters& params);
     Film() = default;
     Film(vec2i size, Filter filter, std::string outputFileName, bool applyToneMapping,
-         bool reportAverage);
+         bool reportAverageColor);
 
     void AddSample(vec2 pFilm, const Spectrum& sL) {
         SampledProfiler _(ProfilePhase::FilmAddSample);
@@ -91,7 +91,7 @@ struct Film {
 
     std::string outputFileName;
     bool applyToneMapping = true;
-    bool reportAverage = false;
+    bool reportAverageColor = false;
     int frameId = 0;
 };
 

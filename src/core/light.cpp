@@ -9,8 +9,8 @@ namespace pine {
 LightSample PointLight::Sample(vec3 p, vec2) const {
     LightSample ls;
     ls.wo = Normalize(position - p, ls.distance);
-    ls.pdf = 1.0f;
-    ls.Le = color / Sqr(ls.distance);
+    ls.pdf = Sqr(ls.distance);
+    ls.Le = color;
     ls.isDelta = true;
     return ls;
 }
