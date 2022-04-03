@@ -150,7 +150,9 @@ void PixelIntegrator::Render() {
 void RadianceIntegrator::Compute(vec2i p, Sampler& sampler) {
     vec2 pFilm = (p + sampler.Get2D()) / film->Size();
     Ray ray = scene->camera.GenRay(pFilm, sampler.Get2D());
-    film->AddSample(pFilm, Li(ray, sampler));
+    auto L = Li(ray, sampler);
+    if (!L.HasInfs() && !L.HasNaNs())
+        film->AddSample(pFilm, L);
 }
 
 }  // namespace pine

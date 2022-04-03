@@ -91,9 +91,9 @@ std::string ReadStringFile(std::string filename) {
     file.Read(str.data(), size);
     return str;
 }
-void WriteBinaryData(std::string filename, const char *ptr, size_t size) {
+void WriteBinaryData(std::string filename, const void *ptr, size_t size) {
     ScopedFile file(filename, std::ios::binary | std::ios::out);
-    file.Write(ptr, size);
+    file.Write((const char *)ptr, size);
 }
 std::vector<char> ReadBinaryData(std::string filename) {
     ScopedFile file(filename, std::ios::binary | std::ios::in);
@@ -245,8 +245,8 @@ void CompressVolume(std::string filename, const std::vector<float> &densityf, ve
 
     auto tree = BuildHuffmanTree(densityi);
     auto encoded = HuffmanEncode(tree, densityi);
-    auto treeData = Serializer().Archive(tree);
-    auto encodedData = Serializer().Archive(encoded);
+    auto treeData = Archive(tree);
+    auto encodedData = Archive(encoded);
     file.Write(size);
     file.Write(treeData.size());
     file.Write(encodedData.size());
@@ -262,8 +262,8 @@ std::pair<std::vector<float>, vec3i> LoadCompressedVolume(std::string filename) 
     ArchiveBufferType encodedData(encodedSize);
     file.Read(&treeData[0], treeSize * sizeof(treeData[0]));
     file.Read(&encodedData[0], encodedSize * sizeof(encodedData[0]));
-    auto tree = Deserializer(treeData).Unarchive<HuffmanTree<uint16_t>>();
-    auto encoded = Deserializer(encodedData).Unarchive<HuffmanEncoded>();
+    auto tree = Unarchive<HuffmanTree<uint16_t>>(treeData);
+    auto encoded = Unarchive<HuffmanEncoded>(encodedData);
     auto densityi = HuffmanDecode<std::vector<uint16_t>>(tree, encoded);
 
     std::vector<float> densityf(densityi.size());
@@ -275,14 +275,12 @@ std::pair<std::vector<float>, vec3i> LoadCompressedVolume(std::string filename) 
 
 TriangleMesh LoadObj(std::string filename) {
     Profiler _("LoadObj");
-    LOG_VERBOSE("[FileIO]Loading \"&\"", filename);
+    LOG_PLAIN("[FileIO]Loading \"&\"", filename);
     Timer timer;
 
     TriangleMesh mesh;
     std::string raw = ReadStringFile(filename);
     std::string_view str = raw;
-    LOG_VERBOSE("[FileIO]Reading .obj into & MB string in & ms", str.size() / 1000000.0,
-                timer.ElapsedMs());
 
     std::string face;
     face.reserve(64);
@@ -356,15 +354,19 @@ TriangleMesh LoadObj(std::string filename) {
         face.clear();
         str = str.substr(pos + 1);
     }
-    LOG("[FileIO]Loaded mesh has & M triangles", mesh.indices.size() / 3 / 1000000.0);
+    uint32_t minIndices = -1;
+    for (auto &i : mesh.indices)
+        minIndices = std::min(minIndices, i);
+    for (auto &i : mesh.indices)
+        i -= minIndices;
 
-    LOG_VERBOSE("[FileIO]Obj loaded in & ms", timer.Reset());
+    LOG_PLAIN(", &M triangles, &ms\n", mesh.indices.size() / 3 / 1000000.0, timer.Reset());
     return mesh;
 }
 
 Parameters LoadScene(std::string filename, Scene *scene) {
+    LOG_VERBOSE("[FileIO]Loading \"&\"", filename);
     Parameters params = Parse(ReadStringFile(filename));
-    LOG_VERBOSE("[FileIO]Creating scene from parameters");
     sceneDirectory = GetFileDirectory(filename);
 
     Timer timer;
@@ -381,13 +383,11 @@ Parameters LoadScene(std::string filename, Scene *scene) {
         if (auto light = shape.GetLight())
             scene->lights.push_back(*light);
     for (const Light &light : scene->lights)
-        if (light.Tag() == Light::Index<EnvironmentLight>())
+        if (light.Is<EnvironmentLight>())
             scene->envLight = light.Be<EnvironmentLight>();
 
     scene->camera = Camera::Create(params["Camera"], scene);
     scene->integrator = Integrator::Create(params["Integrator"], scene);
-
-    LOG_VERBOSE("[FileIO]Scene created in & ms", timer.ElapsedMs());
 
     return params;
 }

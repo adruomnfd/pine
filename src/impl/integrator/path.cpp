@@ -82,7 +82,7 @@ Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
             break;
         }
     }
-
+    
     return L;
 }
 

@@ -16,6 +16,7 @@ static std::shared_ptr<Profiler::Record> profilerRecord = std::make_shared<Profi
 void Profiler::Finalize() {
     if (verbose == false)
         return;
+    main.reset();
     LOG("[Profiler]==================Results==================");
 
     LOG("#structured:");

@@ -389,9 +389,14 @@ struct TriangleMesh {
     }
 
     int GetNumTriangles() const {
-        return indices.size() / 3;
+        return (int)indices.size() / 3;
     }
     Triangle GetTriangle(int index) const {
+        CHECK_GE(index, 0);
+        CHECK_LT(index * 3 + 2, (int)indices.size());
+        CHECK_LT(indices[index * 3 + 0], (uint32_t)vertices.size());
+        CHECK_LT(indices[index * 3 + 1], (uint32_t)vertices.size());
+        CHECK_LT(indices[index * 3 + 2], (uint32_t)vertices.size());
         return {vertices[indices[index * 3 + 0]], vertices[indices[index * 3 + 1]],
                 vertices[indices[index * 3 + 2]]};
     }

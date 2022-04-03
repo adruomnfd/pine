@@ -166,24 +166,39 @@ struct SobolSampler {
 };
 
 struct MltSampler {
-    MltSampler(float sigma, float largeStepProbability, int seed)
-        : rng(seed), sigma(sigma), largeStepProbability(largeStepProbability){};
+    MltSampler(float sigma, float largeStepProbability, int streamCount, int seed)
+        : rng(seed),
+          sigma(sigma),
+          largeStepProbability(largeStepProbability),
+          streamCount(streamCount){};
+
     int SamplesPerPixel() const {
         LOG_FATAL("[MltSampler]SamplesPerPixel() is not implemented");
         return 0;
     }
+
     void StartPixel(vec2i, int) {
         LOG_FATAL("[MltSampler]StartPixel() is not implemented");
     }
+
     void StartNextSample() {
         sampleIndex++;
+        streamIndex = 0;
         dimension = 0;
         largeStep = rng.Uniformf() < largeStepProbability;
     }
-    float Get1D() {
-        EnsureReady(dimension);
-        return X[dimension++].value;
+
+    void StartStream(int index) {
+        streamIndex = index;
+        dimension = 0;
     }
+
+    float Get1D() {
+        int dim = GetNextIndex();
+        EnsureReady(dim);
+        return X[dim].value;
+    }
+
     vec2 Get2D() {
         return {Get1D(), Get1D()};
     }
@@ -192,6 +207,7 @@ struct MltSampler {
         if (largeStep)
             lastLargeStepIndex = sampleIndex;
     }
+
     void Reject() {
         for (auto& Xi : X)
             if (Xi.lastModificationIndex == sampleIndex)
@@ -201,6 +217,9 @@ struct MltSampler {
 
   private:
     void EnsureReady(int dim);
+    int GetNextIndex() {
+        return streamIndex + streamCount * dimension++;
+    }
 
     struct PrimarySample {
         void Backup() {
@@ -221,7 +240,9 @@ struct MltSampler {
     const float sigma, largeStepProbability;
     std::vector<PrimarySample> X;
     int64_t sampleIndex = 0;
+    int64_t streamIndex = 0, streamCount = 0;
     int64_t dimension = 0;
+
     bool largeStep = true;
     int64_t lastLargeStepIndex = 0;
 };

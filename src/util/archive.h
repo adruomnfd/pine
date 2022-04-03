@@ -31,7 +31,7 @@ struct ArchiveReader {
     ArchiveReader(BufferType& data) : data(data){};
 
     template <typename T>
-    void Add(T&& value) {
+    void Add(T& value) {
         size_t size = sizeof(value);
         memcpy(&value, data.data() + offset, size);
         offset += size;
@@ -41,7 +41,7 @@ struct ArchiveReader {
     size_t offset = 0;
 };
 
-template <typename BufferType, typename Strategy, bool RenewPtr>
+template <typename BufferType, typename Strategy, bool IsUnarchive>
 class ArchiverBase {
   public:
     ArchiverBase() = default;
@@ -50,6 +50,13 @@ class ArchiverBase {
     template <typename T>
     T Unarchive() {
         T object;
+        ArchiveImpl(object);
+        return object;
+    }
+
+    template <typename... Ts, typename = std::enable_if_t<(sizeof...(Ts) > 1)>>
+    auto Unarchive() {
+        std::tuple<Ts...> object;
         ArchiveImpl(object);
         return object;
     }
@@ -71,7 +78,7 @@ class ArchiverBase {
 
         } else if constexpr (IsMap<T>::value) {
             strategy.Add(std::forward<Ty>(object));
-            if constexpr (RenewPtr) {
+            if constexpr (IsUnarchive) {
                 size_t size = object.size();
                 new (&object) T;
                 for (size_t i = 0; i < size; i++) {
@@ -90,7 +97,7 @@ class ArchiverBase {
 
         } else if constexpr (IsVector<T>::value) {
             strategy.Add(std::forward<Ty>(object));
-            if constexpr (RenewPtr) {
+            if constexpr (IsUnarchive) {
                 size_t size = object.size();
                 new (&object) T;
                 object.resize(size);
@@ -101,13 +108,14 @@ class ArchiverBase {
 
         } else if constexpr (IsPointer<T>::value) {
             using Tv = std::decay_t<decltype(*object)>;
-            if constexpr (RenewPtr)
+            if constexpr (IsUnarchive)
                 object = T(new Tv);
 
             ArchiveImpl(*std::forward<Ty>(object));
 
         } else {
-            ForEachField(std::forward<Ty>(object), [&](auto&& field) { ArchiveImpl(field); });
+            ForEachField(std::forward<Ty>(object),
+                         [&](auto&& field) { ArchiveImpl(std::forward<decltype(field)>(field)); });
         }
     }
 
@@ -119,6 +127,21 @@ class ArchiverBase {
 using ArchiveBufferType = std::vector<char>;
 using Serializer = ArchiverBase<ArchiveBufferType, ArchiveWriter<ArchiveBufferType>, false>;
 using Deserializer = ArchiverBase<ArchiveBufferType, ArchiveReader<ArchiveBufferType>, true>;
+
+template <typename... Ts>
+auto Archive(const Ts&... input) {
+    return Serializer().Archive(input...);
+}
+
+template <typename... Ts>
+auto Unarchive(const ArchiveBufferType& data) {
+    return Deserializer(data).Unarchive<Ts...>();
+}
+
+template <typename... Ts>
+auto Unarchive(ArchiveBufferType&& data) {
+    return Deserializer(std::move(data)).Unarchive<Ts...>();
+}
 
 }  // namespace pine
 

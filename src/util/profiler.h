@@ -9,6 +9,9 @@
 namespace pine {
 
 struct Profiler {
+    static void Initialize() {
+        main = std::unique_ptr<Profiler>(new Profiler("Main"));
+    }
     static void Finalize();
 
     Profiler(std::string description);
@@ -29,6 +32,8 @@ struct Profiler {
     };
 
     Timer timer;
+
+    static inline std::unique_ptr<Profiler> main;
 };
 
 enum class ProfilePhase {

@@ -7,8 +7,6 @@
 
 namespace pine {
 
-bool verbose = true;
-
 double Timer::ElapsedMs() {
     return std::chrono::duration<double>(clock::now() - start).count() * 1000.0;
 }

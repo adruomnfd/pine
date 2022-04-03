@@ -17,15 +17,15 @@ std::optional<size_t> FirstOfF(std::string_view str, F&& f) {
     return std::nullopt;
 }
 
-bool IsLetter(char s) {
+static bool IsLetter(char s) {
     return (s >= 'A' && s <= 'z') || (s >= '0' && s <= '9') || s == '_';
 }
 
-std::optional<size_t> FirstLetter(std::string_view str) {
+static std::optional<size_t> FirstLetter(std::string_view str) {
     return FirstOfF(str, IsLetter);
 }
 
-std::optional<size_t> FirstOf(std::string_view str, const std::vector<char>& chars) {
+static std::optional<size_t> FirstOf(std::string_view str, const std::vector<char>& chars) {
     return FirstOfF(str, [&](char s) {
         for (char c : chars)
             if (s == c)
@@ -34,7 +34,7 @@ std::optional<size_t> FirstOf(std::string_view str, const std::vector<char>& cha
     });
 }
 
-void EscapeSpace(std::string_view& str) {
+static void EscapeSpace(std::string_view& str) {
     while (std::isspace(str[0])) {
         str = str.substr(1);
         if (str.substr(0, 2) == "//") {
@@ -45,7 +45,7 @@ void EscapeSpace(std::string_view& str) {
     }
 }
 
-Parameters ParseBlock(std::string_view& block, int depth = 0) {
+static Parameters ParseBlock(std::string_view& block, int depth = 0) {
     Parameters params;
 
     while (true) {
@@ -102,12 +102,9 @@ Parameters ParseBlock(std::string_view& block, int depth = 0) {
 
 Parameters Parse(std::string_view raw) {
     Profiler _("Parse");
-    LOG_VERBOSE("[FileIO]Parsing parameters");
     Timer timer;
 
     Parameters parameters = ParseBlock(raw);
-
-    LOG_VERBOSE("[Parser]Parameter parsed in & ms", timer.ElapsedMs());
     return parameters;
 }
 

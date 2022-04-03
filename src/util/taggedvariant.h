@@ -109,25 +109,6 @@ struct HasOpEq {
     static constexpr bool value = decltype(Check<T>(0))::value;
 };
 
-template <typename T, typename U>
-struct CopyQualifier {
-    using type = U;
-};
-template <typename T, typename U>
-struct CopyQualifier<const T, U> {
-    using type = const U;
-};
-template <typename T, typename U>
-struct CopyQualifier<T&, U> {
-    using type = U&;
-};
-template <typename T, typename U>
-struct CopyQualifier<const T&, U> {
-    using type = const U&;
-};
-template <typename T, typename U>
-using CopyQualifier_t = typename CopyQualifier<T, U>::type;
-
 template <typename T, typename First, typename... Rest>
 constexpr int Index() {
     static_assert(std::is_same<T, First>::value || sizeof...(Rest) != 0,
@@ -145,13 +126,12 @@ decltype(auto) Dispatch(F&& f, int index, T&& value) {
 
     if constexpr (Ty::isFinal) {
         CHECK_EQ(index, 0);
-        return f(std::forward<CopyQualifier_t<T, typename Ty::First>>(value.first));
+        return f(std::forward<T>(value).first);
     } else {
         if (index == 0)
-            return f(std::forward<CopyQualifier_t<T, typename Ty::First>>(value.first));
+            return f(std::forward<T>(value).first);
         else
-            return Dispatch(std::forward<F>(f), index - 1,
-                            std::forward<CopyQualifier_t<T, typename Ty::Rest>>(value.rest));
+            return Dispatch(std::forward<F>(f), index - 1, std::forward<T>(value).rest);
     }
 }
 

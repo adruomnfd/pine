@@ -15,14 +15,13 @@ struct DeferredBool {
 
 template <int I>
 struct PriorityTag : PriorityTag<I - 1> {};
-
 template <>
 struct PriorityTag<0> {};
 
 template <typename T>
 struct IsVector {
     template <typename U>
-    static constexpr std::true_type Check(decltype((void (U::*)(size_t)) & U::resize)*);
+    static constexpr std::true_type Check(decltype((void(U::*)(size_t)) & U::resize)*);
     template <typename U>
     static constexpr std::false_type Check(...);
 
@@ -50,6 +49,24 @@ struct IsPointer {
 };
 
 template <typename T>
+struct IsPair {
+    static constexpr bool value = false;
+};
+template <typename T0, typename T1>
+struct IsPair<std::pair<T0, T1>> {
+    static constexpr bool value = true;
+};
+
+template <typename T>
+struct IsTuple {
+    static constexpr bool value = false;
+};
+template <typename... Ts>
+struct IsTuple<std::tuple<Ts...>> {
+    static constexpr bool value = true;
+};
+
+template <typename T>
 struct IsIterable {
     template <typename U>
     static constexpr std::true_type Check(decltype(std::begin(U()))*, decltype(std::begin(U()))*);
@@ -68,8 +85,8 @@ struct HasArchiveMethod {
     };
     template <typename U>
     static constexpr std::true_type Check(
-        decltype((void (U::*)(Invokable&)) & U::template Archive<Invokable&>)*,
-        decltype((void (U::*)(Invokable&) const) & U::template Archive<Invokable&>)*);
+        decltype((void(U::*)(Invokable&)) & U::template Archive<Invokable&>)*,
+        decltype((void(U::*)(Invokable&) const) & U::template Archive<Invokable&>)*);
     template <typename U>
     static constexpr std::false_type Check(...);
 
@@ -78,7 +95,7 @@ struct HasArchiveMethod {
 
 template <typename T, size_t I>
 struct ToAny {
-    template <typename U, typename = typename std::enable_if_t<!std::is_same<T, U>::value>>
+    template <typename U, typename = std::enable_if_t<!std::is_same<T, U>::value>>
     constexpr operator U() const noexcept {
         return U(*this);
     }
@@ -87,7 +104,7 @@ struct ToAny {
 template <typename T, typename... Ts>
 struct IsAggregateInitializableFrom {
     template <typename U>
-    static constexpr std::true_type Check(decltype(U{Ts()...})*);
+    static constexpr std::true_type Check(decltype(U{Ts()...}) *);
     template <typename U>
     static constexpr std::false_type Check(...);
 
@@ -102,7 +119,7 @@ constexpr size_t NumFieldsImpl(std::index_sequence<Is...>) {
         return NumFieldsImpl<T>(std::make_index_sequence<sizeof...(Is) - 1>());
 }
 template <typename Ty,
-          typename = typename std::enable_if_t<std::is_standard_layout<std::decay_t<Ty>>::value>>
+          typename = std::enable_if_t<std::is_standard_layout<std::decay_t<Ty>>::value>>
 constexpr size_t NumFields() {
     using T = std::decay_t<Ty>;
     return NumFieldsImpl<T>(std::make_index_sequence<sizeof(T) / sizeof(char)>());
@@ -166,54 +183,6 @@ constexpr auto&& Get(T&& x) {
     return std::get<I>(TieAsTuple(std::forward<T>(x)));
 }
 
-template <typename T, typename F, int Index = 0,
-          typename = typename std::enable_if_t<std::is_standard_layout<std::decay_t<T>>::value>>
-constexpr void ForEachField(T&& x, F&& f) {
-    if constexpr (Index != NumFields<T>()) {
-        f(Get<Index>(x));
-        ForEachField<T, F, Index + 1>(std::forward<T>(x), std::forward<F>(f));
-    }
-}
-
-template <typename F>
-struct ForEachFieldHelper {
-    template <typename F2>
-    ForEachFieldHelper(F2&& f) : f(std::forward<F2>(f)) {
-    }
-
-    template <typename... Ts>
-    void operator()(Ts&&... ts) {
-        Apply(std::forward<Ts>(ts)...);
-    }
-
-    template <typename T, typename... Ts>
-    constexpr void Apply(T&& x, Ts&&... rest) {
-        f(std::forward<T>(x));
-        if constexpr (sizeof...(rest) != 0)
-            Apply(std::forward<Ts>(rest)...);
-    }
-
-    F f;
-};
-
-template <typename T, typename F,
-          typename = typename std::enable_if_t<HasArchiveMethod<std::decay_t<T>>::value>>
-constexpr void ForEachField(T&& x, F&& f) {
-    ForEachFieldHelper<F> helper(std::forward<F>(f));
-    x.Archive(helper);
-}
-
-template <typename T>
-struct IsDecomposable {
-    template <typename U>
-    static constexpr std::true_type Check(
-        std::enable_if_t<std::is_standard_layout<U>::value || HasArchiveMethod<U>::value>*);
-    template <typename U>
-    static constexpr std::false_type Check(...);
-
-    static constexpr bool value = decltype(Check<T>(0))::value;
-};
-
 template <typename F, typename... Args,
           typename = decltype((*(std::decay_t<F>*)0)((*(std::decay_t<Args>*)0)...))>
 decltype(auto) InvokeImpl(PriorityTag<2>, F&& f, Args&&... args) {
@@ -234,6 +203,48 @@ decltype(auto) InvokeImpl(PriorityTag<0>, F&& f, First&&, Rest&&... rest) {
 template <typename F, typename... Args>
 decltype(auto) Invoke(F&& f, Args&&... args) {
     return InvokeImpl(PriorityTag<2>{}, std::forward<F>(f), std::forward<Args>(args)...);
+}
+
+template <typename F>
+struct ForEachFieldHelper {
+    ForEachFieldHelper(F&& f) : f(std::forward<F>(f)) {
+    }
+
+    template <typename... Ts>
+    void operator()(Ts&&... ts) {
+        Apply(std::forward<Ts>(ts)...);
+    }
+
+    template <typename T, typename... Ts>
+    constexpr void Apply(T&& x, Ts&&... rest) {
+        f(std::forward<T>(x));
+        if constexpr (sizeof...(rest) != 0)
+            Apply(std::forward<Ts>(rest)...);
+    }
+
+    F&& f;
+};
+
+template <typename T, typename F, int Index = 0>
+constexpr void ForEachField(T&& x, F&& f) {
+    using Ty = std::decay_t<T>;
+
+    if constexpr (HasArchiveMethod<Ty>::value) {
+        ForEachFieldHelper<F> helper(std::forward<F>(f));
+        x.Archive(helper);
+    } else if constexpr (std::is_standard_layout_v<std::decay_t<Ty>>) {
+        if constexpr (Index != NumFields<Ty>()) {
+            f(Get<Index>(x));
+            ForEachField<T, F, Index + 1>(std::forward<T>(x), std::forward<F>(f));
+        }
+    } else if constexpr (IsPair<Ty>::value) {
+        f(std::forward<T>(x).first);
+        f(std::forward<T>(x).second);
+    } else if constexpr (IsTuple<Ty>::value) {
+        std::apply([&f = f](auto&&... x) { (f(x), ...); }, std::forward<T>(x));
+    } else {
+        static_assert(DeferredBool<T, false>::value, "Type T is not supported");
+    }
 }
 
 }  // namespace pine

@@ -6,151 +6,78 @@
 
 namespace pine {
 
-struct Vertex : VertexBase {
-    using VertexBase::VertexBase;
+Spectrum Vertex::f(const Vertex &next) const {
+    CHECK_NE(type, VertexType::Invalid);
+    CHECK_NE(wi, vec3(0.0f));
+    vec3 wo = Normalize(next.p() - p());
+    switch (type) {
+    case VertexType::Surface:
+        return si.material->F(MaterialEvalCtx(p(), n(), si.uv, si.dpdu, si.dpdv, wi, wo));
+    case VertexType::Medium: return si.phaseFunction->P(wi, wo);
+    default: LOG_FATAL("[Vertex][f]Unimplemented"); return Spectrum(0.0f);
+    }
+}
+Spectrum Vertex::Le(const Vertex &v) const {
+    if (!IsLight())
+        return Spectrum(0.0f);
+    vec3 wo = Normalize(v.p() - p());
+    CHECK_NE(n(), vec3(0.0f));
+    return si.material->Le(MaterialEvalCtx(p(), n(), si.uv, si.dpdu, si.dpdv, wo));
+}
+float Vertex::ConvertDensity(float pdf, const Vertex &next) const {
+    float dist;
+    vec3 wo = Normalize(next.p() - p(), dist);
+    if (next.IsOnSurface())
+        pdf *= AbsDot(next.n(), wo);
+    pdf /= Sqr(dist);
+    return pdf;
+}
+float Vertex::Pdf(const Vertex *prev, const Vertex &next) const {
+    if (type == VertexType::Light)
+        return PdfLight(next);
+    vec3 wn = Normalize(next.p() - p());
+    vec3 wp;
+    if (prev)
+        wp = Normalize(prev->p() - p());
+    else
+        CHECK(type == VertexType::Camera);
 
-    const Interaction &GetInteraction() const {
-        switch (type) {
-        case VertexType::Surface:
-        case VertexType::Medium: return si;
-        default: return ei;
-        }
-    }
-    vec3 p() const {
-        return GetInteraction().p;
-    }
-    vec3 n() const {
-        return GetInteraction().n;
-    }
-    bool IsOnSurface() const {
-        return n() != vec3(0.0f);
-    }
-    Spectrum f(const Vertex &next) const {
-        CHECK_NE(type, VertexType::Invalid);
-        CHECK_NE(wi, vec3(0.0f));
-        vec3 wo = Normalize(next.p() - p());
-        switch (type) {
-        case VertexType::Surface:
-            return si.material->F(MaterialEvalCtx(p(), n(), si.uv, si.dpdu, si.dpdv, wi, wo));
-        case VertexType::Medium: return si.phaseFunction->P(wi, wo);
-        default: LOG_FATAL("[Vertex][f]Unimplemented"); return Spectrum(0.0f);
-        }
-    }
+    float pdf = 0.0f;
+    if (type == VertexType::Camera)
+        pdf = ei.camera->PdfWe(ei.SpawnRay(wn)).dir;
+    else if (type == VertexType::Surface)
+        pdf = si.material->PDF(MaterialEvalCtx(p(), n(), si.uv, si.dpdu, si.dpdv, wp, wn));
+    else if (type == VertexType::Medium)
+        pdf = si.phaseFunction->P(wp, wn);
+    else
+        LOG_FATAL("[Vertex][Pdf]Unimplemented");
 
-    bool IsConnectible() const {
-        switch (type) {
-        case VertexType::Medium: return true;
-        case VertexType::Light: return !ei.light->IsDelta();
-        case VertexType::Camera: return true;
-        case VertexType::Surface: return true;
-        default: break;
-        }
-        LOG_FATAL("[Vertex][IsConnectible]Unimplemented");
-        return false;
-    }
+    return ConvertDensity(pdf, next);
+}
+float Vertex::PdfLight(const Vertex &v) const {
+    CHECK(IsLight());
+    float dist;
+    vec3 w = Normalize(v.p() - p(), dist);
+    float pdf = 0.0f;
+    if (type == VertexType::Light)
+        pdf = ei.light->PdfLe(Ray(p(), w)).dir;
+    else
+        pdf = 1.0f / Pi4;
+    pdf /= Sqr(dist);
+    if (v.IsOnSurface())
+        pdf *= AbsDot(v.n(), w);
+    return pdf;
+}
+float Vertex::PdfLightOrigin(const Vertex &v) {
+    vec3 w = Normalize(v.p() - p());
+    float pdf;
 
-    bool IsLight() const {
-        return type == VertexType::Light ||
-               (type == VertexType::Surface && si.material->Is<EmissiveMaterial>());
-    }
-    bool IsDeltaLight() const {
-        return type == VertexType::Light && ei.light && ei.light->IsDelta();
-    }
-    Spectrum Le(const Vertex &v) const {
-        if (!IsLight())
-            return Spectrum(0.0f);
-        vec3 wo = Normalize(v.p() - p());
-        CHECK_NE(n(), vec3(0.0f));
-        return si.material->Le(MaterialEvalCtx(p(), n(), si.uv, si.dpdu, si.dpdv, wo));
-    }
-    float ConvertDensity(float pdf, const Vertex &next) const {
-        float dist;
-        vec3 wo = Normalize(next.p() - p(), dist);
-        if (next.IsOnSurface())
-            pdf *= AbsDot(next.n(), wo);
-        pdf /= Sqr(dist);
-        return pdf;
-    }
-    float Pdf(const Vertex *prev, const Vertex &next) const {
-        if (type == VertexType::Light)
-            return PdfLight(next);
-        vec3 wn = Normalize(next.p() - p());
-        vec3 wp;
-        if (prev)
-            wp = Normalize(prev->p() - p());
-        else
-            CHECK(type == VertexType::Camera);
-        // CHECK_NE(n(), vec3(0.0f));
-
-        float pdf = 0.0f;
-        if (type == VertexType::Camera)
-            pdf = ei.camera->PdfWe(ei.SpawnRay(wn)).dir;
-        else if (type == VertexType::Surface)
-            pdf = si.material->PDF(MaterialEvalCtx(p(), n(), si.uv, si.dpdu, si.dpdv, wp, wn));
-        else if (type == VertexType::Medium)
-            pdf = si.phaseFunction->P(wp, wn);
-        else
-            LOG_FATAL("[Vertex][Pdf]Unimplemented");
-
-        return ConvertDensity(pdf, next);
-    }
-    float PdfLight(const Vertex &v) const {
-        CHECK(IsLight());
-        float dist;
-        vec3 w = Normalize(v.p() - p(), dist);
-        float pdf = 0.0f;
-        if (type == VertexType::Light)
-            pdf = ei.light->PdfLe(Ray(p(), w)).dir;
-        else
-            pdf = 1.0f / Pi4;
-        pdf /= Sqr(dist);
-        if (v.IsOnSurface())
-            pdf *= AbsDot(v.n(), w);
-        return pdf;
-    }
-    float PdfLightOrigin(const Vertex &v) {
-        vec3 w = Normalize(v.p() - p());
-        float pdf;
-
-        if (type == VertexType::Light)
-            pdf = ei.light->PdfLe(Ray(p(), w)).pos;
-        else
-            pdf = 1.0f / si.shape->Area();
-        return pdf;
-    }
-
-    static inline Vertex CreateCamera(const Camera *camera, const Ray &ray, const Spectrum &beta) {
-        return Vertex(VertexType::Camera, EndpointInteraction(camera, ray), beta);
-    }
-    static inline Vertex CreateCamera(const Camera *camera, const Interaction &it,
-                                      const Spectrum &beta) {
-        return Vertex(VertexType::Camera, EndpointInteraction(it, camera), beta);
-    }
-    static inline Vertex CreateLight(const Light *light, const Ray &ray, const vec3 &nLight,
-                                     const Spectrum &Le, float pdf) {
-        Vertex v(VertexType::Light, EndpointInteraction(light, ray, nLight), Le);
-        v.pdfFwd = pdf;
-        return v;
-    }
-    static inline Vertex CreateLight(const EndpointInteraction &ei, const Spectrum &beta,
-                                     float pdf) {
-        Vertex v(VertexType::Light, ei, beta);
-        v.pdfFwd = pdf;
-        return v;
-    }
-    static inline Vertex CreateMedium(const Interaction &mi, const Spectrum &beta, float pdf,
-                                      const Vertex &prev) {
-        Vertex v(VertexType::Medium, mi, beta);
-        v.pdfFwd = prev.ConvertDensity(pdf, v);
-        return v;
-    }
-    static inline Vertex CreateSurface(const Interaction &si, const Spectrum &beta, float pdf,
-                                       const Vertex &prev) {
-        Vertex v(VertexType::Surface, si, beta);
-        v.pdfFwd = prev.ConvertDensity(pdf, v);
-        return v;
-    }
-};
+    if (type == VertexType::Light)
+        pdf = ei.light->PdfLe(Ray(p(), w)).pos;
+    else
+        pdf = 1.0f / si.shape->Area();
+    return pdf;
+}
 
 template <typename T>
 struct ScopedAssignment {
@@ -177,8 +104,10 @@ struct ScopedAssignment {
     T *target, backup;
 };
 
-int RandomWalk(const RayIntegrator &integrator, Ray ray, Sampler &sampler, Spectrum beta, float pdf,
-               int maxDepth, Vertex *path) {
+int RandomWalk(const Scene *, const RayIntegrator &integrator, Ray ray, Sampler &sampler,
+               Spectrum beta, float pdf, int maxDepth, Vertex *path) {
+    if (maxDepth == 0)
+        return 0;
     int bounces = 0;
     float pdfFwd = pdf, pdfRev = 0.0f;
 
@@ -231,17 +160,22 @@ int RandomWalk(const RayIntegrator &integrator, Ray ray, Sampler &sampler, Spect
     return bounces;
 }
 
-int GenerateCameraSubpath(const Scene *scene, RayIntegrator &integrator, Sampler &sampler,
+int GenerateCameraSubpath(const Scene *scene, const RayIntegrator &integrator, Sampler &sampler,
                           int maxDepth, vec2 pFilm, Vertex *path) {
+    if (maxDepth == 0)
+        return 0;
     Ray ray = scene->camera.GenRay(pFilm, sampler.Get2D());
     Spectrum beta(1.0f);
 
     path[0] = Vertex::CreateCamera(&scene->camera, ray, beta);
     auto pdf = scene->camera.PdfWe(ray);
-    return RandomWalk(integrator, ray, sampler, beta, pdf.dir, maxDepth - 1, path + 1) + 1;
+    return RandomWalk(scene, integrator, ray, sampler, beta, pdf.dir, maxDepth - 1, path + 1) + 1;
 }
 
-int GenerateLightSubpath(RayIntegrator &integrator, Sampler &sampler, int maxDepth, Vertex *path) {
+int GenerateLightSubpath(const Scene *scene, const RayIntegrator &integrator, Sampler &sampler,
+                         int maxDepth, Vertex *path) {
+    if (maxDepth == 0)
+        return 0;
     auto [light, lightPdf] = integrator.lightSampler.SampleLight(sampler.Get1D());
 
     auto les = light->SampleLe(sampler.Get2D(), sampler.Get2D());
@@ -249,7 +183,7 @@ int GenerateLightSubpath(RayIntegrator &integrator, Sampler &sampler, int maxDep
     Spectrum beta = les.Le / (les.pdf.pos * les.pdf.dir * lightPdf);
 
     int nVertices =
-        RandomWalk(integrator, les.ray, sampler, beta, les.pdf.dir, maxDepth - 1, path + 1);
+        RandomWalk(scene, integrator, les.ray, sampler, beta, les.pdf.dir, maxDepth - 1, path + 1);
 
     return nVertices + 1;
 }
@@ -291,7 +225,6 @@ float MISWeight(Vertex *lightVertices, Vertex *cameraVertices, Vertex &sampled, 
     ScopedAssignment<float> a4;
     if (pt)
         a4 = {&pt->pdfRev, s > 0 ? qs->Pdf(qsMinus, *pt) : pt->PdfLightOrigin(*ptMinus)};
-
     ScopedAssignment<float> a5;
     if (ptMinus)
         a5 = {&ptMinus->pdfRev, s > 0.0f ? pt->Pdf(qs, *ptMinus) : pt->PdfLight(*ptMinus)};
@@ -381,9 +314,9 @@ Spectrum ConnectBDPT(const RayIntegrator &integrator, Vertex *lightVertices, Ver
 BDPTIntegrator::BDPTIntegrator(const Parameters &params, Scene *scene)
     : PixelIntegrator(params, scene) {
     cameraVertices =
-        std::vector<std::vector<VertexBase>>(NumThreads(), std::vector<VertexBase>(maxDepth + 2));
+        std::vector<std::vector<Vertex>>(NumThreads(), std::vector<Vertex>(maxDepth + 2));
     lightVertices =
-        std::vector<std::vector<VertexBase>>(NumThreads(), std::vector<VertexBase>(maxDepth + 1));
+        std::vector<std::vector<Vertex>>(NumThreads(), std::vector<Vertex>(maxDepth + 1));
 }
 
 void BDPTIntegrator::Compute(vec2i p, Sampler &sampler) {
@@ -391,7 +324,7 @@ void BDPTIntegrator::Compute(vec2i p, Sampler &sampler) {
     auto cameraVertices = (Vertex *)&this->cameraVertices[threadIdx][0];
     auto lightVertices = (Vertex *)&this->lightVertices[threadIdx][0];
     int nCamera = GenerateCameraSubpath(scene, *this, sampler, maxDepth + 2, pFilm, cameraVertices);
-    int nLight = GenerateLightSubpath(*this, sampler, maxDepth + 1, lightVertices);
+    int nLight = GenerateLightSubpath(scene, *this, sampler, maxDepth + 1, lightVertices);
     Spectrum L(0.0f);
 
     for (int t = 1; t <= nCamera; t++) {
@@ -403,6 +336,8 @@ void BDPTIntegrator::Compute(vec2i p, Sampler &sampler) {
             vec2 pFilmNew = pFilm;
             Spectrum Lpath = ConnectBDPT(*this, lightVertices, cameraVertices, s, t, scene->camera,
                                          sampler, pFilmNew);
+            if (Lpath.HasInfs() || Lpath.HasNaNs())
+                continue;
             if (t != 1)
                 L += Lpath;
             else

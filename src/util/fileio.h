@@ -30,6 +30,7 @@ struct ScopedFile {
     void Write(const T& val) {
         Write(&val, sizeof(T));
     }
+
     mutable std::fstream file;
     mutable size_t size = (size_t)-1;
 };
@@ -41,7 +42,7 @@ std::string RemoveFileExtension(std::string filename);
 std::string ChangeFileExtension(std::string filename, std::string ext);
 std::string AppendFileName(std::string filename, std::string content);
 std::string ReadStringFile(std::string filename);
-void WriteBinaryData(std::string filename, const char* ptr, size_t size);
+void WriteBinaryData(std::string filename, const void* ptr, size_t size);
 std::vector<char> ReadBinaryData(std::string filename);
 
 void SaveImage(std::string filename, vec2i size, int nchannel, float* data);
@@ -64,9 +65,7 @@ void Serialize(std::string filename, const T& object) {
 template <typename T>
 T Deserialize(std::string filename) {
     Deserializer deserializer(ReadBinaryData(filename));
-    T object;
-    deserializer.Archive(object);
-    return object;
+    return deserializer.Unarchive<T>();
 }
 
 }  // namespace pine

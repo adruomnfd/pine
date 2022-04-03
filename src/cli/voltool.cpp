@@ -15,6 +15,10 @@ int main(int argc, char* argv[]) {
         }
     };
     auto files = [&]() { return std::vector<std::string>(argv, argv + argc); };
+    auto usage = [](auto msg) {
+        LOG(msg);
+        exit(0);
+    };
 
     // clang-format off
 
@@ -25,10 +29,10 @@ int main(int argc, char* argv[]) {
                 CompressVolume(ChangeFileExtension(files()[0], "compressed"), density, size);
             }
             else{
-                LOG("Usage: compress [from] [to]");
+                usage("Usage: compress [from] [to]");
             }       
         DEFAULT
-            LOG("Usage: voltool [compress] [filename]");
+            usage("Usage: voltool [compress] [filename]");
     }
 
     // clang-format on

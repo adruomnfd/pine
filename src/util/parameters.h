@@ -40,13 +40,12 @@ struct Parameters {
         else                                                                \
             LOG_FATAL("[Parameters][Get" #Type "]cannot find \"&\"", name); \
         return {};                                                          \
-    }
-#define DefineGetXWithFallback(R, Type)                             \
-    R Get##Type(const std::string& name, const R& fallback) const { \
-        if (auto value = TryGet##Type(name))                        \
-            return *value;                                          \
-        else                                                        \
-            return fallback;                                        \
+    }                                                                       \
+    R Get##Type(const std::string& name, const R& fallback) const {         \
+        if (auto value = TryGet##Type(name))                                \
+            return *value;                                                  \
+        else                                                                \
+            return fallback;                                                \
     }
     // clang-format off
     DefineGetX(bool, Bool)
@@ -59,20 +58,10 @@ struct Parameters {
     DefineGetX(vec3, Vec3)
     DefineGetX(vec4, Vec4)
     DefineGetX(std::string, String)
-    DefineGetXWithFallback(bool, Bool)
-    DefineGetXWithFallback(int, Int)
-    DefineGetXWithFallback(float, Float)
-    DefineGetXWithFallback(vec2i, Vec2i)
-    DefineGetXWithFallback(vec3i, Vec3i)
-    DefineGetXWithFallback(vec4i, Vec4i)
-    DefineGetXWithFallback(vec2, Vec2)
-    DefineGetXWithFallback(vec3, Vec3)
-    DefineGetXWithFallback(vec4, Vec4)
-    DefineGetXWithFallback(std::string, String)
-// clang-format on
+    // clang-format on
 #undef DefineGetX
 
-                                    const std::vector<Parameters>& GetAll(std::string name) const;
+                const std::vector<Parameters>& GetAll(std::string name) const;
     Parameters& AddSubset(std::string name);
 
     Parameters& operator[](std::string name);

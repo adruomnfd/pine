@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast)
+# add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast -fsanitize=address)
 # add_link_options(-fsanitize=address)
 
 include_directories(

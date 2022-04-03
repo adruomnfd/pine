@@ -22,7 +22,6 @@ class Integrator {
 
     LightSampler lightSampler;
 
-  protected:
     Scene* scene = nullptr;
     Film* film = nullptr;
     vec2i filmSize;

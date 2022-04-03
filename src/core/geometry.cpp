@@ -185,9 +185,9 @@ bool Rect::Intersect(Ray& ray, Interaction& it) const {
     if (v < -0.5f || v > 0.5f)
         return false;
     ray.tmax = t;
-    it.p = position + ex * u + ey * v;
+    it.p = position + lx * ex * u + ly * ey * v;
     it.n = n;
-    it.uv = vec2(u, v);
+    it.uv = vec2(u, v) + vec2(0.5f);
     it.dpdu = ex;
     it.dpdv = ey;
     return true;
@@ -350,7 +350,16 @@ Rect Rect::Create(const Parameters& params) {
 }
 
 TriangleMesh TriangleMesh::Create(const Parameters& params) {
-    return LoadObj(params.GetString("file"));
+    TriangleMesh mesh = LoadObj(params.GetString("file"));
+
+    if (auto s = params.TryGetVec3("scale"))
+        for (auto& v : mesh.vertices)
+            v *= *s;
+    if (auto p = params.TryGetVec3("position"))
+        for (auto& v : mesh.vertices)
+            v += *p;
+
+    return mesh;
 }
 
 Shape Shape::Create(const Parameters& params, Scene* scene) {

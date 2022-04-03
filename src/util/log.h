@@ -7,8 +7,12 @@
 
 namespace pine {
 
-extern bool verbose;
+inline bool verbose = true;
 
+template <typename... Args>
+inline void LOG_PLAIN(const Args&... args) {
+    printf("%s", Fstring(args...).c_str());
+}
 template <typename... Args>
 inline void LOG(const Args&... args) {
     printf("%s\n", Fstring(args...).c_str());
@@ -56,30 +60,18 @@ inline void print(const Args&... args) {
                __FILE__, __LINE__, __func__);                                             \
         abort();                                                                          \
     }
-#define CHECK_EQ(a, b)                                                                            \
-    if (!((a) == (b)))                                                                            \
-        LOG_FATAL("[CHECK_EQ Failure]with & equal &, & equal & [file &, line &, &()]", #a, a, #b, \
+
+#define CHECK_IMPL(name, op, a, b)                                                                \
+    if (!((a)op(b)))                                                                              \
+        LOG_FATAL("[" name " Failure]with & equal &, & equal & [file &, line &, &()]", #a, a, #b, \
                   b, __FILE__, __LINE__, __func__);
-#define CHECK_NE(a, b)                                                                            \
-    if (!((a) != (b)))                                                                            \
-        LOG_FATAL("[CHECK_NE Failure]with & equal &, & equal & [file &, line &, &()]", #a, a, #b, \
-                  b, __FILE__, __LINE__, __func__);
-#define CHECK_LT(a, b)                                                                            \
-    if (!((a) < (b)))                                                                             \
-        LOG_FATAL("[CHECK_LT Failure]with & equal &, & equal & [file &, line &, &()]", #a, a, #b, \
-                  b, __FILE__, __LINE__, __func__);
-#define CHECK_GT(a, b)                                                                            \
-    if (!((a) > (b)))                                                                             \
-        LOG_FATAL("[CHECK_GT Failure]with & equal &, & equal & [file &, line &, &()]", #a, a, #b, \
-                  b, __FILE__, __LINE__, __func__);
-#define CHECK_LE(a, b)                                                                            \
-    if (!((a) <= (b)))                                                                            \
-        LOG_FATAL("[CHECK_LE Failure]with & equal &, & equal & [file &, line &, &()]", #a, a, #b, \
-                  b, __FILE__, __LINE__, __func__);
-#define CHECK_GE(a, b)                                                                            \
-    if (!((a) >= (b)))                                                                            \
-        LOG_FATAL("[CHECK_GE Failure]with & equal &, & equal & [file &, line &, &()]", #a, a, #b, \
-                  b, __FILE__, __LINE__, __func__);
+
+#define CHECK_EQ(a, b) CHECK_IMPL("CHECK_EQ", ==, a, b)
+#define CHECK_NE(a, b) CHECK_IMPL("CHECK_NE", !=, a, b)
+#define CHECK_LT(a, b) CHECK_IMPL("CHECK_LT", <, a, b)
+#define CHECK_GT(a, b) CHECK_IMPL("CHECK_GT", >, a, b)
+#define CHECK_LE(a, b) CHECK_IMPL("CHECK_LE", <=, a, b)
+#define CHECK_GE(a, b) CHECK_IMPL("CHECK_GE", >=, a, b)
 
 #ifndef NDEBUG
 #define DCHECK(x) CHECK(x)

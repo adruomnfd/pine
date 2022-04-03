@@ -1,4 +1,5 @@
 #include <util/fileio.h>
+#include <util/huffman.h>
 
 using namespace pine;
 
@@ -43,6 +44,23 @@ static void Scaling(const std::vector<std::string>& filenames, float scale, bool
     }
 };
 
+static void Compress(std::string from, std::string to) {
+    auto input = ReadBinaryData(from);
+    auto tree = BuildHuffmanTree(input);
+    auto encoded = HuffmanEncode(tree, input);
+    auto serialized = Archive(tree, encoded);
+
+    WriteBinaryData(to, serialized.data(), sizeof(serialized[0]) * serialized.size());
+}
+
+static void Decompress(std::string from, std::string to) {
+    auto serialized = ReadBinaryData(from);
+    auto [tree, encoded] = Unarchive<HuffmanTree<uint8_t>, HuffmanEncoded>(serialized);
+    auto input = HuffmanDecode<std::vector<uint8_t>>(tree, encoded);
+
+    WriteBinaryData(to, input.data(), sizeof(input[0]) * input.size());
+}
+
 int main(int argc, char* argv[]) {
     --argc;
     ++argv;
@@ -75,6 +93,11 @@ int main(int argc, char* argv[]) {
     };
     auto files = [&]() { return std::vector<std::string>(argv, argv + argc); };
 
+    auto usage = [](auto msg) {
+        LOG(msg);
+        exit(0);
+    };
+
     // clang-format off
 
     SWITCH(next()) {
@@ -84,26 +107,34 @@ int main(int argc, char* argv[]) {
                 CASE("--inplace" && argc)
                     ConvertFormat(files(), fmt, true);
                 CASE_BEGINWITH("--")
-                    LOG("convert [bmp | png] [--inplace] [filename]...");
+                    usage("convert [bmp | png] [--inplace] [filename]...");
                 DEFAULT
                     putback();
                     ConvertFormat(files(), fmt, false);
             }
         CASE("scaling")
             if(!isnumber())
-                LOG("scaling [scale] [--inplace] [filename]...");
+                usage("scaling [scale] [--inplace] [filename]...");
             float scale = std::stof(next());
             SWITCH(next()){
                 CASE("--inplace") 
                     Scaling(files(), scale, true);
                 CASE_BEGINWITH("--")
-                    LOG("scaling [scale] [--inplace] [filename]...");
+                    usage("scaling [scale] [--inplace] [filename]...");
                 DEFAULT 
                     putback();
                     Scaling(files(), scale, false);
-            }           
+            }
+        CASE("compress")
+            if(files().size() != 2)  
+                usage("compress [from] [to]");
+            Compress(files()[0],files()[1]);         
+        CASE("decompress")
+            if(files().size() != 2)  
+                usage("compress [from] [to]");
+            Decompress(files()[0],files()[1]);         
         DEFAULT
-            LOG("Usage: imgtool [convert | scaling] [filename]...");
+            usage("Usage: imgtool [convert | scaling] [filename]...");
     }
 
     // clang-format on

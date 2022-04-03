@@ -10,7 +10,7 @@ namespace pine {
 
 void BVHImpl::Build(std::vector<Primitive> primitives) {
     Profiler _("BuildBVH");
-    LOG_VERBOSE("[BVH]Building BVH");
+    LOG_PLAIN("[BVH]Building BVH");
     Timer timer;
 
     AABB aabb;
@@ -23,8 +23,8 @@ void BVHImpl::Build(std::vector<Primitive> primitives) {
     rootIndex = (int)nodes.size() - 1;
     // Optimize();
 
-    LOG_VERBOSE("[BVH]BVH built in & ms", timer.ElapsedMs());
-    LOG_VERBOSE("[BVH]Resulting BVH has & nodes(&.2 MB), & primitives(&.2 MB)", nodes.size(),
+    LOG_PLAIN(", & ms", timer.ElapsedMs());
+    LOG_PLAIN(", & nodes(&.2 MB), & primitives(&.2 MB)\n", nodes.size(),
                 nodes.size() * sizeof(nodes[0]) / 1000000.0, primitives.size(),
                 primitives.size() * sizeof(primitives[0]) / 1000000.0);
 }
