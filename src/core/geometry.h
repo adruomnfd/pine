@@ -29,6 +29,7 @@ struct AABB {
     AABB() = default;
     AABB(vec3 lower, vec3 upper) : lower(lower), upper(upper){};
     AABB(vec3 p) : lower(p), upper(p){};
+    
     int MaxDim() const {
         vec3 diagonal = upper - lower;
         if (diagonal.x > diagonal.y)
@@ -419,7 +420,6 @@ struct TriangleMesh {
 
 struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line, TriangleMesh> {
     using TaggedVariant::TaggedVariant;
-    static Shape Create(const Parameters& params, Scene* scene);
 
     bool Hit(const Ray& ray) const {
         SampledProfiler _(ProfilePhase::ShapeIntersect);
@@ -442,8 +442,8 @@ struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line
         CHECK(material);
         ShapeSample ss = Dispatch([&](auto&& x) { return x.Sample(p, u); });
         ss.wo = Normalize(ss.p - p, ss.distance);
-        MaterialEvalCtx mc(ss.p, ss.n, ss.uv, vec3(), vec3(), -ss.wo);
-        ss.Le = material->Le(mc);
+        if (material->Is<EmissiveMaterial>())
+            ss.Le = material->Le({ss.p, ss.n, ss.uv, vec3(), vec3(), -ss.wo});
         ss.pdf = Sqr(ss.distance) / (AbsDot(-ss.wo, ss.n) * Area());
         return ss;
     }
@@ -458,6 +458,8 @@ struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line
     std::shared_ptr<Material> material;
     MediumInterface<std::shared_ptr<Medium>> mediumInterface;
 };
+
+Shape CreateShape(const Parameters& params, Scene* scene);
 
 }  // namespace pine
 

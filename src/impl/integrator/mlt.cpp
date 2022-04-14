@@ -18,6 +18,8 @@ MltIntegrator::MltIntegrator(const Parameters& params, Scene* scene) : Integrato
         }
     }
     nMutations = (int64_t)Area(filmSize) * params.GetInt("mutationsPerPixel", samplesPerPixel);
+    sigma = params.GetFloat("sigma", 0.01f);
+    largeStepProbability = params.GetFloat("largeStepProbability", 0.3f);
 };
 
 static const int cameraStreamIndex = 0;
@@ -69,8 +71,8 @@ void MltIntegrator::Render() {
     ParallelFor(nBootstrapSamples, [&](int index) {
         if (bdpt) {
             for (int depth = 0; depth < bdpt->maxDepth; depth++) {
-                Sampler sampler =
-                    MltSampler(0.01f, 0.3f, nSampleStreams, index * bdpt->maxDepth + depth);
+                Sampler sampler = MltSampler(sigma, largeStepProbability, nSampleStreams,
+                                             index * bdpt->maxDepth + depth);
                 vec2 pFilm;
                 Spectrum l = MltIntegrator::L(sampler, depth, pFilm);
                 if (!l.HasInfs() && !l.HasNaNs())
@@ -88,7 +90,8 @@ void MltIntegrator::Render() {
     ParallelFor(nMarkovChains, [&](int chainIndex) {
         ScopedPR(pr, chainIndex, chainIndex == nMarkovChains - 1, threadIdx == 0);
         RNG rng(chainIndex);
-        Sampler sampler = MltSampler(0.01f, 0.3f, bdpt ? nSampleStreams : 1, chainIndex);
+        Sampler sampler =
+            MltSampler(sigma, largeStepProbability, bdpt ? nSampleStreams : 1, chainIndex);
 
         auto L = [&]() {
             if (bdpt) {

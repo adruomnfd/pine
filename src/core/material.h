@@ -70,7 +70,6 @@ struct EmissiveMaterial {
 struct Material : public TaggedVariant<LayeredMaterial, EmissiveMaterial> {
   public:
     using TaggedVariant::TaggedVariant;
-    static Material Create(const Parameters& params);
 
     vec3 BumpNormal(const MaterialEvalCtx& c) const;
 
@@ -103,9 +102,10 @@ struct Material : public TaggedVariant<LayeredMaterial, EmissiveMaterial> {
         return Dispatch([&](auto&& x) { return x.Le(c); });
     }
 
-  private:
     std::optional<NodeInput> bumpMap;
 };
+
+Material CreateMaterial(const Parameters& params);
 
 }  // namespace pine
 

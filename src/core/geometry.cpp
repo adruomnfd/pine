@@ -362,7 +362,7 @@ TriangleMesh TriangleMesh::Create(const Parameters& params) {
     return mesh;
 }
 
-Shape Shape::Create(const Parameters& params, Scene* scene) {
+Shape CreateShape(const Parameters& params, Scene* scene) {
     std::string type = params.GetString("type");
     Shape shape;
 

@@ -54,7 +54,6 @@ struct ThinLenCamera {
 
 struct Camera : public TaggedVariant<ThinLenCamera> {
     using TaggedVariant::TaggedVariant;
-    static Camera Create(const Parameters& params, Scene* scene);
 
     Ray GenRay(vec2 pFilm, vec2 u2) const {
         SampledProfiler _(ProfilePhase::GenerateRay);
@@ -77,6 +76,8 @@ struct Camera : public TaggedVariant<ThinLenCamera> {
 
     std::shared_ptr<Medium> medium;
 };
+
+Camera CreateCamera(const Parameters& params, Scene* scene);
 
 }  // namespace pine
 

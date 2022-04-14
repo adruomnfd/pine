@@ -2,7 +2,7 @@
 #include <util/parameters.h>
 
 namespace pine {
-Filter Filter::Create(const Parameters& params) {
+Filter CreateFilter(const Parameters& params) {
     std::string type = params.GetString("type", "LanczosSinc");
     vec2 radius = params.GetVec2("radius", vec2(0.5f));
     SWITCH(type) {

@@ -232,7 +232,7 @@ constexpr void ForEachField(T&& x, F&& f) {
     if constexpr (HasArchiveMethod<Ty>::value) {
         ForEachFieldHelper<F> helper(std::forward<F>(f));
         x.Archive(helper);
-    } else if constexpr (std::is_standard_layout_v<std::decay_t<Ty>>) {
+    } else if constexpr (std::is_standard_layout_v<Ty>) {
         if constexpr (Index != NumFields<Ty>()) {
             f(Get<Index>(x));
             ForEachField<T, F, Index + 1>(std::forward<T>(x), std::forward<F>(f));
@@ -246,6 +246,12 @@ constexpr void ForEachField(T&& x, F&& f) {
         static_assert(DeferredBool<T, false>::value, "Type T is not supported");
     }
 }
+
+template <typename T>
+struct IsForEachFieldable {
+    static constexpr bool value = HasArchiveMethod<T>::value || std::is_standard_layout_v<T> ||
+                                  IsPair<T>::value || IsTuple<T>::value;
+};
 
 }  // namespace pine
 

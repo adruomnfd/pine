@@ -9,27 +9,29 @@
 #include <impl/integrator/viz.h>
 #include <impl/integrator/mlt.h>
 #include <impl/integrator/path.h>
-#include <impl/integrator/sppm.h>
+#include <impl/integrator/area.h>
 #include <impl/integrator/bdpt.h>
+#include <impl/integrator/sppm.h>
 #include <impl/integrator/lightpath.h>
 #include <impl/integrator/randomwalk.h>
 
 namespace pine {
 
-std::shared_ptr<Integrator> Integrator::Create(const Parameters& params, Scene* scene) {
+Integrator* CreateIntegrator(const Parameters& params, Scene* scene) {
     std::string type = params.GetString("type");
     SWITCH(type) {
-        CASE("AO") return std::make_shared<AOIntegrator>(params, scene);
-        CASE("Viz") return std::make_shared<VizIntegrator>(params, scene);
-        CASE("Mlt") return std::make_shared<MltIntegrator>(params, scene);
-        CASE("Path") return std::make_shared<PathIntegrator>(params, scene);
-        CASE("Sppm") return std::make_shared<SPPMIntegrator>(params, scene);
-        CASE("Bdpt") return std::make_shared<BDPTIntegrator>(params, scene);
-        CASE("LightPath") return std::make_shared<LightPathIntegrator>(params, scene);
-        CASE("RandomWalk") return std::make_shared<RandomWalkIntegrator>(params, scene);
+        CASE("AO") return new AOIntegrator(params, scene);
+        CASE("Viz") return new VizIntegrator(params, scene);
+        CASE("Mlt") return new MltIntegrator(params, scene);
+        CASE("Path") return new PathIntegrator(params, scene);
+        CASE("Area") return new AreaIntegrator(params, scene);
+        CASE("Bdpt") return new BDPTIntegrator(params, scene);
+        CASE("Sppm") return new SPPMIntegrator(params, scene);
+        CASE("LightPath") return new LightPathIntegrator(params, scene);
+        CASE("RandomWalk") return new RandomWalkIntegrator(params, scene);
         DEFAULT {
             LOG_WARNING("[Integrator][Create]Unknown type \"&\"", type);
-            return std::make_shared<PathIntegrator>(params, scene);
+            return new PathIntegrator(params, scene);
         }
     }
 }
@@ -37,18 +39,18 @@ Integrator::Integrator(const Parameters& params, Scene* scene) : scene(scene) {
     film = &scene->camera.GetFilm();
     filmSize = scene->camera.GetFilm().Size();
 
-    lightSampler = LightSampler::Create(params["lightSampler"], scene->lights);
+    lightSampler = CreateLightSampler(params["lightSampler"], scene->lights);
 
     Parameters samplerParams = params["sampler"];
     samplerParams.Set("filmSize", filmSize);
-    samplers = {Sampler::Create(samplerParams)};
+    samplers = {CreateSampler(samplerParams)};
     for (int i = 0; i < NumThreads() - 1; i++)
         samplers.push_back(samplers[0].Clone());
     samplesPerPixel = samplers[0].SamplesPerPixel();
 }
 
 RayIntegrator::RayIntegrator(const Parameters& params, Scene* scene)
-    : Integrator(params, scene), accel(Accel::Create(params["accel"])) {
+    : Integrator(params, scene), accel(CreateAccel(params["accel"])) {
     accel->Initialize(scene);
     maxDepth = params.GetInt("maxDepth", 4);
 }

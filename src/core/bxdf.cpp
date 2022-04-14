@@ -164,23 +164,23 @@ float DielectricBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
 }
 
 DiffuseBSDF DiffuseBSDF::Create(const Parameters& params) {
-    return DiffuseBSDF(Node::Create(params["albedo"]));
+    return DiffuseBSDF(CreateNode(params["albedo"]));
 }
 
 ConductorBSDF ConductorBSDF::Create(const Parameters& params) {
-    return ConductorBSDF(Node::Create(params["albedo"]), Node::Create(params["roughness"]));
+    return ConductorBSDF(CreateNode(params["albedo"]), CreateNode(params["roughness"]));
 }
 
 DielectricBSDF DielectricBSDF::Create(const Parameters& params) {
     NodeInput albedo;
     if (params.HasSubset("albedo"))
-        albedo = Node::Create(params["albedo"]);
+        albedo = CreateNode(params["albedo"]);
     else
         albedo = new nodes::Constant(1.0f, vec3(1.0f));
-    return DielectricBSDF(albedo, Node::Create(params["roughness"]), Node::Create(params["eta"]));
+    return DielectricBSDF(albedo, CreateNode(params["roughness"]), CreateNode(params["eta"]));
 }
 
-BSDF BSDF::Create(const Parameters& params) {
+BSDF CreateBSDF(const Parameters& params) {
     std::string type = params.GetString("type");
     SWITCH(type) {
         CASE("Diffuse") return DiffuseBSDF::Create(params);

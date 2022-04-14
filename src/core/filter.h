@@ -96,7 +96,6 @@ struct Filter
     : TaggedVariant<BoxFilter, TriangleFilter, GaussianFilter, MitchellFilter, LanczosSincFilter> {
   public:
     using TaggedVariant::TaggedVariant;
-    static Filter Create(const Parameters& params);
 
     float Evaluate(vec2 p) const {
         return Dispatch([&](auto&& x) { return x.Evaluate(p); });
@@ -105,6 +104,8 @@ struct Filter
         return Dispatch([&](auto&& x) { return x.radius; });
     }
 };
+
+Filter CreateFilter(const Parameters& params);
 
 }  // namespace pine
 

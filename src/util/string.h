@@ -41,7 +41,7 @@ auto ToStringImpl(const T &val, PriorityTag<1>) {
 }
 
 template <typename... Ts>
-auto ToString(const Ts &... vals) {
+auto ToString(const Ts &...vals) {
     std::string str;
     int expand[] = {0, (str += pine::ToStringImpl(vals, PriorityTag<2>{}), 0)...};
     (void)expand;
@@ -140,7 +140,7 @@ class Fstring {
     }
 
     template <typename T, typename... Ts>
-    Fstring(const char *format, const T &first, const Ts &... rest) {
+    Fstring(const char *format, const T &first, const Ts &...rest) {
         static_assert(!std::is_same<T, Format>::value, "Error");
 
         *this = Formatting(format, first);
@@ -152,7 +152,7 @@ class Fstring {
     }
 
     template <typename T, typename... Ts>
-    Fstring(const char *format, Format fmt, const T &first, const Ts &... rest) {
+    Fstring(const char *format, Format fmt, const T &first, const Ts &...rest) {
         static_assert(!std::is_same<T, Format>::value, "Two consecutive _Format_ is not allowed");
 
         *this = Formatting(format, first, fmt);
@@ -164,7 +164,7 @@ class Fstring {
     }
 
     template <typename T, typename... Ts>
-    Fstring(Format fmt, const char *format, const T &first, const Ts &... rest) {
+    Fstring(Format fmt, const char *format, const T &first, const Ts &...rest) {
         static_assert(!std::is_same<T, Format>::value,
                       "local _Format_ cannot be applied when global _Format_ is specified");
 
@@ -208,24 +208,24 @@ Fstring Fstring::FormattingImpl(const Ty &value, Format fmt) {
 
     if constexpr (HasMemberMethodFormatting<T>::value) {
         formatted = value.Formatting(fmt);
-    } else if constexpr (std::is_same<T, std::string>::value) {
+    } else if constexpr (std::is_same_v<T, std::string>) {
         formatted = FormattingCharArray(value.c_str(), fmt.minWidth, fmt.leftAlign);
-    } else if constexpr (std::is_same<T, char>::value) {
+    } else if constexpr (std::is_same_v<T, char>) {
         formatted.size_ = std::max(1, fmt.minWidth);
         formatted.ptr_ = new char[formatted.size_ + 1];
         formatted.ptr_[0] = value;
         formatted.ptr_[formatted.size_] = '\0';
-    } else if constexpr (std::is_same<T, char *>::value || std::is_same<T, const char *>::value) {
+    } else if constexpr (std::is_same_v<T, char *> || std::is_same_v<T, const char *>) {
         formatted = FormattingCharArray(value, fmt.minWidth, fmt.leftAlign);
-    } else if constexpr (std::is_pointer<T>::value || std::is_null_pointer<T>::value ||
-                         std::is_integral<T>::value || std::is_floating_point<T>::value) {
+    } else if constexpr (std::is_pointer_v<T> || std::is_null_pointer_v<T> ||
+                         std::is_integral_v<T> || std::is_floating_point_v<T>) {
         bool negative;
-        if constexpr (std::is_floating_point<T>::value)
+        if constexpr (std::is_floating_point_v<T>)
             negative = value < 0.0;
         else
             negative = (int64_t)value < 0;
 
-        if constexpr (std::is_floating_point<T>::value) {
+        if constexpr (std::is_floating_point_v<T>) {
             if (std::isnan(value)) {
                 formatted.size_ = 4;
                 formatted.ptr_ = new char[5];
@@ -272,7 +272,7 @@ Fstring Fstring::FormattingImpl(const Ty &value, Format fmt) {
         int64_t digits = negative ? -(int64_t)value : (int64_t)value;
         int numDigits = Log10(digits) + 1;
 
-        if constexpr (std::is_floating_point<T>::value) {
+        if constexpr (std::is_floating_point_v<T>) {
             if (fmt.precision < 0) {
                 fmt.precision = 4;
                 uint64_t digits = (double)std::abs(value) * 1e+4;
@@ -290,7 +290,7 @@ Fstring Fstring::FormattingImpl(const Ty &value, Format fmt) {
 
         formatted.size_ =
             sizeOfIntegerPart +
-            ((std::is_floating_point<T>::value && fmt.precision > 0) ? fmt.precision + 1 : 0);
+            ((std::is_floating_point_v<T> && fmt.precision > 0) ? fmt.precision + 1 : 0);
         formatted.ptr_ = new char[formatted.size_ + 1];
 
         for (int i = 0; i < formatted.size_; i++)
@@ -304,7 +304,7 @@ Fstring Fstring::FormattingImpl(const Ty &value, Format fmt) {
             digits /= 10;
         }
 
-        if constexpr (std::is_floating_point<T>::value) {
+        if constexpr (std::is_floating_point_v<T>) {
             double digits = (double)std::abs(value);
             if (fmt.precision > 0)
                 formatted.ptr_[sizeOfIntegerPart - offset] = '.';
@@ -318,7 +318,7 @@ Fstring Fstring::FormattingImpl(const Ty &value, Format fmt) {
     } else if constexpr (IsPointer<T>::value) {
         formatted += "*";
         formatted += FormattingImpl(*value, fmt);
-    } else if constexpr (IsDecomposable<T>::value) {
+    } else if constexpr (IsForEachFieldable<T>::value) {
         formatted += "{";
         int i = 0;
         ForEachField(value, [&](auto &&field) {

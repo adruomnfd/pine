@@ -34,7 +34,6 @@ struct NodeInput {
 };
 
 struct Node {
-    static Node* Create(const Parameters& params);
     virtual ~Node() = default;
 
     virtual float EvalFloat(const NodeEvalCtx&) const {
@@ -44,6 +43,8 @@ struct Node {
         return vec3(0.0f);
     }
 };
+
+Node* CreateNode(const Parameters& params);
 
 namespace nodes {
 

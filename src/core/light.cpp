@@ -168,7 +168,7 @@ EnvironmentLight EnvironmentLight::Create(const Parameters& lightParams) {
     }
 }
 
-Light Light::Create(const Parameters& params) {
+Light CreateLight(const Parameters& params) {
     std::string type = params.GetString("type");
     SWITCH(type) {
         CASE("Point") return PointLight(PointLight::Create(params));

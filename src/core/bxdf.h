@@ -57,7 +57,6 @@ struct DielectricBSDF {
 class BSDF : public TaggedVariant<DiffuseBSDF, ConductorBSDF, DielectricBSDF> {
   public:
     using TaggedVariant::TaggedVariant;
-    static BSDF Create(const Parameters& params);
 
     std::optional<BSDFSample> Sample(vec3 wi, float u1, vec2 u2, const NodeEvalCtx& nc) const {
         return Dispatch([&](auto&& x) { return x.Sample(wi, u1, u2, nc); });
@@ -69,6 +68,8 @@ class BSDF : public TaggedVariant<DiffuseBSDF, ConductorBSDF, DielectricBSDF> {
         return Dispatch([&](auto&& x) { return x.PDF(wi, wo, nc); });
     }
 };
+
+BSDF CreateBSDF(const Parameters& params);
 
 }  // namespace pine
 

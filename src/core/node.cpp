@@ -30,7 +30,7 @@ vec3 nodes::Texture::EvalVec3(const NodeEvalCtx& c) const {
     return pine::Pow(texels[co.x + co.y * size.x] / 255.0f, 2.2f);
 }
 
-Node* Node::Create(const Parameters& params) {
+Node* CreateNode(const Parameters& params) {
     std::string type = params.GetString("type");
     SWITCH(type) {
         CASE("Constant")
@@ -42,49 +42,50 @@ Node* Node::Create(const Parameters& params) {
         CASE("TexCoord")
         return new nodes::TexCoord();
         CASE("Decompose")
-        return new nodes::Decompose(Create(params["input"]), params.GetInt("dimension"));
+        return new nodes::Decompose(CreateNode(params["input"]), params.GetInt("dimension"));
         CASE("Composite")
-        return new nodes::Composite(Create(params["inputX"]), Create(params["inputY"]),
-                                    Create(params["inputZ"]));
+        return new nodes::Composite(CreateNode(params["inputX"]), CreateNode(params["inputY"]),
+                                    CreateNode(params["inputZ"]));
         CASE("Add")
-        return new nodes::Add(Create(params["input"]), Create(params["factor"]));
+        return new nodes::Add(CreateNode(params["input"]), CreateNode(params["factor"]));
         CASE("Substract")
-        return new nodes::Substract(Create(params["input"]), Create(params["factor"]));
+        return new nodes::Substract(CreateNode(params["input"]), CreateNode(params["factor"]));
         CASE("Multiply")
-        return new nodes::Multiply(Create(params["input"]), Create(params["factor"]));
+        return new nodes::Multiply(CreateNode(params["input"]), CreateNode(params["factor"]));
         CASE("Divide")
-        return new nodes::Divide(Create(params["input"]), Create(params["factor"]));
+        return new nodes::Divide(CreateNode(params["input"]), CreateNode(params["factor"]));
         CASE("MultiplyAdd")
-        return new nodes::MultiplyAdd(Create(params["input"]), Create(params["mulFactor"]),
-                                      Create(params["addFactor"]));
+        return new nodes::MultiplyAdd(CreateNode(params["input"]), CreateNode(params["mulFactor"]),
+                                      CreateNode(params["addFactor"]));
         CASE("Length")
-        return new nodes::Length(Create(params["input"]));
+        return new nodes::Length(CreateNode(params["input"]));
         CASE("Sqr")
-        return new nodes::Sqr(Create(params["input"]));
+        return new nodes::Sqr(CreateNode(params["input"]));
         CASE("Sqrt")
-        return new nodes::Sqrt(Create(params["input"]));
+        return new nodes::Sqrt(CreateNode(params["input"]));
         CASE("Pow")
-        return new nodes::Pow(Create(params["input"]), Create(params["exp"]));
+        return new nodes::Pow(CreateNode(params["input"]), CreateNode(params["exp"]));
         CASE("Sin")
-        return new nodes::Sin(Create(params["input"]));
+        return new nodes::Sin(CreateNode(params["input"]));
         CASE("Cos")
-        return new nodes::Cos(Create(params["input"]));
+        return new nodes::Cos(CreateNode(params["input"]));
         CASE("Tan")
-        return new nodes::Tan(Create(params["input"]));
+        return new nodes::Tan(CreateNode(params["input"]));
         CASE("Fract")
-        return new nodes::Fract(Create(params["input"]));
+        return new nodes::Fract(CreateNode(params["input"]));
         CASE("Checkerboard")
-        return new nodes::Checkerboard(Create(params["input"]), Create(params["frequency"]));
+        return new nodes::Checkerboard(CreateNode(params["input"]),
+                                       CreateNode(params["frequency"]));
         CASE("Noise")
-        return new nodes::Noise(Create(params["input"]), Create(params["frequency"]),
-                                Create(params["octaves"]));
+        return new nodes::Noise(CreateNode(params["input"]), CreateNode(params["frequency"]),
+                                CreateNode(params["octaves"]));
         CASE("Noise3D")
-        return new nodes::Noise3D(Create(params["input"]), Create(params["frequency"]),
-                                  Create(params["octaves"]));
+        return new nodes::Noise3D(CreateNode(params["input"]), CreateNode(params["frequency"]),
+                                  CreateNode(params["octaves"]));
         CASE("Texture")
-        return new nodes::Texture(Create(params["texcoord"]), params.GetString("filename"));
+        return new nodes::Texture(CreateNode(params["texcoord"]), params.GetString("filename"));
         CASE("Invert")
-        return new nodes::Invert(Create(params["input"]));
+        return new nodes::Invert(CreateNode(params["input"]));
         CASE("" || params.GetString("@") != "")
         return new nodes::Constant(params.GetFloat("float", params.GetFloat("@")),
                                    params.GetVec3("vec3", params.GetVec3("@")));

@@ -2,7 +2,6 @@
 #include <core/scene.h>
 #include <util/fileio.h>
 #include <util/profiler.h>
-#include <util/reflect.h>
 
 int main(int argc, char* argv[]) {
     using namespace pine;

@@ -16,6 +16,9 @@ struct MltIntegrator : public Integrator {
     std::unique_ptr<RadianceIntegrator> integrator;
     std::unique_ptr<class BDPTIntegrator> bdpt;
     int64_t nMutations = 0;
+
+    float sigma = 0.0f;
+    float largeStepProbability = 0.0f;
 };
 
 }  // namespace pine

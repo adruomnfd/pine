@@ -17,8 +17,8 @@ SampledLight UniformLightSampler::SampleLight(float ul) const {
     return sl;
 }
 
-PowerLightSampler::PowerLightSampler(const std::vector<Light>& lights) : lights(lights) {
-    std::vector<float> lightPower;
+PowerLightSampler::PowerLightSampler(const pstd::vector<Light>& lights) : lights(lights) {
+    pstd::vector<float> lightPower;
     for (auto&& light : lights)
         lightPower.push_back(light.Power().y());
     powerDistr = Distribution1D(&lightPower[0], (int)lightPower.size());
@@ -34,14 +34,14 @@ SampledLight PowerLightSampler::SampleLight(float ul) const {
 }
 
 UniformLightSampler UniformLightSampler::Create(const Parameters&,
-                                                const std::vector<Light>& lights) {
+                                                const pstd::vector<Light>& lights) {
     return UniformLightSampler(lights);
 }
-PowerLightSampler PowerLightSampler::Create(const Parameters&, const std::vector<Light>& lights) {
+PowerLightSampler PowerLightSampler::Create(const Parameters&, const pstd::vector<Light>& lights) {
     return PowerLightSampler(lights);
 }
 
-LightSampler LightSampler::Create(const Parameters& params, const std::vector<Light>& lights) {
+LightSampler CreateLightSampler(const Parameters& params, const pstd::vector<Light>& lights) {
     std::string type = params.GetString("type", "Power");
     SWITCH(type) {
         CASE("Uniform") return UniformLightSampler(UniformLightSampler::Create(params, lights));

@@ -42,11 +42,11 @@ LayeredMaterial::LayeredMaterial(const Parameters& params) {
               [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
 
     for (auto& layer : layers)
-        bsdfs.push_back(BSDF::Create(layer.second));
+        bsdfs.push_back(CreateBSDF(layer.second));
 }
 
 EmissiveMaterial::EmissiveMaterial(const Parameters& params) {
-    color = Node::Create(params["color"]);
+    color = CreateNode(params["color"]);
 }
 
 vec3 Material::BumpNormal(const MaterialEvalCtx& c) const {
@@ -65,7 +65,7 @@ vec3 Material::BumpNormal(const MaterialEvalCtx& c) const {
     return FaceSameHemisphere(Normalize(Cross(dpdu, dpdv)), c.n);
 }
 
-Material Material::Create(const Parameters& params) {
+Material CreateMaterial(const Parameters& params) {
     std::string type = params.GetString("type");
     Material material;
 
@@ -79,7 +79,7 @@ Material Material::Create(const Parameters& params) {
     }
 
     if (params.HasSubset("bumpMap"))
-        material.bumpMap = Node::Create(params["bumpMap"]);
+        material.bumpMap = CreateNode(params["bumpMap"]);
 
     return material;
 }

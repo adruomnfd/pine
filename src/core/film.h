@@ -19,7 +19,6 @@ struct Pixel {
 };
 
 struct Film {
-    static Film Create(const Parameters& params);
     Film() = default;
     Film(vec2i size, Filter filter, std::string outputFileName, bool applyToneMapping,
          bool reportAverageColor);
@@ -94,6 +93,8 @@ struct Film {
     bool reportAverageColor = false;
     int frameId = 0;
 };
+
+Film CreateFilm(const Parameters& params);
 
 }  // namespace pine
 

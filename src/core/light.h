@@ -168,7 +168,6 @@ struct EnvironmentLight : TaggedVariant<Atmosphere, Sky> {
 
 struct Light : TaggedVariant<PointLight, DirectionalLight, AreaLight, EnvironmentLight> {
     using TaggedVariant::TaggedVariant;
-    static Light Create(const Parameters& params);
 
     LightSample Sample(vec3 p, vec2 u2) const {
         return Dispatch([&](auto&& x) { return x.Sample(p, u2); });
@@ -186,6 +185,8 @@ struct Light : TaggedVariant<PointLight, DirectionalLight, AreaLight, Environmen
         return Dispatch([&](auto&& x) { return x.IsDelta(); });
     }
 };
+
+Light CreateLight(const Parameters& params);
 
 }  // namespace pine
 

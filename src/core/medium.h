@@ -65,7 +65,6 @@ struct GridMedium {
 
 struct Medium : TaggedVariant<HomogeneousMedium, GridMedium> {
     using TaggedVariant::TaggedVariant;
-    static Medium Create(const Parameters& params);
 
     Spectrum Tr(const Ray& ray, Sampler& sampler) const {
         SampledProfiler _(ProfilePhase::MediumTr);
@@ -76,6 +75,8 @@ struct Medium : TaggedVariant<HomogeneousMedium, GridMedium> {
         return Dispatch([&](auto&& x) { return x.Sample(ray, mi, sampler); });
     }
 };
+
+Medium CreateMedium(const Parameters& params);
 
 }  // namespace pine
 

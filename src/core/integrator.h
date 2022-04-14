@@ -14,7 +14,6 @@ namespace pine {
 
 class Integrator {
   public:
-    static std::shared_ptr<Integrator> Create(const Parameters& params, Scene* scene);
     Integrator(const Parameters& params, Scene* scene);
     virtual ~Integrator() = default;
 
@@ -47,7 +46,7 @@ class PixelIntegrator : public RayIntegrator {
   public:
     using RayIntegrator::RayIntegrator;
 
-    virtual void Render() override;
+    void Render() override;
     virtual void Compute(vec2i p, Sampler& sampler) = 0;
 };
 
@@ -55,9 +54,11 @@ class RadianceIntegrator : public PixelIntegrator {
   public:
     using PixelIntegrator::PixelIntegrator;
 
-    virtual void Compute(vec2i p, Sampler& sampler) override;
+    void Compute(vec2i p, Sampler& sampler) override;
     virtual Spectrum Li(Ray ray, Sampler& sampler) = 0;
 };
+
+Integrator* CreateIntegrator(const Parameters& params, Scene* scene);
 
 }  // namespace pine
 

@@ -5,8 +5,8 @@
 
 namespace pine {
 
-Film Film::Create(const Parameters& params) {
-    return Film(params.GetVec2i("size", vec2i(720, 480)), Filter::Create(params["filter"]),
+Film CreateFilm(const Parameters& params) {
+    return Film(params.GetVec2i("size", vec2i(720, 480)), CreateFilter(params["filter"]),
                 params.GetString("outputFileName", "result.png"),
                 params.GetBool("applyToneMapping", true), params.GetBool("reportAverageColor", false));
 }

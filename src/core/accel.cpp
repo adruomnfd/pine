@@ -6,14 +6,14 @@
 
 namespace pine {
 
-std::shared_ptr<Accel> Accel::Create(const Parameters& params) {
+Accel* CreateAccel(const Parameters& params) {
     std::string type = params.GetString("type", "BVH");
     SWITCH(type) {
-        CASE("BVH") return std::make_shared<BVH>(params);
-        // CASE("CWBVH") return std::make_shared<CWBVH>(params);
+        CASE("BVH") return new BVH(params);
+        // CASE("CWBVH") return new CWBVH(params);
         DEFAULT {
             LOG_WARNING("[Accel][Create]Unknown type \"&\"", type);
-            return std::make_shared<BVH>(params);
+            return new BVH(params);
         }
     }
 }

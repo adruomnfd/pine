@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <utility>
+#include <new>
 
 namespace pine {
 
@@ -120,19 +121,40 @@ constexpr int Index() {
         return 1 + Index<T, Rest...>();
 }
 
-template <typename F, typename T>
-decltype(auto) Dispatch(F&& f, int index, T&& value) {
+template <typename T, typename... Args>
+struct CommonType {
+    using type = T;
+};
+
+template <typename F, typename U, typename T>
+constexpr decltype(auto) FuncWrapper(F&& f, U&& x) {
+    return f(std::forward<U>(x).template Be<T>());
+}
+
+template <typename... Ts, typename F, typename U>
+decltype(auto) DispatchJumpTable(F&& f, int index, U&& value) {
+    using T = typename CommonType<Ts...>::type;
+    using Fwt = std::decay_t<decltype(FuncWrapper<F, U, T>)>;
+    constexpr static Fwt table[] = {FuncWrapper<F, U, Ts>...};
+
+    return table[index](std::forward<F>(f), std::forward<U>(value));
+}
+
+template <typename... Ts, typename F, typename T>
+decltype(auto) DispatchIfElse(F&& f, int index, T&& value) {
     using Ty = std::decay_t<T>;
 
-    if constexpr (Ty::isFinal) {
-        CHECK_EQ(index, 0);
+    if constexpr (Ty::isFinal)
         return f(std::forward<T>(value).first);
-    } else {
-        if (index == 0)
-            return f(std::forward<T>(value).first);
-        else
-            return Dispatch(std::forward<F>(f), index - 1, std::forward<T>(value).rest);
-    }
+    else if (index == 0)
+        return f(std::forward<T>(value).first);
+    else
+        return Dispatch(std::forward<F>(f), index - 1, std::forward<T>(value).rest);
+}
+
+template <typename... Ts, typename F, typename T>
+decltype(auto) Dispatch(F&& f, int index, T&& value) {
+    return DispatchJumpTable<Ts...>(std::forward<F>(f), index, std::forward<T>(value));
 }
 
 template <typename... Ts>
@@ -208,25 +230,25 @@ struct TaggedVariant {
     template <typename F>
     decltype(auto) Dispatch(F&& f) {
         CHECK(IsValid());
-        return pine::Dispatch(std::forward<F>(f), tag, value);
+        return pine::Dispatch<Ts...>(std::forward<F>(f), tag, value);
     }
 
     template <typename F>
     decltype(auto) Dispatch(F&& f) const {
         CHECK(IsValid());
-        return pine::Dispatch(std::forward<F>(f), tag, value);
+        return pine::Dispatch<Ts...>(std::forward<F>(f), tag, value);
     }
 
     template <typename F>
     void TryDispatch(F&& f) {
         if (IsValid())
-            pine::Dispatch(std::forward<F>(f), tag, value);
+            pine::Dispatch<Ts...>(std::forward<F>(f), tag, value);
     }
 
     template <typename F>
     void TryDispatch(F&& f) const {
         if (IsValid())
-            pine::Dispatch(std::forward<F>(f), tag, value);
+            pine::Dispatch<Ts...>(std::forward<F>(f), tag, value);
     }
 
     bool IsValid() const {

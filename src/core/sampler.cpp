@@ -277,7 +277,7 @@ SobolSampler SobolSampler::Create(const Parameters& params) {
                         randomizeStrategy);
 }
 
-Sampler Sampler::Create(const Parameters& params) {
+Sampler CreateSampler(const Parameters& params) {
     std::string type = params.GetString("type");
     SWITCH(type) {
         CASE("Uniform") return UniformSampler(UniformSampler::Create(params));

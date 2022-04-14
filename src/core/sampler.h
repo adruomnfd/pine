@@ -250,7 +250,6 @@ struct MltSampler {
 struct Sampler : TaggedVariant<UniformSampler, StratifiedSampler, HaltonSampler,
                                ZeroTwoSequenceSampler, SobolSampler, MltSampler> {
     using TaggedVariant::TaggedVariant;
-    static Sampler Create(const Parameters& params);
 
     int SamplesPerPixel() const {
         SampledProfiler _(ProfilePhase::GenerateSamples);
@@ -276,6 +275,8 @@ struct Sampler : TaggedVariant<UniformSampler, StratifiedSampler, HaltonSampler,
         return Dispatch([&](auto&& x) { return Sampler(x); });
     }
 };
+
+Sampler CreateSampler(const Parameters& params);
 
 }  // namespace pine
 

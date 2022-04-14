@@ -6,7 +6,7 @@
 namespace pine {
 
 ThinLenCamera ThinLenCamera::Create(const Parameters& params) {
-    return ThinLenCamera(Film::Create(params["film"]), params.GetVec3("from"), params.GetVec3("to"),
+    return ThinLenCamera(CreateFilm(params["film"]), params.GetVec3("from"), params.GetVec3("to"),
                          params.GetFloat("fov"), params.GetFloat("lensRadius", 0.0f),
                          params.GetFloat("focusDistance", 1.0f));
 }
@@ -83,7 +83,7 @@ CameraSample ThinLenCamera::SampleWi(vec3 p, vec2 u) const {
     return cs;
 }
 
-Camera Camera::Create(const Parameters& params, Scene* scene) {
+Camera CreateCamera(const Parameters& params, Scene* scene) {
     Camera camera;
     std::string type = params.GetString("type");
 

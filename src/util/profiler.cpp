@@ -17,14 +17,14 @@ void Profiler::Finalize() {
     if (verbose == false)
         return;
     main.reset();
-    LOG("[Profiler]==================Results==================");
+    LOG("[Profiler]Results:");
 
     LOG("#structured:");
     auto ReportRecord = [](auto& me, Record record, size_t indent, double totalTime) -> void {
         if (totalTime != 0.0f && record.time / totalTime < 0.005f)
             return;
         if (record.name != "") {
-            LOG("& &< &9 calls &10.1 ms    &3.2 %", Format(indent), "", Format(40 - indent),
+            LOG("|& &< &9 calls &10.1 ms    &3.2 %", Format(indent), "", Format(40 - indent),
                 record.name.c_str(), record.sampleCount, record.time,
                 (totalTime == 0.0f) ? 100.0 : 100.0 * record.time / totalTime);
             indent += 2;
@@ -72,7 +72,7 @@ void Profiler::Finalize() {
             maxNameLength = std::max(maxNameLength, rec.name.size());
     for (const auto& rec : flat)
         if (rec.time / totalTime > 0.005f)
-            LOG(" &<: &9 calls &9.2 ms(avg) &10.1 ms(total) &3.2 %", Format(maxNameLength),
+            LOG("| &<: &9 calls &9.2 ms(avg) &10.1 ms(total) &3.2 %", Format(maxNameLength),
                 rec.name.c_str(), rec.sampleCount, rec.time / (double)rec.sampleCount, rec.time,
                 100.0 * rec.time / totalTime);
 
@@ -132,6 +132,7 @@ void SampledProfiler::Finalize() {
     timer.it_interval.tv_usec = 0;
     timer.it_value = timer.it_interval;
     CHECK_EQ(setitimer(ITIMER_PROF, &timer, NULL), 0);
+    LOG("[SampledProfiler]Results:");
 
     std::vector<std::pair<std::string, uint64_t>> phaseStat((int)ProfilePhase::NumPhase);
     for (int i = 0; i < (int)ProfilePhase::NumPhase; i++)
@@ -150,15 +151,13 @@ void SampledProfiler::Finalize() {
                   return lhs.second > rhs.second;
               });
 
-    LOG("[SampledProfiler]==================Results==================");
-
     size_t maxWidth = 0;
     for (auto pair : phaseStat) {
         maxWidth = std::max(pair.first.size(), maxWidth);
     }
     for (auto pair : phaseStat) {
         if (pair.second)
-            LOG(" &<: &10 &4.2%", Format(maxWidth), pair.first, pair.second,
+            LOG("| &<: &10 &4.2%", Format(maxWidth), pair.first, pair.second,
                 100.0 * pair.second / profileTotalSamples);
     }
 

@@ -211,7 +211,7 @@ GridMedium GridMedium::Create(const Parameters& params) {
                       params.GetBool("interpolate", true), method, rayMarchingStepSize);
 }
 
-Medium Medium::Create(const Parameters& params) {
+Medium CreateMedium(const Parameters& params) {
     std::string type = params.GetString("type");
     SWITCH(params.GetString("type")) {
         CASE("Homogeneous") return HomogeneousMedium(HomogeneousMedium::Create(params));
