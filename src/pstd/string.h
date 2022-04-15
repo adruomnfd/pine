@@ -10,49 +10,58 @@ namespace pstd {
 
 inline size_t strlen(const char* str) {
     size_t len = 0;
-    while (*(str++) != '\0')
+    while (*(str++))
         ++len;
     return len;
 }
 
-inline bool issame(const char* lhs, const char* rhs) {
+inline bool strcmp(const char* lhs, const char* rhs) {
     if (!lhs || !rhs)
         return !lhs && !rhs;
 
     for (size_t i = 0;; ++i) {
         if (lhs[i] != rhs[i])
             return false;
-        if (lhs[i] == '\0' || rhs[i] == '\0')
-            return lhs[i] == '\0' && rhs[i] == '\0';
+        if (!lhs[i] || !rhs[i])
+            return !lhs[i] && !rhs[i];
     }
 }
 
 template <typename T>
-struct string_alloc {
+struct string_allocator {
     T* alloc(size_t size) const {
-        return new T[size + 1]();
+        return ::new T[size + 1]();
     }
     void free(T* ptr) const {
-        delete[] ptr;
+        ::delete[] ptr;
+    }
+
+    template <typename... Args>
+    void construct_at(T* ptr, Args&&... args) const {
+        pstd::construct_at(ptr, pstd::forward<Args>(args)...);
+    }
+
+    void destruct_at(T* ptr) const {
+        *ptr = {};
     }
 };
 
-class string : public vector_base<char, string_alloc<char>> {
+class string : public vector_base<char, string_allocator<char>> {
   public:
-    using base = vector_base<char, string_alloc<char>>;
+    using base = vector_base<char, string_allocator<char>>;
     using base::base;
 
-    string(const char* cstr) : base(strlen(cstr)) {
-        copy(cstr, cstr + len, begin());
+    string(const char* cstr) : base(pstd::strlen(cstr)) {
+        pstd::copy(cstr, cstr + len, begin());
     }
 
     string(const char* cstr, size_t len) : base(len) {
-        copy(cstr, cstr + len, begin());
+        pstd::copy(cstr, cstr + len, begin());
     }
 
     string& operator=(const char* str) {
-        resize(strlen(str));
-        copy(str, str + size(), begin());
+        resize(pstd::strlen(str));
+        pstd::copy(str, str + size(), begin());
         return *this;
     }
     string& operator=(class string_view str);
@@ -64,14 +73,11 @@ class string : public vector_base<char, string_alloc<char>> {
         return string(data() + pos, len);
     }
 
-    // TO-DO: DRY
     size_t find_first_of(char c) const {
         size_t i = 0;
-        while (i < size()) {
+        for (; i < size(); ++i)
             if (ptr[i] == c)
                 break;
-            i++;
-        }
         if (i == size())
             return npos;
 
@@ -79,11 +85,9 @@ class string : public vector_base<char, string_alloc<char>> {
     }
     size_t find_last_of(char c) const {
         size_t i = 0, last = npos;
-        while (i < size()) {
+        for (; i < size(); ++i)
             if (ptr[i] == c)
                 last = i;
-            i++;
-        }
 
         return last;
     }
@@ -92,7 +96,7 @@ class string : public vector_base<char, string_alloc<char>> {
         size_t oldlen = len;
 
         resize(len + rhs.len);
-        copy(rhs.begin(), rhs.end(), begin() + oldlen);
+        pstd::copy(pstd::begin(rhs), pstd::end(rhs), begin() + oldlen);
         return *this;
     }
     string& operator+=(class string_view rhs);
@@ -110,10 +114,10 @@ class string : public vector_base<char, string_alloc<char>> {
     }
 
     friend bool operator==(const string& lhs, const string& rhs) {
-        return issame(lhs.data(), rhs.data());
+        return strcmp(lhs.data(), rhs.data());
     }
     friend bool operator!=(const string& lhs, const string& rhs) {
-        return !issame(lhs.data(), rhs.data());
+        return !strcmp(lhs.data(), rhs.data());
     }
     friend bool operator<(const string& lhs, const string& rhs) {
         return lhs.data() < rhs.data();
@@ -130,41 +134,35 @@ class string_view {
     using iterator = const char*;
 
     string_view() = default;
-    string_view(const char* str) : str(str), len(strlen(str)) {
+    string_view(const char* str) : str(str), len(pstd::strlen(str)) {
     }
     string_view(const char* str, size_t len) : str(str), len(len) {
     }
-    string_view(const string& str) : str(str.c_str()), len(str.size()) {
+    string_view(const string& str) : str(str.c_str()), len(pstd::size(str)) {
     }
 
     string_view substr(size_t pos) const {
         return string_view(str + pos, len - pos);
     }
     string_view substr(size_t pos, size_t len) const {
-        // TODO zeroize ?
         return string_view(str + pos, len);
     }
-    // TO-DO: DRY
+
     size_t find_first_of(char c) const {
         size_t i = 0;
-        while (i < size()) {
+        for (; i < size(); ++i)
             if (str[i] == c)
                 break;
-            i++;
-        }
-
         if (i == size())
-            i = npos;
+            return npos;
 
         return i;
     }
     size_t find_last_of(char c) const {
         size_t i = 0, last = npos;
-        while (i < size()) {
+        for (; i < size(); ++i)
             if (str[i] == c)
                 last = i;
-            i++;
-        }
 
         return last;
     }
@@ -189,10 +187,10 @@ class string_view {
     }
 
     friend bool operator==(string_view lhs, string_view rhs) {
-        return issame(lhs.str, rhs.str);
+        return pstd::strcmp(lhs.str, rhs.str);
     }
     friend bool operator!=(string_view lhs, string_view rhs) {
-        return !issame(lhs.str, rhs.str);
+        return !pstd::strcmp(lhs.str, rhs.str);
     }
     friend bool operator<(string_view lhs, string_view rhs) {
         return lhs.str < rhs.str;
@@ -208,16 +206,16 @@ class string_view {
 };
 
 inline string& string::operator=(string_view str) {
-    resize(str.size());
-    copy(str.begin(), str.end(), begin());
+    resize(pstd::size(str));
+    pstd::copy(pstd::begin(str), pstd::end(str), begin());
     return *this;
 }
 
 inline string& string::operator+=(class string_view rhs) {
     size_t oldlen = len;
 
-    resize(len + rhs.size());
-    copy(rhs.begin(), rhs.end(), begin() + oldlen);
+    resize(len + pstd::size(rhs));
+    pstd::copy(pstd::begin(rhs), pstd::end(rhs), begin() + oldlen);
     return *this;
 }
 inline string& string::operator+=(const char* rhs) {
@@ -226,6 +224,20 @@ inline string& string::operator+=(const char* rhs) {
 inline string operator+(string lhs, string_view rhs) {
     return lhs += rhs;
 }
+
+// to_string
+template <typename T>
+inline string to_string(T val, enable_if_t<is_integral_v<T>>* = 0);
+template <typename T>
+inline string to_string(T val, enable_if_t<is_floating_point_v<T>>* = 0);
+template <typename T>
+inline string to_string(T* val, enable_if_t<is_pointerish_v<T>>* = 0);
+template <typename T>
+inline string to_string(const T& val, decltype(pstd::begin(pstd::declval<T>()))* = 0);
+template <typename T>
+inline string to_string(const T& val, enable_if_t<has_archive_method_v<T>>* = 0, void* = 0);
+template <typename... Ts, typename = enable_if_t<(sizeof...(Ts) > 1)>>
+inline string to_string(const Ts&... vals);
 
 inline string to_string(const string& val) {
     return val;
@@ -244,13 +256,13 @@ inline string to_string(char val) {
 }
 
 template <typename T>
-inline string to_string(T val, enable_if_t<is_integral_v<T>>* = 0) {
+inline string to_string(T val, enable_if_t<is_integral_v<T>>*) {
     constexpr int MaxLen = 16;
     char str[MaxLen] = {};
     int i = MaxLen;
 
     bool negative = val < 0;
-    val = abs(val);
+    val = pstd::abs(val);
     do {
         str[--i] = '0' + val % 10;
         val /= 10;
@@ -263,26 +275,31 @@ inline string to_string(T val, enable_if_t<is_integral_v<T>>* = 0) {
 }
 
 template <typename T>
-inline string to_string(T val, enable_if_t<is_floating_point_v<T>>* = 0) {
+inline string to_string(T val, enable_if_t<is_floating_point_v<T>>*) {
     string str = pstd::to_string((corresponding_int_t<T>)val) + ".";
-    val = absfract(val);
+    val = pstd::absfract(val);
 
     for (int i = 0; i < 8; ++i) {
         val *= 10;
         str.push_back('0' + (char)val);
-        val = absfract(val);
+        val = pstd::absfract(val);
     }
 
     return str;
 }
 
 template <typename T>
-inline string to_string(const T& val, decltype(declval<T>().begin())* = 0) {
+inline string to_string(T* val, enable_if_t<is_pointerish_v<T>>*) {
+    return "*" + pstd::to_string(*val);
+}
+
+template <typename T>
+inline string to_string(const T& val, decltype(pstd::begin(pstd::declval<T>()))*) {
     string str = "[";
-    for (auto it = val.begin();;) {
-        str += to_string(*it);
+    for (auto it = pstd::begin(val);;) {
+        str += pstd::to_string(*it);
         ++it;
-        if (it != val.end())
+        if (it != pstd::end(val))
             str += ", ";
         else
             break;
@@ -293,12 +310,13 @@ inline string to_string(const T& val, decltype(declval<T>().begin())* = 0) {
 }
 
 template <typename T>
-inline string to_string(const T& val, enable_if_t<has_archive_method_v<T>>* = 0) {
+inline string to_string(const T& val, enable_if_t<has_archive_method_v<T>>*, void*) {
     string str = "{";
 
-    apply_fields(val, [&](const auto&... xs) { str += ((to_string(xs) + ", ") + ...); });
+    pstd::apply_fields(val,
+                       [&](const auto&... xs) { str += ((pstd::to_string(xs) + ", ") + ...); });
 
-    if (str.size() > 3) {
+    if (pstd::size(str) > 3) {
         str.pop_back();
         str.pop_back();
     }
@@ -306,15 +324,15 @@ inline string to_string(const T& val, enable_if_t<has_archive_method_v<T>>* = 0)
     return str + "}";
 }
 
-template <typename... Ts>
+template <typename... Ts, typename>
 inline string to_string(const Ts&... vals) {
-    return (to_string(vals) + ...);
+    return (pstd::to_string(vals) + ...);
 }
 
 inline int stoi(string_view str) {
     int number = 0;
     bool is_neg = false;
-    for (size_t j = 0; j < str.size(); j++) {
+    for (size_t j = 0; j < pstd::size(str); j++) {
         if (j == 0 && str[j] == '-')
             is_neg = true;
         else
@@ -328,7 +346,7 @@ inline float stof(string_view str) {
     bool is_neg = false;
     bool reached_dicimal_point = false;
     float scale = 0.1f;
-    for (size_t j = 0; j < str.size(); j++) {
+    for (size_t j = 0; j < pstd::size(str); j++) {
         if (j == 0 && str[j] == '-')
             is_neg = true;
         else if (!reached_dicimal_point && str[j] == '.')

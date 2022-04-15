@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
     auto scene = pstd::make_shared<Scene>();
     LoadScene(argv[1], scene.get());
-    scene->integrator->Render();
+    // scene->integrator->Render();
 
     SampledProfiler::Finalize();
     Profiler::Finalize();

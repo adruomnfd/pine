@@ -77,5 +77,5 @@ target_link_libraries(pine pinelib)
 # add_executable(pine_test test/test_main.cpp)
 # target_link_libraries(pine_test pinelib)
 
-# #Pstd Test
-# add_executable(pstd_test test/pstd_test.cpp)
+#Pstd Test
+add_executable(pstd_test test/pstd_test.cpp)

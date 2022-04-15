@@ -11,7 +11,7 @@ class map {
   public:
     template <typename Pair = pair<Key, Value>>
     auto insert(Pair&& p) {
-        return xs.push_back(p);
+        return xs.push_back(pstd::forward<Pair>(p));
     }
 
     auto find(const Key& key) const {

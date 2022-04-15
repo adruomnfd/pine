@@ -1,6 +1,8 @@
 #ifndef PINE_STD_MOVE_H
 #define PINE_STD_MOVE_H
 
+#include <pstd/type_traits.h>
+
 namespace pstd {
 
 template <typename T>
@@ -9,22 +11,28 @@ inline T&& move(T& x) {
 }
 
 template <typename T>
-inline T&& forward(T& x) {
+inline T&& forward(type_identity_t<T>& x) {
     return static_cast<T&&>(x);
 }
 
 template <typename T>
 inline void swap(T& x, T& y) {
-    T temp = move(x);
-    x = move(y);
-    y = move(temp);
+    T temp = pstd::move(x);
+    x = pstd::move(y);
+    y = pstd::move(temp);
 }
 
 template <typename T, typename U>
 inline T exchange(T& x, U&& newval) {
-    T old = move(x);
-    x = forward(newval);
+    T old = pstd::move(x);
+    x = pstd::forward<T>(newval);
     return old;
+}
+
+template <typename To, typename From>
+inline To bitcast(const From& x) {
+    // TODO
+    return *(To*)&x;
 }
 
 }  // namespace pstd

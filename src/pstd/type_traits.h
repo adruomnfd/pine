@@ -29,6 +29,14 @@ struct enable_if<true, T> {
 template <bool Value, typename T = void>
 using enable_if_t = typename enable_if<Value, T>::type;
 
+// type_identity
+template <typename T>
+struct type_identity {
+    using type = T;
+};
+template <typename T>
+using type_identity_t = typename type_identity<T>::type;
+
 // conditional
 template <bool, typename T, typename U>
 struct conditional;
@@ -68,6 +76,44 @@ template <typename R, typename... Args>
 struct is_function<R(Args...)> : true_type {};
 template <typename T>
 inline constexpr bool is_function_v = is_function<T>::value;
+
+// is_integral
+template <typename T>
+struct is_integral : false_type {};
+template <>
+struct is_integral<int8_t> : true_type {};
+template <>
+struct is_integral<int16_t> : true_type {};
+template <>
+struct is_integral<int32_t> : true_type {};
+template <>
+struct is_integral<int64_t> : true_type {};
+template <>
+struct is_integral<uint8_t> : true_type {};
+template <>
+struct is_integral<uint16_t> : true_type {};
+template <>
+struct is_integral<uint32_t> : true_type {};
+template <>
+struct is_integral<uint64_t> : true_type {};
+template <typename T>
+inline constexpr bool is_integral_v = is_integral<T>::value;
+
+// is_floating_point
+template <typename T>
+struct is_floating_point : false_type {};
+template <>
+struct is_floating_point<float> : true_type {};
+template <>
+struct is_floating_point<double> : true_type {};
+template <typename T>
+inline constexpr bool is_floating_point_v = is_floating_point<T>::value;
+
+// is_arithmetic
+template <typename T>
+struct is_arithmetic : integral_constant<bool, is_integral_v<T> || is_floating_point_v<T>> {};
+template <typename T>
+inline constexpr bool is_arithmetic_v = is_arithmetic<T>::value;
 
 // remove_const
 template <typename T>
@@ -169,11 +215,6 @@ T declval() {
     return declval<T>();
 }
 
-template <typename T, typename U>
-struct second {
-    using type = U;
-};
-
 // is_convertible
 template <typename From, typename To>
 struct is_convertible {
@@ -182,48 +223,10 @@ struct is_convertible {
     static constexpr false_type test(...);
 
   public:
-    static constexpr bool value = decltype(test(declval<From>()))::value;
+    static constexpr bool value = decltype(test(pstd::declval<From>()))::value;
 };
 template <typename From, typename To>
 inline constexpr bool is_convertible_v = is_convertible<From, To>::value;
-
-// is_integral
-template <typename T>
-struct is_integral : false_type {};
-template <>
-struct is_integral<int8_t> : true_type {};
-template <>
-struct is_integral<int16_t> : true_type {};
-template <>
-struct is_integral<int32_t> : true_type {};
-template <>
-struct is_integral<int64_t> : true_type {};
-template <>
-struct is_integral<uint8_t> : true_type {};
-template <>
-struct is_integral<uint16_t> : true_type {};
-template <>
-struct is_integral<uint32_t> : true_type {};
-template <>
-struct is_integral<uint64_t> : true_type {};
-template <typename T>
-inline constexpr bool is_integral_v = is_integral<T>::value;
-
-// is_floating_point
-template <typename T>
-struct is_floating_point : false_type {};
-template <>
-struct is_floating_point<float> : true_type {};
-template <>
-struct is_floating_point<double> : true_type {};
-template <typename T>
-inline constexpr bool is_floating_point_v = is_floating_point<T>::value;
-
-// is_arithmetic
-template <typename T>
-struct is_arithmetic : integral_constant<bool, is_integral_v<T> || is_floating_point_v<T>> {};
-template <typename T>
-inline constexpr bool is_arithmetic_v = is_arithmetic<T>::value;
 
 // corresponding_int
 template <typename T>
@@ -252,6 +255,19 @@ struct corresponding_uint<double> {
 };
 template <typename T>
 using corresponding_uint_t = typename corresponding_uint<T>::type;
+
+// is_pointerish
+template <typename T>
+struct is_pointerish {
+    template <typename U>
+    static constexpr true_type test(decltype(*pstd::declval<U>()) *);
+    template <typename U>
+    static constexpr true_type test(...);
+
+    static constexpr bool value = decltype(test<T>(0))::value;
+};
+template <typename T>
+inline constexpr bool is_pointerish_v = is_pointerish<T>::value;
 
 // defered_bool
 template <typename T, bool Value>

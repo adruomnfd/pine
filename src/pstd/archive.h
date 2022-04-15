@@ -24,7 +24,7 @@ struct has_archive_method {
     };
 
     template <typename U>
-    static constexpr true_type test(decltype(declval<U>()._archive_(pseudo_archiver{}))*);
+    static constexpr true_type test(decltype(pstd::declval<U>()._archive_(pseudo_archiver{}))*);
     template <typename U>
     static constexpr false_type test(...);
 
@@ -34,8 +34,8 @@ template <typename T>
 inline constexpr bool has_archive_method_v = has_archive_method<T>::value;
 
 template <typename T, typename F>
-constexpr void apply_fields(T&& x, F&& f) {
-    x._archive_(forward<F>(f));
+constexpr decltype(auto) apply_fields(T&& x, F&& f) {
+    return x._archive_(pstd::forward<F>(f));
 }
 
 template <typename F>

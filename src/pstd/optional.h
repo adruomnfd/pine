@@ -16,7 +16,7 @@ struct optional {
 
     template <typename U>
     optional(U&& val) {
-        value_ = forward<U>(val);
+        value_ = pstd::forward<U>(val);
         valid = true;
     }
 

@@ -39,23 +39,16 @@ inline constexpr T max(const T& a, const T& b) {
 
 template <typename T, typename... Ts>
 inline constexpr T min(const T& a, const Ts&... b) {
-    return min(a, min(b...));
+    return pstd::min(a, pstd::min(b...));
 }
 template <typename T, typename... Ts>
 inline constexpr T max(const T& a, const Ts&... b) {
-    return max(a, max(b...));
+    return pstd::max(a, pstd::max(b...));
 }
 
 template <typename T>
 inline constexpr T abs(T x) {
     return x > 0 ? x : -x;
-}
-
-template <typename To, typename From>
-inline To bitcast(const From& from) {
-    To to;
-    memcpy(&to, &from, min(sizeof(To), sizeof(From)));
-    return to;
 }
 
 template <typename T>
@@ -68,20 +61,20 @@ inline constexpr int signbit(T sgn) {
 }
 
 inline int ieeeexp(float x) {
-    return (0xff & (bitcast<uint32_t>(x) >> 23)) - 127;
+    return (0xff & (pstd::bitcast<uint32_t>(x) >> 23)) - 127;
 }
 
 inline float exp2i(int e) {
-    return bitcast<float>((e + 127) << 23);
+    return pstd::bitcast<float>((e + 127) << 23);
 }
 
 inline int hsb(uint32_t x) {
-    return ieeeexp((float)x);
+    return pstd::ieeeexp((float)x);
 }
 
 template <typename T>
 inline int ctz(T x) {
-    return hsb(x & -x);
+    return pstd::hsb(x & -x);
 }
 
 template <typename T>
@@ -98,7 +91,7 @@ inline constexpr T roundup2(T x) {
 
 template <typename T>
 inline T rounddown2(T x) {
-    return (T)1 << hsb(x);
+    return (T)1 << pstd::hsb(x);
 }
 
 template <typename T>
@@ -109,7 +102,7 @@ inline constexpr T mod(T a, T b) {
 
 template <typename T>
 inline constexpr T clamp(T val, T a, T b) {
-    return min(max(val, a), b);
+    return pstd::min(pstd::max(val, a), b);
 }
 
 template <typename T, typename U>
@@ -152,13 +145,13 @@ inline constexpr T fract(T v) {
 
 template <typename T>
 inline constexpr T absfract(T v) {
-    v = abs(v);
+    v = pstd::abs(v);
     return v - (corresponding_uint_t<T>)v;
 }
 
 template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
 inline T sqrt(T y) {
-    T x = exp2i(ieeeexp(y) / 2);
+    T x = pstd::exp2i(pstd::ieeeexp(y) / 2);
 
     x = x / 2 + y / (2 * x);
     x = x / 2 + y / (2 * x);
@@ -184,9 +177,9 @@ inline constexpr T powi(T x, int e) {
 
 template <typename T>
 inline constexpr T pow(T x, T e) {
-    int ei = floor(e);
+    int ei = pstd::floor(e);
     e -= ei;
-    T y = ei > 0 ? powi(x, ei) : 1 / powi(x, -ei);
+    T y = ei > 0 ? pstd::powi(x, ei) : 1 / pstd::powi(x, -ei);
 
     for (int i = 0; i < 32; ++i) {
         if (e > 1.0f) {
@@ -194,7 +187,7 @@ inline constexpr T pow(T x, T e) {
             e -= 1.0f;
         }
         e *= 2;
-        x = sqrt(x);
+        x = pstd::sqrt(x);
     }
 
     return y;
@@ -202,17 +195,17 @@ inline constexpr T pow(T x, T e) {
 
 template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
 inline T log2(T y) {
-    int log = ieeeexp(y);
+    int log = pstd::ieeeexp(y);
 
     T logl = 0;
     T logr = 1;
-    T expl = exp2i(logl);
-    T expr = exp2i(logr);
-    y /= exp2i(log);
+    T expl = pstd::exp2i(logl);
+    T expr = pstd::exp2i(logr);
+    y /= pstd::exp2i(log);
 
     for (int i = 0; i < 32; ++i) {
         T logm = (logl + logr) / 2;
-        T expm = sqrt(expl * expr);
+        T expm = pstd::sqrt(expl * expr);
         if (expm < y) {
             logl = logm;
             expl = expm;
@@ -227,12 +220,12 @@ inline T log2(T y) {
 
 template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
 inline T log(T y) {
-    return Ln2 * log2(y);
+    return Ln2 * pstd::log2(y);
 }
 
 template <typename T>
 inline T log2int(T y) {
-    return hsb(y);
+    return pstd::hsb(y);
 }
 
 template <typename T, typename = enable_if_t<is_floating_point_v<T>>>

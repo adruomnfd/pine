@@ -35,7 +35,7 @@ static pstd::optional<size_t> FirstOf(pstd::string_view str, const pstd::vector<
 }
 
 static void EscapeSpace(pstd::string_view& str) {
-    while (std::isspace(str[0])) {
+    while (str.size() && std::isspace(str[0])) {
         str = str.substr(1);
         if (str.substr(0, 2) == "//") {
             while (str[0] != '\n' && str[0] != '\r')
@@ -67,12 +67,11 @@ static Parameters ParseBlock(pstd::string_view& block, int depth = 0) {
         pstd::string name = (pstd::string)block.substr(*keyEnd, *seperator - *keyEnd);
 
         // TODO
-        std::string name_std = name.c_str();
-        name_std.resize(name.size());
+        std::string name_std = std::string(pstd::begin(name), pstd::end(name));
         name_std.erase(
             std::remove_if(begin(name_std), end(name_std), [](char s) { return !IsLetter(s); }),
             end(name_std));
-        name = name_std.c_str();
+        name.assign(pstd::begin(name_std), pstd::end(name_std));
         //
 
         block = block.substr(*seperator);
@@ -101,6 +100,7 @@ static Parameters ParseBlock(pstd::string_view& block, int depth = 0) {
             if (name != "" && !subset.HasValue("name"))
                 subset.Set("name", name);
         }
+
     }
 
     if (auto blockEnd = FirstOf(block, {'}'}))

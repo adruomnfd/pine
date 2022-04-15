@@ -11,8 +11,9 @@
 #include <sstream>
 #include <pstd/vector.h>
 
-#include <ext/stb_image/stb_image_write.h>
-#include <ext/stb_image/stb_image.h>
+extern "C" int stbi_write_png(char const *filename, int x, int y, int comp, const void *data,
+                              int stride_bytes);
+extern "C" struct stbi_uc *stbi_load(char const *filename, int *x, int *y, int *comp, int req_comp);
 
 namespace pine {
 
@@ -102,88 +103,6 @@ pstd::vector<char> ReadBinaryData(pstd::string filename) {
     return data;
 }
 
-void SaveBMPImage(pstd::string filename, vec2i size, int nchannel, uint8_t *data) {
-    LOG("[FileIO]Saving image \"&\"", filename);
-    ScopedFile file(filename, std::ios::out);
-
-    pstd::vector<vec3u8> colors(Area(size));
-    for (int x = 0; x < size.x; x++)
-        for (int y = 0; y < size.y; y++) {
-            vec3u8 c;
-            c.z = data[(x + y * size.x) * nchannel + 0];
-            c.y = data[(x + y * size.x) * nchannel + 1];
-            c.x = data[(x + y * size.x) * nchannel + 2];
-            colors[x + (size.y - 1 - y) * size.x] = c;
-        }
-
-    int filesize = 54 + 3 * Area(size);
-    uint8_t header[] = {'B',
-                        'M',
-                        (uint8_t)(filesize),
-                        (uint8_t)(filesize >> 8),
-                        (uint8_t)(filesize >> 16),
-                        (uint8_t)(filesize >> 24),
-                        0,  // bfReserved1
-                        0,
-                        0,  // bfReserved2
-                        0,
-                        54,  // bfOffBits
-                        0,
-                        0,
-                        0,
-                        40,  // biSize
-                        0,
-                        0,
-                        0,
-                        (uint8_t)(size.x),
-                        (uint8_t)(size.x >> 8),
-                        (uint8_t)(size.x >> 16),
-                        (uint8_t)(size.x >> 24),
-                        (uint8_t)(size.y),
-                        (uint8_t)(size.y >> 8),
-                        (uint8_t)(size.y >> 16),
-                        (uint8_t)(size.y >> 24),
-                        1,  // biPlanes
-                        0,
-                        24,  // biBitCount
-                        0,
-                        0,  // biCompression
-                        0,
-                        0,
-                        0,
-                        0,  // biSizeImage
-                        0,
-                        0,
-                        0,
-                        0,  // biXPelsPerMeter
-                        0,
-                        0,
-                        0,
-                        0,  // biYPelsPerMeter
-                        0,
-                        0,
-                        0,
-                        0,  // biClrUsed
-                        0,
-                        0,
-                        0,
-                        0,  // biClrImportance
-                        0,
-                        0,
-                        0};
-    file.Write(header, sizeof(header));
-
-    uint8_t padding[3] = {0, 0, 0};
-    size_t paddingSize = (4 - (size.x * 3) % 4) % 4;
-    if (paddingSize == 0) {
-        file.Write(colors.data(), sizeof(colors[0]) * colors.size());
-    } else {
-        for (int y = 0; y < size.y; y++) {
-            file.Write(colors.data() + y * size.x * 3, size.x * 3);
-            file.Write(padding, paddingSize);
-        }
-    }
-}
 void SaveImage(pstd::string filename, vec2i size, int nchannel, float *data) {
     pstd::vector<uint8_t> pixels(Area(size) * nchannel);
     for (int x = 0; x < size.x; x++)
@@ -193,7 +112,6 @@ void SaveImage(pstd::string filename, vec2i size, int nchannel, float *data) {
                     data[y * size.x * nchannel + x * nchannel + c] * 256.0f, 0.0f, 255.0f);
 
     SWITCH(GetFileExtension(filename)) {
-        CASE("bmp") SaveBMPImage(filename, size, nchannel, (uint8_t *)pixels.data());
         CASE("png")
         stbi_write_png(filename.c_str(), size.x, size.y, nchannel, pixels.data(),
                        size.x * nchannel);
@@ -203,7 +121,6 @@ void SaveImage(pstd::string filename, vec2i size, int nchannel, float *data) {
 }
 void SaveImage(pstd::string filename, vec2i size, int nchannel, uint8_t *data) {
     SWITCH(GetFileExtension(filename)) {
-        CASE("bmp") SaveBMPImage(filename, size, nchannel, data);
         CASE("png")
         stbi_write_png(filename.c_str(), size.x, size.y, nchannel, data, size.x * nchannel);
         DEFAULT
@@ -370,6 +287,7 @@ TriangleMesh LoadObj(pstd::string filename) {
 Parameters LoadScene(pstd::string filename, Scene *scene) {
     LOG("[FileIO]Loading \"&\"", filename);
     Parameters params = Parse(ReadStringFile(filename));
+
     sceneDirectory = GetFileDirectory(filename);
 
     Timer timer;

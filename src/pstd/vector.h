@@ -11,45 +11,54 @@
 namespace pstd {
 
 template <typename T>
-struct default_alloc {
+struct default_allocator {
     T* alloc(size_t size) const {
-        return new T[size]();
+        return (T*)::operator new(sizeof(T) * size);
     }
     void free(T* ptr) const {
-        delete[] ptr;
+        ::operator delete(ptr);
+    }
+
+    template <typename... Args>
+    void construct_at(T* ptr, Args&&... args) const {
+        pstd::construct_at(ptr, pstd::forward<Args>(args)...);
+    }
+
+    void destruct_at(T* ptr) const {
+        pstd::destruct_at(ptr);
     }
 };
 
-template <typename T, typename Alloc>
-class vector_base : public Alloc {
+template <typename T, typename Allocator>
+class vector_base {
   public:
     using value_type = T;
+
     using pointer = T*;
+
     using reference = T&;
     using const_reference = const T&;
 
     using iterator = T*;
     using const_iterator = const T*;
 
-    using Alloc::alloc;
-    using Alloc::free;
-
-    vector_base() = default;
     ~vector_base() {
         clear();
     }
 
-    explicit vector_base(size_t len) : len(len), reserved(len) {
-        ptr = alloc(len);
+    vector_base() = default;
+
+    explicit vector_base(size_t len) {
+        resize(len);
     }
-    vector_base(size_t len, T val) : vector_base(len) {
-        fill(begin(), end(), val);
+    vector_base(size_t len, const T& val) : vector_base(len) {
+        pstd::fill(begin(), end(), val);
     }
-    vector_base(std::initializer_list<T> list) : vector_base(list.size()) {
-        copy(list.begin(), list.end(), begin());
+    vector_base(std::initializer_list<T> list) : vector_base(pstd::size(list)) {
+        pstd::copy(pstd::begin(list), pstd::end(list), begin());
     }
     template <typename It>
-    vector_base(It first, It last) : vector_base(size_t(last - first)) {
+    vector_base(It first, It last) : vector_base(pstd::distance(first, last)) {
         pstd::copy(first, last, begin());
     }
 
@@ -57,41 +66,41 @@ class vector_base : public Alloc {
         *this = rhs;
     }
     vector_base(vector_base&& rhs) : vector_base() {
-        *this = move(rhs);
+        *this = pstd::move(rhs);
     }
 
     vector_base& operator=(const vector_base& rhs) {
-        clear();
-        ptr = alloc(rhs.size());
-        len = rhs.size();
-        reserved = rhs.size();
-        copy(rhs.begin(), rhs.end(), begin());
+        resize(pstd::size(rhs));
+        pstd::copy(pstd::begin(rhs), pstd::end(rhs), begin());
+        allocator = rhs.allocator;
 
         return *this;
     }
     vector_base& operator=(vector_base&& rhs) {
-        swap(ptr, rhs.ptr);
-        swap(len, rhs.len);
-        swap(reserved, rhs.reserved);
+        pstd::swap(ptr, rhs.ptr);
+        pstd::swap(len, rhs.len);
+        pstd::swap(reserved, rhs.reserved);
+        pstd::swap(allocator, rhs.allocator);
         return *this;
     }
 
-    void assign(const_iterator first, const_iterator last) {
-        resize(size_t(last - first));
-        copy(first, last, begin());
+    template <typename It>
+    void assign(It first, It last) {
+        resize(pstd::distance(first, last));
+        pstd::copy(first, last, begin());
     }
 
     template <typename U = T>
     void push_back(U&& val) {
         reserve(size() + 1);
-        *end() = forward<U>(val);
+        allocator.construct_at(&(*end()), pstd::forward<U>(val));
         len += 1;
     }
 
     template <typename... Args>
     void emplace_back(Args&&... args) {
         reserve(size() + 1);
-        new (&ptr[size()]) T(forward<Args>(args)...);
+        allocator.construct_at(&(*end()), T(pstd::forward<Args>(args)...));
         len += 1;
     }
 
@@ -102,34 +111,38 @@ class vector_base : public Alloc {
     template <typename U>
     iterator insert(iterator it, U&& val) {
         ptrdiff_t dist = it - begin();
-        resize(size() + 1);
+        reserve(size() + 1);
         it = begin() + dist;
 
         auto i = end();
-        --i;
         for (; i > it; --i) {
             auto prev = i;
             --prev;
-            swap(*prev, *i);
+            pstd::swap(*prev, *i);
         }
 
-        *it = forward<U>(val);
+        *it = pstd::forward<U>(val);
+        ++len;
 
         return it;
     }
 
     void resize(size_t nlen) {
+        // TODO #optimization#: resize() default-construct objects which is unnecessary in case
+        // where we rewrite them right away
         reserve(nlen);
+        for (size_t i = size(); i < nlen; ++i)
+            allocator.construct_at(&ptr[i]);
         for (size_t i = nlen; i < size(); ++i)
-            ptr[i] = {};
+            allocator.destruct_at(&ptr[i]);
         len = nlen;
     }
 
     void reserve(size_t nreserved) {
         if (nreserved <= reserved)
             return;
-        pointer nptr = alloc(roundup2(nreserved));
-        copy(begin(), end(), nptr);
+        pointer nptr = allocator.alloc(roundup2(nreserved));
+        pstd::memcpy(&(*begin()), nptr, pstd::distance(begin(), end()) * sizeof(T));
         reset(nptr, size(), nreserved);
     }
 
@@ -171,10 +184,13 @@ class vector_base : public Alloc {
         return ptr;
     }
 
-//   protected:
+  protected:
     void reset(pointer nptr, size_t nlen, size_t nreserved) {
-        if (ptr)
-            free(ptr);
+        if (ptr) {
+            for (size_t i = 0; i < size(); ++i)
+                allocator.destruct_at(&ptr[i]);
+            allocator.free(ptr);
+        }
         ptr = nptr;
         len = nlen;
         reserved = nreserved;
@@ -183,10 +199,12 @@ class vector_base : public Alloc {
     T* ptr = nullptr;
     size_t len = 0;
     size_t reserved = 0;
+
+    Allocator allocator;
 };
 
 template <typename T>
-using vector = vector_base<T, default_alloc<T>>;
+using vector = vector_base<T, default_allocator<T>>;
 
 }  // namespace pstd
 

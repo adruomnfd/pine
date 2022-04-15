@@ -1,9 +1,11 @@
 #ifndef PINE_STD_MEMORY_H
 #define PINE_STD_MEMORY_H
 
-#include <pstd/type_traits.h>
-#include <pstd/stdint.h>
+#include <pstd/new.h>
 #include <pstd/move.h>
+#include <pstd/stdint.h>
+#include <pstd/archive.h>
+#include <pstd/type_traits.h>
 
 namespace pstd {
 
@@ -18,6 +20,16 @@ inline constexpr void memset(void* dst, char val, size_t size) {
     auto cdst = (char*)dst;
     for (size_t i = 0; i != size; ++i)
         cdst[i] = val;
+}
+
+template <typename T, typename... Args>
+inline void construct_at(T* ptr, Args&&... args) {
+    ::new (ptr) T(pstd::forward<Args>(args)...);
+}
+
+template <typename T>
+inline void destruct_at(T* ptr) {
+    ptr->T::~T();
 }
 
 template <typename T>
@@ -46,21 +58,22 @@ class unique_ptr {
     template <typename U, typename UDeleter>
     friend class unique_ptr;
 
+    ~unique_ptr() {
+        if (ptr != pointer())
+            deleter(ptr);
+    }
+
     unique_ptr() = default;
     unique_ptr(nullptr_t) {
     }
     explicit unique_ptr(pointer ptr, Deleter deleter = {}) : ptr(ptr), deleter(deleter) {
-    }
-    ~unique_ptr() {
-        if (ptr != pointer())
-            deleter(ptr);
     }
 
     unique_ptr(const unique_ptr&) = delete;
     unique_ptr& operator=(const unique_ptr&) = delete;
 
     unique_ptr(unique_ptr&& rhs) : unique_ptr() {
-        *this = move(rhs);
+        *this = pstd::move(rhs);
     }
     unique_ptr& operator=(unique_ptr&& rhs) {
         swap(rhs);
@@ -69,7 +82,7 @@ class unique_ptr {
 
     template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     unique_ptr(unique_ptr<U, UDeleter>&& rhs) : unique_ptr() {
-        *this = move(rhs);
+        *this = pstd::move(rhs);
     }
     template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     unique_ptr& operator=(unique_ptr<U, UDeleter>&& rhs) {
@@ -126,12 +139,13 @@ class unique_ptr {
         return lhs.get() < rhs.get();
     }
 
+    PSTD_ARCHIVE(ptr)
+
   private:
     template <typename U, typename UDeleter>
     void swap(unique_ptr<U, UDeleter>& rhs) {
-        using pstd::swap;
-        swap(ptr, (pointer&)rhs.ptr);
-        swap(deleter, (Deleter&)rhs.deleter);
+        pstd::swap(ptr, (pointer&)rhs.ptr);
+        pstd::swap(deleter, (Deleter&)rhs.deleter);
     }
 
     pointer ptr = {};
@@ -140,7 +154,7 @@ class unique_ptr {
 
 template <typename T, typename... Args>
 inline unique_ptr<T> make_unique(Args&&... args) {
-    return unique_ptr<T>(new T(forward<Args>(args)...));
+    return unique_ptr<T>(new T(pstd::forward<Args>(args)...));
 }
 
 // shared_ptr
@@ -153,6 +167,10 @@ class shared_ptr {
     template <typename U, typename UDeleter>
     friend class shared_ptr;
 
+    ~shared_ptr() {
+        decrement();
+    }
+
     shared_ptr() = default;
 
     shared_ptr(nullptr_t) {
@@ -160,15 +178,12 @@ class shared_ptr {
     explicit shared_ptr(pointer ptr, Deleter deleter = {})
         : ptr(ptr), deleter(deleter), refcount(new size_t(1)) {
     }
-    ~shared_ptr() {
-        decrement();
-    }
 
     shared_ptr(const shared_ptr& rhs) : shared_ptr() {
         *this = rhs;
     }
     shared_ptr(shared_ptr&& rhs) : shared_ptr() {
-        *this = move(rhs);
+        *this = pstd::move(rhs);
     }
     shared_ptr& operator=(const shared_ptr& rhs) {
         copy(rhs);
@@ -185,7 +200,7 @@ class shared_ptr {
     }
     template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     shared_ptr(shared_ptr<U, UDeleter>&& rhs) : shared_ptr() {
-        *this = move(rhs);
+        *this = pstd::move(rhs);
     }
     template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     shared_ptr& operator=(const shared_ptr<U, UDeleter>& rhs) {
@@ -242,6 +257,8 @@ class shared_ptr {
         return lhs.get() < rhs.get();
     }
 
+    PSTD_ARCHIVE(ptr)
+
   private:
     template <typename U, typename UDeleter>
     void copy(const shared_ptr<U, UDeleter>& rhs) {
@@ -257,10 +274,9 @@ class shared_ptr {
 
     template <typename U, typename UDeleter>
     void swap(shared_ptr<U, UDeleter>& rhs) {
-        using pstd::swap;
-        swap(ptr, (pointer&)rhs.ptr);
-        swap(deleter, (Deleter&)rhs.deleter);
-        swap(refcount, rhs.refcount);
+        pstd::swap(ptr, (pointer&)rhs.ptr);
+        pstd::swap(deleter, (Deleter&)rhs.deleter);
+        pstd::swap(refcount, rhs.refcount);
     }
 
     void decrement() {
@@ -274,11 +290,11 @@ class shared_ptr {
 
     pointer ptr = {};
     Deleter deleter = {};
-    size_t* refcount = {};
+    size_t* refcount = nullptr;
 };
 template <typename T, typename... Args>
 inline shared_ptr<T> make_shared(Args&&... args) {
-    return shared_ptr<T>(new T(forward<Args>(args)...));
+    return shared_ptr<T>(new T(pstd::forward<Args>(args)...));
 }
 
 };  // namespace pstd

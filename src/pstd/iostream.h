@@ -11,8 +11,8 @@ class ostream {
   public:
     template <typename T>
     friend ostream& operator<<(ostream& os, T&& val) {
-        string str = to_string(forward<T>(val));
-        fwrite(str.c_str(), size(str), 1, stdout);
+        string str = pstd::to_string(pstd::forward<T>(val));
+        fwrite(str.c_str(), pstd::size(str) * sizeof(str[0]), 1, stdout);
         return os;
     }
 };

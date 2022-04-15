@@ -14,22 +14,20 @@ struct pair {
 };
 
 template <typename T, typename... Ts>
-struct tuple_base {
+struct tuple {
     PSTD_ARCHIVE(value, rest)
 
     T value;
-    tuple_base<Ts...> rest;
+    tuple<Ts...> rest;
 };
 
 template <typename T>
-struct tuple_base<T> {
+struct tuple<T> {
     PSTD_ARCHIVE(value)
 
     T value;
 };
 
-template <typename... Ts>
-struct tuple : tuple_base<Ts...> {};
 
 }  // namespace pstd
 

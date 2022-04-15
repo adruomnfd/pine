@@ -7,8 +7,6 @@
 namespace pine {
 
 Spectrum Vertex::f(const Vertex &next) const {
-    CHECK_NE(type, VertexType::Invalid);
-    CHECK_NE(wi, vec3(0.0f));
     vec3 wo = Normalize(next.p() - p());
     switch (type) {
     case VertexType::Surface:
@@ -21,7 +19,6 @@ Spectrum Vertex::Le(const Vertex &v) const {
     if (!IsLight())
         return Spectrum(0.0f);
     vec3 wo = Normalize(v.p() - p());
-    CHECK_NE(n(), vec3(0.0f));
     return si.material->Le(MaterialEvalCtx(p(), n(), si.uv, si.dpdu, si.dpdv, wo));
 }
 float Vertex::ConvertDensity(float pdf, const Vertex &next) const {
