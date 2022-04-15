@@ -18,9 +18,9 @@ int main(int argc, char* argv[]) {
     SampledProfiler::Initialize();
     SampledSpectrum::Initialize();
 
-    auto scene = std::make_shared<Scene>();
+    auto scene = pstd::make_shared<Scene>();
     LoadScene(argv[1], scene.get());
-    scene->integrator->Render();
+    // scene->integrator->Render();
 
     SampledProfiler::Finalize();
     Profiler::Finalize();

@@ -25,12 +25,12 @@ struct ThinLenCamera {
           w2c(Inverse(c2w)),
           film(film),
           nLens(Normalize(to - from)),
-          fov(std::tan(fov / 2)),
+          fov(pstd::tan(fov / 2)),
           fov2d(this->fov * film.Aspect(), this->fov),
           lensRadius(lensRadius),
           focalDistance(focalDistance),
-          lensArea(lensRadius ? Pi * Sqr(lensRadius) : 1.0f),
-          area(Sqr(2 * this->fov) * film.Aspect()){};
+          lensArea(lensRadius ? Pi * pstd::sqr(lensRadius) : 1.0f),
+          area(pstd::sqr(2 * this->fov) * film.Aspect()){};
 
     Ray GenRay(vec2 pFilm, vec2 u2) const;
     Spectrum We(const Ray& ray, vec2& pFilm) const;
@@ -74,7 +74,7 @@ struct Camera : public TaggedVariant<ThinLenCamera> {
         return Dispatch([&](auto&& x) -> auto& { return x.GetFilm(); });
     }
 
-    std::shared_ptr<Medium> medium;
+    pstd::shared_ptr<Medium> medium;
 };
 
 Camera CreateCamera(const Parameters& params, Scene* scene);

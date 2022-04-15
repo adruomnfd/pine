@@ -8,7 +8,7 @@ namespace pine {
 
 static float PhaseHG(float cosTheta, float g) {
     float denom = 1.0f + g * g + 2 * g * cosTheta;
-    return (1 - g * g) / (denom * std::sqrt(denom) * Pi * 4);
+    return (1 - g * g) / (denom * pstd::sqrt(denom) * Pi * 4);
 }
 
 float PhaseFunction::P(vec3 wi, vec3 wo) const {
@@ -16,17 +16,17 @@ float PhaseFunction::P(vec3 wi, vec3 wo) const {
 }
 float PhaseFunction::Sample(vec3 wi, vec3& wo, vec2 u2) const {
     float cosTheta;
-    if (std::abs(g) < 1e-3f) {
+    if (pstd::abs(g) < 1e-3f) {
         cosTheta = 1 - 2 * u2[0];
     } else {
         float sqrTerm = (1.0f - g * g) / (1 + g - 2 * g * u2[0]);
         cosTheta = -(1.0f + g * g - sqrTerm * sqrTerm) / (2.0f * g);
     }
 
-    float sinTheta = std::sqrt(1.0f - cosTheta * cosTheta);
+    float sinTheta = pstd::sqrt(1.0f - cosTheta * cosTheta);
     float phi = 2 * Pi * u2[1];
     mat3 m = CoordinateSystem(wi);
-    wo = m * vec3(sinTheta * std::cos(phi), sinTheta * std::sin(phi), cosTheta);
+    wo = m * vec3(sinTheta * pstd::cos(phi), sinTheta * pstd::sin(phi), cosTheta);
     return PhaseHG(cosTheta, g);
 }
 
@@ -35,9 +35,9 @@ Spectrum HomogeneousMedium::Tr(const Ray& ray, Sampler&) const {
 }
 Spectrum HomogeneousMedium::Sample(const Ray& ray, Interaction& mi, Sampler& sampler) const {
     int i = sampler.Get1D() * Spectrum::nSamples;
-    float dist = -std::log(1.0f - sampler.Get1D()) / sigma_t[i];
+    float dist = -pstd::log(1.0f - sampler.Get1D()) / sigma_t[i];
     bool sampledMedium = dist < ray.tmax;
-    float t = std::min(dist, ray.tmax);
+    float t = pstd::min(dist, ray.tmax);
     Spectrum tr = Exp(-sigma_t * t);
 
     if (sampledMedium) {
@@ -62,15 +62,15 @@ Spectrum GridMedium::Tr(const Ray& r, Sampler& sampler) const {
         float tr = 1.0f;
         float t = tmin;
         while (true) {
-            t -= std::log(1.0f - sampler.Get1D()) * invMaxDensity / sigma_t;
+            t -= pstd::log(1.0f - sampler.Get1D()) * invMaxDensity / sigma_t;
             if (t >= tmax)
                 break;
             float density = Density(ray(t));
-            tr *= 1.0f - std::max(0.0f, density * invMaxDensity);
+            tr *= 1.0f - pstd::max(0.0f, density * invMaxDensity);
 
             const float rrThreshold = 0.1f;
             if (tr < rrThreshold) {
-                float q = std::max(0.05f, 1.0f - tr);
+                float q = pstd::max(0.05f, 1.0f - tr);
                 if (sampler.Get1D() < q)
                     return 0.0f;
                 else
@@ -89,7 +89,7 @@ Spectrum GridMedium::Tr(const Ray& r, Sampler& sampler) const {
             t += stepSize;
         }
 
-        return std::exp(-tr);
+        return pstd::exp(-tr);
     }
 
     return Spectrum(1.0f);
@@ -104,7 +104,7 @@ Spectrum GridMedium::Sample(const Ray& r, Interaction& mi, Sampler& sampler) con
     if (method == SamplingMethod::DeltaTracking) {
         float t = tmin;
         while (true) {
-            t -= std::log(1.0f - sampler.Get1D()) * invMaxDensity / sigma_t;
+            t -= pstd::log(1.0f - sampler.Get1D()) * invMaxDensity / sigma_t;
             if (t >= tmax)
                 return Spectrum(1.0f);
             if (Density(ray(t)) * invMaxDensity > sampler.Get1D()) {
@@ -160,24 +160,24 @@ float GridMedium::D(vec3i p) const {
 }
 
 GridMedium::GridMedium(Spectrum sigma_a, Spectrum sigma_s, PhaseFunction phaseFunction, vec3i size,
-                       vec3 position, float scale, std::vector<float> density, bool interpolate,
+                       vec3 position, float scale, pstd::vector<float> density, bool interpolate,
                        SamplingMethod method, float rayMarchingStepSize)
     : sigma_a(sigma_a),
       sigma_s(sigma_s),
       sigma_t((sigma_a + sigma_s)[0]),
       phaseFunction(phaseFunction),
       size(size),
-      density(std::move(density)),
+      density(pstd::move(density)),
       interpolate(interpolate),
       method(method),
-      rayMarchingStepSize(rayMarchingStepSize / max(size.x, size.y, size.z)) {
+      rayMarchingStepSize(rayMarchingStepSize / pstd::max(size.x, size.y, size.z)) {
     float maxDensity = 0.0f;
     for (int x = 0; x < size.x; x++)
         for (int y = 0; y < size.y; y++)
             for (int z = 0; z < size.z; z++)
-                maxDensity = std::max(D(vec3i(x, y, z)), maxDensity);
+                maxDensity = pstd::max(D(vec3i(x, y, z)), maxDensity);
     invMaxDensity = 1.0f / maxDensity;
-    vec3 normalizedSize = size / float(std::max(size.x, std::max(size.y, size.z)));
+    vec3 normalizedSize = size / float(pstd::max(size.x, pstd::max(size.y, size.z)));
     w2m = Translate(vec3(0.5f) - position) * Scale(1.0f / normalizedSize / scale);
     m2w = Inverse(w2m);
 }
@@ -192,7 +192,7 @@ GridMedium GridMedium::Create(const Parameters& params) {
     LOG("[GridMedium]Grid size: &", size);
     LOG("[GridMedium]Memory usage: & MB", sizeof(density[0]) * density.size() / 1000000.0);
     SamplingMethod method = SamplingMethod::DeltaTracking;
-    std::string samplingMethod = params.GetString("samplingMethod", "deltaTracking");
+    pstd::string samplingMethod = params.GetString("samplingMethod", "deltaTracking");
     SWITCH(samplingMethod) {
         CASE("rayMarching") method = SamplingMethod::RayMarching;
         CASE("deltaTracking") method = SamplingMethod::DeltaTracking;
@@ -207,12 +207,12 @@ GridMedium GridMedium::Create(const Parameters& params) {
 
     return GridMedium(params.GetVec3("sigma_a"), params.GetVec3("sigma_s"),
                       PhaseFunction(params.GetFloat("g", 0.0f)), size, params.GetVec3("position"),
-                      params.GetFloat("scale", 1.0f), std::move(density),
+                      params.GetFloat("scale", 1.0f), pstd::move(density),
                       params.GetBool("interpolate", true), method, rayMarchingStepSize);
 }
 
 Medium CreateMedium(const Parameters& params) {
-    std::string type = params.GetString("type");
+    pstd::string type = params.GetString("type");
     SWITCH(params.GetString("type")) {
         CASE("Homogeneous") return HomogeneousMedium(HomogeneousMedium::Create(params));
         CASE("Grid") return GridMedium(GridMedium::Create(params));

@@ -9,7 +9,7 @@
 
 #ifndef _NEW
 #define _NEW
-#include <pstd/stddef.h>
+#include <pstd/stdint.h>
 inline void* operator new(pstd::size_t, void* p) {
     return p;
 }

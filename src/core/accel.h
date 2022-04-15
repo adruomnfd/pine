@@ -3,9 +3,6 @@
 
 #include <core/geometry.h>
 
-#include <memory>
-#include <vector>
-
 namespace pine {
 
 class Accel {

@@ -53,7 +53,7 @@
 //     delete wideTreeRoot;
 //     LOG_VERBOSE_SAMELINE("[CWBVH]Compressing wide BVH       (&.1 ms)\n", timer.Reset());
 
-//     LOG_VERBOSE("[CWBVH]Resulting Compressed Wide BVH has & nodes(&.2 MB), & primitives(&.2 MB)",
+//     LOG("[CWBVH]Resulting Compressed Wide BVH has & nodes(&.2 MB), & primitives(&.2 MB)",
 //                 nodes.size(), nodes.size() * sizeof(nodes[0]) / 1000000.0, triangles.size(),
 //                 triangles.size() * sizeof(triangles[0]) / 1000000.0);
 // }
@@ -88,19 +88,19 @@
 //     for (auto& cluster : clusters)
 //         cluster.mortonCode = EncodeMorton32x3(centroidAABB.Offset(cluster.aabb.Centroid()));
 
-//     std::sort(clusters.begin(), clusters.end(), [](const Cluster& lhs, const Cluster& rhs) {
+//     pstd::sort(clusters.begin(), clusters.end(), [](const Cluster& lhs, const Cluster& rhs) {
 //         return lhs.mortonCode < rhs.mortonCode;
 //     });
 
 //     int c = (int)clusters.size();
-//     std::vector<int> N(clusters.size());
-//     std::vector<int> P(clusters.size());
+//     pstd::vector<int> N(clusters.size());
+//     pstd::vector<int> P(clusters.size());
 
 //     while (c > 1) {
 //         ParallelFor(c, [&](int i) {
 //             // Nearest neighbor search
 //             float minDist = FloatMax;
-//             for (int j = std::max(i - r, 0); j < std::min(i + r + 1, c); j++) {
+//             for (int j = pstd::max(i - r, 0); j < pstd::min(i + r + 1, c); j++) {
 //                 if (i != j) {
 //                     float dist = Distance(clusters[i], clusters[j]);
 //                     if (dist < minDist) {
@@ -131,7 +131,7 @@
 //         c = P[c - 1] + !clusters[c - 1].invalid;
 //     }
 // }
-// int CWBVH::Cluster::Flatten(std::vector<Node2>& nodes) const {
+// int CWBVH::Cluster::Flatten(pstd::vector<Node2>& nodes) const {
 //     Node2 node;
 //     node.index = nodes.size();
 //     nodes.resize(nodes.size() + 1);
@@ -166,7 +166,7 @@
 //         AABB aabb;
 //         CompactTriangle triangle;
 //     };
-//     std::vector<Primitive> primitives(mesh->GetNumTriangles());
+//     pstd::vector<Primitive> primitives(mesh->GetNumTriangles());
 //     for (int i = 0; i < mesh->GetNumTriangles(); i++) {
 //         Primitive prim;
 //         Triangle tri = mesh->GetTriangle(i);
@@ -264,7 +264,7 @@
 //                 }
 //             }
 
-//             pmid = std::partition(begin, end, [=](const Primitive& prim) {
+//             pmid = pstd::partition(begin, end, [=](const Primitive& prim) {
 //                 int b = nBuckets * aabbCentroid.Offset(prim.aabb.Centroid(bestAxis), bestAxis);
 //                 if (b == nBuckets)
 //                     b = nBuckets - 1;
@@ -296,7 +296,7 @@
 //         AABB aabb;
 //         CompactTriangle triangle;
 //     };
-//     std::vector<Primitive> primitives(mesh->GetNumTriangles());
+//     pstd::vector<Primitive> primitives(mesh->GetNumTriangles());
 //     for (int i = 0; i < mesh->GetNumTriangles(); i++) {
 //         Primitive prim;
 //         Triangle tri = mesh->GetTriangle(i);
@@ -333,10 +333,10 @@
 //         int bestAxis = -1;
 //         int bestSplitIndex = -1;
 
-//         std::vector<float> costs(numSplits);
+//         pstd::vector<float> costs(numSplits);
 //         for (int axis = 0; axis < 3; axis++) {
 //             {
-//                 std::sort(begin, end, [&](const Primitive& l, const Primitive& r) {
+//                 pstd::sort(begin, end, [&](const Primitive& l, const Primitive& r) {
 //                     return l.aabb.lower[axis] < r.aabb.lower[axis];
 //                 });
 //                 AABB boundLeft;
@@ -367,7 +367,7 @@
 //             }
 
 //             {
-//                 std::sort(begin, end, [&](const Primitive& l, const Primitive& r) {
+//                 pstd::sort(begin, end, [&](const Primitive& l, const Primitive& r) {
 //                     return l.aabb.upper[axis] < r.aabb.upper[axis];
 //                 });
 //                 AABB boundLeft;
@@ -399,11 +399,11 @@
 
 //         Primitive* nth = begin + bestSplitIndex + 1;
 //         if (useLowerOrUpperBound == Lower)
-//             std::nth_element(begin, nth, end, [&](const Primitive& l, const Primitive& r) {
+//             pstd::nth_element(begin, nth, end, [&](const Primitive& l, const Primitive& r) {
 //                 return l.aabb.lower[bestAxis] < r.aabb.lower[bestAxis];
 //             });
 //         else if (useLowerOrUpperBound == Upper)
-//             std::nth_element(begin, nth, end, [&](const Primitive& l, const Primitive& r) {
+//             pstd::nth_element(begin, nth, end, [&](const Primitive& l, const Primitive& r) {
 //                 return l.aabb.upper[bestAxis] < r.aabb.upper[bestAxis];
 //             });
 //         else
@@ -450,7 +450,7 @@
 
 //         auto& L = nodes2[nodeIndex];
 
-//         std::priority_queue<Item> queue;
+//         pstd::priority_queue<Item> queue;
 //         queue.push(Item(node2Root, 0.0f, FloatMax));
 
 //         while (queue.size()) {
@@ -508,14 +508,14 @@
 //             }
 //         }
 
-//         std::vector<std::pair<int, int>> candicates;
+//         pstd::vector<pstd::pair<int, int>> candicates;
 //         if (pass % 3 == 0) {
-//             std::vector<Pair> inefficiencies(nodes2.size());
+//             pstd::vector<Pair> inefficiencies(nodes2.size());
 
 //             for (int i = 0; i < (int)nodes2.size(); i++)
 //                 inefficiencies[i] = {i, nodes2[i].Inefficiency(nodes2.data())};
 
-//             std::partial_sort(inefficiencies.begin(), inefficiencies.begin() + nodes2.size() /
+//             pstd::partial_sort(inefficiencies.begin(), inefficiencies.begin() + nodes2.size() /
 //             200,
 //                               inefficiencies.end());
 //             for (int i = 0; i < (int)nodes2.size() / 200; i++) {
@@ -577,12 +577,12 @@
 //             }
 //         }
 
-//         std::sort(candicates.begin(), candicates.end(),
-//                   [&](std::pair<int, int> l, std::pair<int, int> r) {
+//         pstd::sort(candicates.begin(), candicates.end(),
+//                   [&](pstd::pair<int, int> l, pstd::pair<int, int> r) {
 //                       return nodes2[l.first].SurfaceArea() > nodes2[r.first].SurfaceArea();
 //                   });
 
-//         for (std::pair<int, int> node : candicates) {
+//         for (pstd::pair<int, int> node : candicates) {
 //             int C = node.first;
 //             int N = node.second;
 //             Node2& x = nodes2[FindNodeForReinsertion(C)];
@@ -728,8 +728,8 @@
 //     }
 // }
 
-// void CWBVH::Node8::Compress(std::vector<Node8Compressed>& nodes,
-//                             std::vector<CompactTriangle>& triangles, uint32_t index) {
+// void CWBVH::Node8::Compress(pstd::vector<Node8Compressed>& nodes,
+//                             pstd::vector<CompactTriangle>& triangles, uint32_t index) {
 //     CHECK(parentAABB.IsValid());
 //     nodes[index].SetParentAABB(parentAABB);
 
@@ -738,9 +738,9 @@
 
 //     // Reordering children
 //     float cost[8][8];
-//     std::vector<int> rows = {0, 1, 2, 3, 4, 5, 6, 7};
-//     std::vector<int> cols = {0, 1, 2, 3, 4, 5, 6, 7};
-//     std::vector<vec2i> slots;
+//     pstd::vector<int> rows = {0, 1, 2, 3, 4, 5, 6, 7};
+//     pstd::vector<int> cols = {0, 1, 2, 3, 4, 5, 6, 7};
+//     pstd::vector<vec2i> slots;
 
 //     for (int i : rows)
 //         for (int s : cols) {
@@ -763,13 +763,13 @@
 //                 }
 //             }
 //         slots.push_back({minRow, minCol});
-//         rows.erase(std::find(rows.begin(), rows.end(), minRow));
-//         cols.erase(std::find(cols.begin(), cols.end(), minCol));
+//         rows.erase(pstd::find(rows.begin(), rows.end(), minRow));
+//         cols.erase(pstd::find(cols.begin(), cols.end(), minCol));
 //     }
 
 //     AABB oldAABB[8];
 //     Node8* oldChildren[8];
-//     std::vector<CompactTriangle> oldTriangles[8];
+//     pstd::vector<CompactTriangle> oldTriangles[8];
 //     for (int i = 0; i < 8; i++) {
 //         oldAABB[i] = aabb[i];
 //         oldChildren[i] = this->children[i];
@@ -819,7 +819,7 @@
 // void CWBVH::Node8Compressed::SetParentAABB(AABB B) {
 //     p = B.lower;
 //     for (int i = 0; i < 3; i++) {
-//         e[i] = std::ceil(std::log2(B.Diagonal()[i] / ((1 << 8) - 1)));
+//         e[i] = pstd::ceil(pstd::log2(B.Diagonal()[i] / ((1 << 8) - 1)));
 //     }
 // }
 // void CWBVH::Node8Compressed::SetChildAABB(int index, AABB b) {
@@ -832,8 +832,8 @@
 //         return f;
 //     };
 //     for (int i = 0; i < 3; i++) {
-//         qlohi[i][0][index] = std::floor((b.lower[i] - p[i]) / Exp2(e[i]));
-//         qlohi[i][1][index] = std::ceil((b.upper[i] - p[i]) / Exp2(e[i]));
+//         qlohi[i][0][index] = pstd::floor((b.lower[i] - p[i]) / Exp2(e[i]));
+//         qlohi[i][1][index] = pstd::ceil((b.upper[i] - p[i]) / Exp2(e[i]));
 //     }
 // }
 
@@ -888,8 +888,8 @@
 //     for (int b = 0; b < 3; b++)
 //         octant |= (invdir[b] < 0) << b;
 //     uint64_t octinv8 = (7 - octant) * 0x0101010101010101;
-//     const bool octl[3] = {std::signbit(ray.d[0]), std::signbit(ray.d[1]),
-//     std::signbit(ray.d[2])}; const bool octh[3] = {!octl[0], !octl[1], !octl[2]};
+//     const bool octl[3] = {pstd::signbit(ray.d[0]), pstd::signbit(ray.d[1]),
+//     pstd::signbit(ray.d[2])}; const bool octh[3] = {!octl[0], !octl[1], !octl[2]};
 
 //     const Node8Compressed* PINE_RESTRICT nodes = this->nodes.data();
 //     const CompactTriangle* PINE_RESTRICT triangles = this->triangles.data();

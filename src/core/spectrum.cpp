@@ -1,6 +1,7 @@
 #include <core/spectrum.h>
 
-#include <algorithm>
+#include <pstd/algorithm.h>
+#include <pstd/vector.h>
 
 namespace pine {
 
@@ -24,11 +25,11 @@ static float AverageSpectrumSamples(const float* lambda, const float* v, int n, 
         ++i;
 
     auto interp = [lambda, v](float w, int i) {
-        return Lerp((w - lambda[i]) / (lambda[i + 1] - lambda[i]), v[i], v[i + 1]);
+        return pstd::lerp((w - lambda[i]) / (lambda[i + 1] - lambda[i]), v[i], v[i + 1]);
     };
     for (; i + 1 < n && lambdaEnd >= lambda[i]; i++) {
-        float segLambdaStart = std::max(lambdaStart, lambda[i]);
-        float segLambdaEnd = std::min(lambdaEnd, lambda[i + 1]);
+        float segLambdaStart = pstd::max(lambdaStart, lambda[i]);
+        float segLambdaEnd = pstd::min(lambdaEnd, lambda[i + 1]);
         sum += 0.5f * (interp(segLambdaStart, i) + interp(segLambdaEnd, i)) *
                (segLambdaEnd - segLambdaStart);
     }
@@ -42,11 +43,11 @@ static bool IsSpectrumSamplesSorted(const float* lambda, int n) {
     return true;
 }
 static void SortSpectrumSamples(float* lambda, float* v, int n) {
-    std::vector<int> indices(n);
+    pstd::vector<int> indices(n);
     for (int i = 0; i < n; i++)
         indices[i] = i;
-    std::sort(begin(indices), end(indices), [&](int a, int b) { return lambda[a] < lambda[b]; });
-    std::vector<float> lambda2(lambda, lambda + n), v2(v, v + n);
+    pstd::sort(begin(indices), end(indices), [&](int a, int b) { return lambda[a] < lambda[b]; });
+    pstd::vector<float> lambda2(lambda, lambda + n), v2(v, v + n);
     for (int i = 0; i < n; i++) {
         lambda[i] = lambda2[indices[i]];
         v[i] = v2[indices[i]];
@@ -55,15 +56,17 @@ static void SortSpectrumSamples(float* lambda, float* v, int n) {
 
 void SampledSpectrum::Initialize() {
     for (int i = 0; i < nSpectralSamples; i++) {
-        float wl0 = Lerp(float(i) / nSpectralSamples, sampledLambdaStart, sampledLambdaEnd);
-        float wl1 = Lerp(float(i + 1) / nSpectralSamples, sampledLambdaStart, sampledLambdaEnd);
+        float wl0 = pstd::lerp(float(i) / nSpectralSamples, sampledLambdaStart, sampledLambdaEnd);
+        float wl1 =
+            pstd::lerp(float(i + 1) / nSpectralSamples, sampledLambdaStart, sampledLambdaEnd);
         X.c[i] = AverageSpectrumSamples(CIE_lambda, CIE_X, nCIESamples, wl0, wl1);
         Y.c[i] = AverageSpectrumSamples(CIE_lambda, CIE_Y, nCIESamples, wl0, wl1);
         Z.c[i] = AverageSpectrumSamples(CIE_lambda, CIE_Z, nCIESamples, wl0, wl1);
     }
     for (int i = 0; i < nSpectralSamples; i++) {
-        float wl0 = Lerp(float(i) / nSpectralSamples, sampledLambdaStart, sampledLambdaEnd);
-        float wl1 = Lerp(float(i + 1) / nSpectralSamples, sampledLambdaStart, sampledLambdaEnd);
+        float wl0 = pstd::lerp(float(i) / nSpectralSamples, sampledLambdaStart, sampledLambdaEnd);
+        float wl1 =
+            pstd::lerp(float(i + 1) / nSpectralSamples, sampledLambdaStart, sampledLambdaEnd);
         rgbRefl2SpectWhite.c[i] = AverageSpectrumSamples(RGB2SpectLambda, RGBRefl2SpectWhite,
                                                          nRGB2SpectSamples, wl0, wl1);
         rgbRefl2SpectCyan.c[i] =
@@ -95,7 +98,7 @@ void SampledSpectrum::Initialize() {
     }
 }
 SampledSpectrum SampledSpectrum::FromSampled(const float* lambda, const float* v, int n) {
-    std::vector<float> lambda2, v2;
+    pstd::vector<float> lambda2, v2;
     if (!IsSpectrumSamplesSorted(lambda, n)) {
         lambda2.assign(lambda, lambda + n);
         v2.assign(v, v + n);
@@ -106,9 +109,10 @@ SampledSpectrum SampledSpectrum::FromSampled(const float* lambda, const float* v
 
     SampledSpectrum r;
     for (int i = 0; i < nSpectralSamples; i++) {
-        float lambda0 = Lerp(float(i) / nSpectralSamples, sampledLambdaStart, sampledLambdaStart);
+        float lambda0 =
+            pstd::lerp(float(i) / nSpectralSamples, sampledLambdaStart, sampledLambdaStart);
         float lambda1 =
-            Lerp(float(i + 1) / nSpectralSamples, sampledLambdaStart, sampledLambdaStart);
+            pstd::lerp(float(i + 1) / nSpectralSamples, sampledLambdaStart, sampledLambdaStart);
         r.c[i] = AverageSpectrumSamples(lambda, v, n, lambda0, lambda1);
     }
 
@@ -197,10 +201,10 @@ static float InterpolateSpectrumSamples(const float* lambda, const float* vals, 
         return vals[n - 1];
     int offset = FindInterval(n, [&](int index) { return lambda[index] <= l; });
     float t = (l - lambda[offset]) / (lambda[offset + 1] - lambda[offset]);
-    return Lerp(t, vals[offset], vals[offset + 1]);
+    return pstd::lerp(t, vals[offset], vals[offset + 1]);
 }
 RGBSpectrum RGBSpectrum::FromSampled(const float* lambda, const float* v, int n) {
-    std::vector<float> lambda2, v2;
+    pstd::vector<float> lambda2, v2;
     if (!IsSpectrumSamplesSorted(lambda, n)) {
         lambda2.assign(lambda, lambda + n);
         v2.assign(v, v + n);

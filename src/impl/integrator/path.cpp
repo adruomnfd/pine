@@ -61,7 +61,7 @@ Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
 
         if (depth + 1 == maxDepth)
             break;
-            
+
         L += beta * EstimateDirect(ray, it, sampler);
 
         mc.u1 = sampler.Get1D();
@@ -72,7 +72,7 @@ Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
             ray = it.SpawnRay(bs->wo);
 
             if (depth > 2) {
-                float q = Clamp(1.0f - beta.y(), 0.05f, 1.0f);
+                float q = pstd::clamp(1.0f - beta.y(), 0.05f, 1.0f);
                 if (sampler.Get1D() < q)
                     break;
                 else
@@ -82,7 +82,7 @@ Spectrum PathIntegrator::Li(Ray ray, Sampler& sampler) {
             break;
         }
     }
-    
+
     return L;
 }
 

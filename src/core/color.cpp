@@ -24,11 +24,11 @@ vec3 ACES(vec3 v) {
 
 vec3 ColorMap(float v) {
     if (v < 1 / 3.0f) {
-        return Lerp(v * 3.0f, vec3(0), vec3(0.0f, 0.0f, 0.5f));
+        return pstd::lerp(v * 3.0f, vec3(0), vec3(0.0f, 0.0f, 0.5f));
     } else if (v < 2 / 3.0f) {
-        return Lerp((v - 1 / 3.0f) * 3.0f, vec3(0.0f, 0.0f, 0.5f), vec3(0, 1, 0));
+        return pstd::lerp((v - 1 / 3.0f) * 3.0f, vec3(0.0f, 0.0f, 0.5f), vec3(0, 1, 0));
     } else if (v < 3 / 3.0f) {
-        return Lerp((v - 2 / 3.0f) * 3.0f, vec3(0, 1, 0), vec3(1, 0, 0));
+        return pstd::lerp((v - 2 / 3.0f) * 3.0f, vec3(0, 1, 0), vec3(1, 0, 0));
     } else {
         return vec3(1, 0, 0);
     }
@@ -54,8 +54,8 @@ Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
     for (int i = 0; i < nSamples; i++) {
         vec3 samplePosition = ray(tCurrent + segmentLength * 0.5f);
         float height = Length(samplePosition) - earthRadius;
-        float hr = std::exp(-height * Hr) * segmentLength,
-              hm = std::exp(-height * Hm) * segmentLength;
+        float hr = pstd::exp(-height * Hr) * segmentLength,
+              hm = pstd::exp(-height * Hm) * segmentLength;
         opticalDepthR += hr;
         opticalDepthM += hm;
 
@@ -70,11 +70,11 @@ Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
         float lod = Dot(samplePosition, sunDirection);
         float lt = segmentLengthLight * 0.5f;
         for (; j < nSamplesLight; j++, lt += segmentLengthLight) {
-            float heightLight = lo2 + Sqr(lt) * ld2 + 2 * lt * lod - earthRadius;
+            float heightLight = lo2 + pstd::sqr(lt) * ld2 + 2 * lt * lod - earthRadius;
             if (heightLight < 0)
                 break;
-            opticalDepthRLight += std::exp(-heightLight * Hr) * segmentLengthLight;
-            opticalDepthMLight += std::exp(-heightLight * Hm) * segmentLengthLight;
+            opticalDepthRLight += pstd::exp(-heightLight * Hr) * segmentLengthLight;
+            opticalDepthMLight += pstd::exp(-heightLight * Hm) * segmentLengthLight;
         }
         if (j == nSamplesLight) {
             vec3 tau = betaR * (opticalDepthR + opticalDepthRLight) +
@@ -91,10 +91,11 @@ Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
 Spectrum SkyColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
     if (sunDirection == direction)
         return vec3(8.0f * sunColor);
-    std::swap(direction.y, direction.z);
+    pstd::swap(direction.y, direction.z);
     auto [phi, theta] = CartesianToSpherical(direction);
     theta /= Pi;
-    return sunColor * Sqr(Lerp(theta, vec3(0.01f, 0.03f, 0.3f), vec3(0.3f, 0.5f, 0.8f)));
+    return sunColor *
+           pstd::sqr(pstd::lerp(theta, vec3(0.01f, 0.03f, 0.3f), vec3(0.3f, 0.5f, 0.8f)));
 }
 
 }  // namespace pine

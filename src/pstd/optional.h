@@ -5,12 +5,14 @@
 
 namespace pstd {
 
-struct nullopt {};
+struct nullopt_t {};
+
+inline constexpr nullopt_t nullopt;
 
 template <typename T>
 struct optional {
     optional() = default;
-    optional(nullopt){};
+    optional(nullopt_t){};
 
     template <typename U>
     optional(U&& val) {

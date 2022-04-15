@@ -41,7 +41,7 @@ struct GridMedium {
 
     static GridMedium Create(const Parameters& params);
     GridMedium(Spectrum sigma_a, Spectrum sigma_s, PhaseFunction phaseFunction, vec3i size,
-               vec3 position, float scale, std::vector<float> density, bool interpolate,
+               vec3 position, float scale, pstd::vector<float> density, bool interpolate,
                SamplingMethod method, float rayMarchingStepSize);
 
     Spectrum Tr(const Ray& ray, Sampler& sampler) const;
@@ -57,7 +57,7 @@ struct GridMedium {
     float invMaxDensity;
     mat4 m2w;
     mat4 w2m;
-    std::vector<float> density;
+    pstd::vector<float> density;
     bool interpolate;
     SamplingMethod method;
     float rayMarchingStepSize;

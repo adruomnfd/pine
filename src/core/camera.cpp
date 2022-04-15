@@ -49,7 +49,7 @@ Spectrum ThinLenCamera::We(const Ray& ray, vec2& pFilm) const {
     pFilm = TransformFromFilmSpace(pFocus, fov2d);
     if (!Inside(pFilm, vec2(0.0f), vec2(1.0f)))
         return 0.0f;
-    float cos4Theta = Sqr(Sqr(cosTheta));
+    float cos4Theta = pstd::sqr(pstd::sqr(cosTheta));
     return Spectrum(1.0f / (area * lensArea * cos4Theta));
 }
 
@@ -77,7 +77,7 @@ CameraSample ThinLenCamera::SampleWi(vec3 p, vec2 u) const {
     float dist;
     cs.p = pLensWorld;
     cs.wo = Normalize(pLensWorld - p, dist);
-    cs.pdf = Sqr(dist) / (AbsDot(nLens, -cs.wo) * lensArea);
+    cs.pdf = pstd::sqr(dist) / (AbsDot(nLens, -cs.wo) * lensArea);
     cs.we = We(Ray(pLensWorld, -cs.wo), cs.pFilm);
 
     return cs;
@@ -85,7 +85,7 @@ CameraSample ThinLenCamera::SampleWi(vec3 p, vec2 u) const {
 
 Camera CreateCamera(const Parameters& params, Scene* scene) {
     Camera camera;
-    std::string type = params.GetString("type");
+    pstd::string type = params.GetString("type");
 
     SWITCH(type) {
         CASE("ThinLen") camera = ThinLenCamera(ThinLenCamera::Create(params));
@@ -102,7 +102,7 @@ Camera CreateCamera(const Parameters& params, Scene* scene) {
         camera.medium = *medium;
     }
     if (camera.medium)
-        LOG_VERBOSE("[Camera]In medium");
+        LOG("[Camera]In medium");
     return camera;
 }
 

@@ -3,6 +3,8 @@
 
 #include <core/vecmath.h>
 
+#include <pstd/memory.h>
+
 namespace pine {
 
 inline uint64_t Hash64u(uint64_t s) {
@@ -15,7 +17,7 @@ inline uint64_t Hash64u(uint64_t s) {
 template <typename T, typename... Ts>
 inline uint64_t Hash(T first, Ts... rest) {
     uint64_t bits[(sizeof(T) + 7) / sizeof(uint64_t)] = {};
-    memcpy(bits, &first, sizeof(T));
+    pstd::memcpy(bits, &first, sizeof(T));
 
     uint64_t h = 0;
     for (size_t i = 0; i < sizeof(bits) / sizeof(bits[0]); i++)
@@ -31,7 +33,7 @@ template <typename... Ts>
 inline float Hashf(Ts... vals) {
     uint64_t h = Hash(vals...);
     uint32_t h32 = h ^ (h >> 32);
-    return std::min(h32 / float(-1u), OneMinusEpsilon);
+    return pstd::min(h32 / float(-1u), OneMinusEpsilon);
 }
 
 inline uint64_t SplitMix64(uint64_t& s) {
@@ -90,7 +92,7 @@ struct RNG {
 
     float Uniformf() {
         uint64_t u64 = Uniform64u();
-        return std::min(uint32_t(uint32_t(u64) + uint32_t(u64 >> 32)) * 0x1p-32f, OneMinusEpsilon);
+        return pstd::min(uint32_t(uint32_t(u64) + uint32_t(u64 >> 32)) * 0x1p-32f, OneMinusEpsilon);
     }
     vec2 Uniform2f() {
         return {Uniformf(), Uniformf()};

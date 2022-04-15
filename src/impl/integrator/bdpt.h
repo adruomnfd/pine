@@ -155,8 +155,8 @@ class BDPTIntegrator : public PixelIntegrator {
     BDPTIntegrator(const Parameters &params, Scene *scene);
     void Compute(vec2i p, Sampler &sampler);
 
-    std::vector<std::vector<Vertex>> cameraVertices;
-    std::vector<std::vector<Vertex>> lightVertices;
+    pstd::vector<pstd::vector<Vertex>> cameraVertices;
+    pstd::vector<pstd::vector<Vertex>> lightVertices;
 };
 
 }  // namespace pine

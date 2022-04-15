@@ -4,8 +4,9 @@
 #include <core/noise.h>
 #include <core/scattering.h>
 
-#include <vector>
-#include <memory>
+#include <pstd/vector.h>
+#include <pstd/memory.h>
+#include <pstd/string.h>
 
 namespace pine {
 
@@ -28,7 +29,7 @@ struct NodeInput {
     float EvalFloat(const NodeEvalCtx& c) const;
     vec3 EvalVec3(const NodeEvalCtx& c) const;
 
-    std::shared_ptr<Node> link = nullptr;
+    pstd::shared_ptr<Node> link = nullptr;
     float defaultFloat = 0.0f;
     vec3 defaultVec3 = vec3(0.0f);
 };
@@ -204,10 +205,10 @@ struct Sqr : Node {
     Sqr(NodeInput input) : input(input){};
 
     float EvalFloat(const NodeEvalCtx& c) const override {
-        return pine::Sqr(input.EvalFloat(c));
+        return pstd::sqr(input.EvalFloat(c));
     }
     vec3 EvalVec3(const NodeEvalCtx& c) const override {
-        return pine::Sqr(input.EvalVec3(c));
+        return pstd::sqr(input.EvalVec3(c));
     }
 
     NodeInput input;
@@ -218,7 +219,7 @@ struct Sqrt : Node {
     Sqrt(NodeInput input) : input(input){};
 
     float EvalFloat(const NodeEvalCtx& c) const override {
-        return std::sqrt(input.EvalFloat(c));
+        return pstd::sqrt(input.EvalFloat(c));
     }
     vec3 EvalVec3(const NodeEvalCtx& c) const override {
         return pine::Sqrt(input.EvalVec3(c));
@@ -232,7 +233,7 @@ struct Pow : Node {
     Pow(NodeInput input, NodeInput exp) : input(input), exp(exp){};
 
     float EvalFloat(const NodeEvalCtx& c) const override {
-        return std::pow(input.EvalFloat(c), exp.EvalFloat(c));
+        return pstd::pow(input.EvalFloat(c), exp.EvalFloat(c));
     }
     vec3 EvalVec3(const NodeEvalCtx& c) const override {
         return pine::Pow(input.EvalVec3(c), exp.EvalFloat(c));
@@ -247,11 +248,11 @@ struct Sin : Node {
     Sin(NodeInput input) : input(input){};
 
     float EvalFloat(const NodeEvalCtx& c) const override {
-        return std::sin(input.EvalFloat(c));
+        return pstd::sin(input.EvalFloat(c));
     }
     vec3 EvalVec3(const NodeEvalCtx& c) const override {
         vec3 v = input.EvalVec3(c);
-        return vec3(std::sin(v.x), std::sin(v.y), std::sin(v.z));
+        return vec3(pstd::sin(v.x), pstd::sin(v.y), pstd::sin(v.z));
     }
 
     NodeInput input;
@@ -262,11 +263,11 @@ struct Cos : Node {
     Cos(NodeInput input) : input(input){};
 
     float EvalFloat(const NodeEvalCtx& c) const override {
-        return std::cos(input.EvalFloat(c));
+        return pstd::cos(input.EvalFloat(c));
     }
     vec3 EvalVec3(const NodeEvalCtx& c) const override {
         vec3 v = input.EvalVec3(c);
-        return vec3(std::cos(v.x), std::cos(v.y), std::cos(v.z));
+        return vec3(pstd::cos(v.x), pstd::cos(v.y), pstd::cos(v.z));
     }
 
     NodeInput input;
@@ -277,11 +278,11 @@ struct Tan : Node {
     Tan(NodeInput input) : input(input){};
 
     float EvalFloat(const NodeEvalCtx& c) const override {
-        return std::tan(input.EvalFloat(c));
+        return pstd::tan(input.EvalFloat(c));
     }
     vec3 EvalVec3(const NodeEvalCtx& c) const override {
         vec3 v = input.EvalVec3(c);
-        return vec3(std::tan(v.x), std::tan(v.y), std::tan(v.z));
+        return vec3(pstd::tan(v.x), pstd::tan(v.y), pstd::tan(v.z));
     }
 
     NodeInput input;
@@ -292,7 +293,7 @@ struct Fract : Node {
     Fract(NodeInput input) : input(input){};
 
     float EvalFloat(const NodeEvalCtx& c) const override {
-        return pine::Fract(input.EvalFloat(c));
+        return pstd::fract(input.EvalFloat(c));
     }
     vec3 EvalVec3(const NodeEvalCtx& c) const override {
         return pine::Fract(input.EvalVec3(c));
@@ -309,8 +310,8 @@ struct Checkerboard : Node {
     float EvalFloat(const NodeEvalCtx& c) const override {
         vec3 p = input.EvalVec3(c);
         p *= frequency.EvalFloat(c);
-        return float((pine::Fract(p.x) - 0.5f) * (pine::Fract(p.y) - 0.5f) *
-                         (pine::Fract(p.z) - 0.5f) >
+        return float((pstd::fract(p.x) - 0.5f) * (pstd::fract(p.y) - 0.5f) *
+                         (pstd::fract(p.z) - 0.5f) >
                      0.0f);
     }
     vec3 EvalVec3(const NodeEvalCtx& c) const override {
@@ -384,7 +385,7 @@ struct Invert : Node {
 
 struct Texture : Node {
     Texture() = default;
-    Texture(NodeInput texcoord, std::string filename);
+    Texture(NodeInput texcoord, pstd::string filename);
 
     vec3 EvalVec3(const NodeEvalCtx& c) const override;
     float EvalFloat(const NodeEvalCtx& c) const override {
@@ -393,7 +394,7 @@ struct Texture : Node {
 
     NodeInput texcoord;
     vec2i size;
-    std::vector<vec3u8> texels;
+    pstd::vector<vec3u8> texels;
 };
 
 }  // namespace nodes

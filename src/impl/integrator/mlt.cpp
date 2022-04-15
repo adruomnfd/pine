@@ -4,17 +4,19 @@
 #include <impl/integrator/randomwalk.h>
 #include <core/scene.h>
 
+#include <pstd/tuple.h>
+
 namespace pine {
 
 MltIntegrator::MltIntegrator(const Parameters& params, Scene* scene) : Integrator(params, scene) {
-    std::string baseMethod = params.GetString("baseMethod", "path");
+    pstd::string baseMethod = params.GetString("baseMethod", "path");
     SWITCH(baseMethod) {
-        CASE("path") integrator = std::make_unique<PathIntegrator>(params, scene);
-        CASE("bdpt") bdpt = std::make_unique<BDPTIntegrator>(params, scene);
-        CASE("randomwalk") integrator = std::make_unique<RandomWalkIntegrator>(params, scene);
+        CASE("path") integrator = pstd::make_unique<PathIntegrator>(params, scene);
+        CASE("bdpt") bdpt = pstd::make_unique<BDPTIntegrator>(params, scene);
+        CASE("randomwalk") integrator = pstd::make_unique<RandomWalkIntegrator>(params, scene);
         DEFAULT {
             LOG_FATAL("[MltIntegrator]Unsupported base method &", baseMethod);
-            integrator = std::make_unique<PathIntegrator>(params, scene);
+            integrator = pstd::make_unique<PathIntegrator>(params, scene);
         }
     }
     nMutations = (int64_t)Area(filmSize) * params.GetInt("mutationsPerPixel", samplesPerPixel);
@@ -60,7 +62,7 @@ Spectrum MltIntegrator::L(Sampler& sampler, int depth, vec2& pFilm) {
 
 void MltIntegrator::Render() {
     int64_t nMarkovChains = NumThreads() * 32;
-    int64_t nMutationsPerChain = std::max(nMutations / nMarkovChains, 1l);
+    int64_t nMutationsPerChain = pstd::max(nMutations / nMarkovChains, 1l);
     int64_t nBootstrapSamples = nMutations / 32;
 
     ProgressReporter pr("Rendering", "MarkovChains", "Mutations", nMarkovChains,
@@ -93,15 +95,15 @@ void MltIntegrator::Render() {
         Sampler sampler =
             MltSampler(sigma, largeStepProbability, bdpt ? nSampleStreams : 1, chainIndex);
 
-        auto L = [&]() {
+        auto L = [&]() -> pstd::pair<vec2, Spectrum> {
             if (bdpt) {
                 vec2 pFilm;
                 Spectrum l = MltIntegrator::L(sampler, rng.Uniformf() * bdpt->maxDepth, pFilm);
-                return std::pair{pFilm, l};
+                return {pFilm, l};
             } else {
                 vec2 pFilm = sampler.Get2D();
                 Ray ray = scene->camera.GenRay(pFilm, sampler.Get2D());
-                return std::pair(pFilm, integrator->Li(ray, sampler));
+                return {pFilm, integrator->Li(ray, sampler)};
             }
         };
 
@@ -110,7 +112,7 @@ void MltIntegrator::Render() {
         for (int m = 0; m < nMutationsPerChain; m++) {
             sampler.StartNextSample();
             auto [pFilmProposed, Lproposed] = L();
-            float pAccept = Clamp(Lproposed.y() / Lcurrent.y(), 0.0f, 1.0f);
+            float pAccept = pstd::clamp(Lproposed.y() / Lcurrent.y(), 0.0f, 1.0f);
             if (Lcurrent.HasInfs() || Lcurrent.HasNaNs())
                 pAccept = 1.0f;
 

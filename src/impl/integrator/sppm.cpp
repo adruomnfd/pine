@@ -14,7 +14,7 @@ SPPMIntegrator::SPPMIntegrator(const Parameters& params, Scene* scene)
     finalGatheringDepth = params.GetInt("finalGatheringDepth", 0);
     writeFrequency = params.GetInt("writeFrequency", -1);
     if (writeFrequency <= 0)
-        writeFrequency = std::numeric_limits<int>::max();
+        writeFrequency = pstd::numeric_limits<int>::max();
 }
 
 struct SPPMPixel {
@@ -45,7 +45,7 @@ static bool ToGrid(vec3 p, AABB bounds, const int gridRes[3], vec3i& pi) {
     for (int i = 0; i < 3; i++) {
         pi[i] = int(gridRes[i] * pg[i]);
         inBounds &= pi[i] >= 0 && pi[i] < gridRes[i];
-        pi[i] = Clamp(pi[i], 0, gridRes[i] - 1);
+        pi[i] = pstd::clamp(pi[i], 0, gridRes[i] - 1);
     }
 
     return inBounds;
@@ -59,14 +59,14 @@ void SPPMIntegrator::Render() {
     if (scene->lights.size() == 0)
         LOG_FATAL("[SPPMIntegrator][Render]No light in the scene");
     int nPixels = Area(filmSize);
-    std::unique_ptr<SPPMPixel[]> pixels(new SPPMPixel[nPixels]);
+    pstd::unique_ptr<SPPMPixel[]> pixels(new SPPMPixel[nPixels]);
     for (int i = 0; i < nPixels; i++)
         pixels[i].radius = initialSearchRadius;
 
     ProgressReporter pr("Rendering", "SPPMIterations", "Photons", nIterations, photonsPerIteration);
 
     int hashSize = nPixels;
-    std::vector<std::vector<SPPMPixelListNode>> grids = {std::vector<SPPMPixelListNode>(hashSize)};
+    pstd::vector<pstd::vector<SPPMPixelListNode>> grids = {pstd::vector<SPPMPixelListNode>(hashSize)};
 
     for (int iter = 0; iter < nIterations; iter++) {
         ScopedPR(pr, iter, iter == nIterations - 1);
@@ -139,7 +139,7 @@ void SPPMIntegrator::Render() {
             });
         }
 
-        std::vector<std::atomic<SPPMPixelListNode*>> grid(hashSize);
+        pstd::vector<std::atomic<SPPMPixelListNode*>> grid(hashSize);
         AABB gridBounds;
         int gridRes[3];
         {
@@ -152,14 +152,14 @@ void SPPMIntegrator::Render() {
                 AABB vpBound =
                     AABB(pixel.vp.p - vec3(pixel.radius), pixel.vp.p + vec3(pixel.radius));
                 gridBounds = Union(gridBounds, vpBound);
-                maxRadius = std::max(maxRadius, pixel.radius);
+                maxRadius = pstd::max(maxRadius, pixel.radius);
             }
 
             vec3 diag = gridBounds.Diagonal();
-            float maxDiag = max(diag.x, diag.y, diag.z);
+            float maxDiag = pstd::max(diag.x, diag.y, diag.z);
             int baseGridRes = maxDiag / maxRadius;
             for (int i = 0; i < 3; i++)
-                gridRes[i] = std::max((int)(baseGridRes * diag[i] / maxDiag), 1);
+                gridRes[i] = pstd::max((int)(baseGridRes * diag[i] / maxDiag), 1);
         }
 
         {
@@ -180,7 +180,7 @@ void SPPMIntegrator::Render() {
                                     ++chunkIndex;
                                     nodeIndex = 0;
                                     if (chunkIndex >= grids.size())
-                                        grids.push_back(std::vector<SPPMPixelListNode>(hashSize));
+                                        grids.push_back(pstd::vector<SPPMPixelListNode>(hashSize));
                                 }
                                 SPPMPixelListNode* node = &grids[chunkIndex][nodeIndex++];
                                 node->pixel = &pixel;
@@ -252,7 +252,7 @@ void SPPMIntegrator::Render() {
                         break;
                     Spectrum bnew = beta * bs->f * AbsDot(bs->wo, it.n) / bs->pdf;
 
-                    float q = std::max(1.0f - bnew.y() / beta.y(), 0.0f);
+                    float q = pstd::max(1.0f - bnew.y() / beta.y(), 0.0f);
                     if (RadicalInverse(haltonDim++, haltonIndex) < q)
                         break;
                     beta = bnew / (1.0f - q);
@@ -269,11 +269,11 @@ void SPPMIntegrator::Render() {
                 if (p.M > 0.0f) {
                     float gamma = 1.5f / 3.0f;
                     float Nnew = p.N + gamma * p.M;
-                    float Rnew = p.radius * std::sqrt(Nnew / (p.N + p.M));
+                    float Rnew = p.radius * pstd::sqrt(Nnew / (p.N + p.M));
                     Spectrum phi;
                     for (int j = 0; j < Spectrum::nSamples; j++)
                         phi[j] = p.phi[j];
-                    p.tau = (p.tau + p.vp.beta * phi) * Sqr(Rnew) / Sqr(p.radius);
+                    p.tau = (p.tau + p.vp.beta * phi) * pstd::sqr(Rnew) / pstd::sqr(p.radius);
                     p.N = Nnew;
                     p.radius = Rnew;
                     p.M = 0.0f;
@@ -292,7 +292,7 @@ void SPPMIntegrator::Render() {
             for (int i = 0; i < nPixels; i++) {
                 const SPPMPixel& pixel = pixels[i];
                 Spectrum L = pixel.Ld / (iter + 1);
-                L += pixel.tau / (Np * Pi * Sqr(pixel.radius));
+                L += pixel.tau / (Np * Pi * pstd::sqr(pixel.radius));
                 vec3 rgb = L.ToRGB();
                 film->GetPixel({i % filmSize.x, i / filmSize.x}).rgb[0].Add(rgb[0]);
                 film->GetPixel({i % filmSize.x, i / filmSize.x}).rgb[1].Add(rgb[1]);

@@ -7,8 +7,8 @@
 #include <core/accel.h>
 #include <core/film.h>
 
-#include <memory>
-#include <map>
+#include <pstd/memory.h>
+#include <pstd/map.h>
 
 namespace pine {
 
@@ -25,7 +25,7 @@ class Integrator {
     Film* film = nullptr;
     vec2i filmSize;
 
-    std::vector<Sampler> samplers;
+    pstd::vector<Sampler> samplers;
     int samplesPerPixel;
 };
 
@@ -38,7 +38,7 @@ class RayIntegrator : public Integrator {
     Spectrum IntersectTr(Ray ray, Sampler& sampler) const;
     Spectrum EstimateDirect(Ray ray, Interaction it, Sampler& sampler) const;
 
-    std::shared_ptr<Accel> accel;
+    pstd::shared_ptr<Accel> accel;
     int maxDepth;
 };
 

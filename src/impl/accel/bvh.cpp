@@ -8,7 +8,7 @@
 
 namespace pine {
 
-void BVHImpl::Build(std::vector<Primitive> primitives) {
+void BVHImpl::Build(pstd::vector<Primitive> primitives) {
     Profiler _("BuildBVH");
     LOG_PLAIN("[BVH]Building BVH");
     Timer timer;
@@ -19,14 +19,14 @@ void BVHImpl::Build(std::vector<Primitive> primitives) {
 
     nodes.reserve(primitives.size());
     // BuildSAHBinned(primitives.data(), primitives.data() + primitives.size(), aabb);
-    BuildSAHFull(primitives.data(), primitives.data() + primitives.size(), aabb);
+    BuildSAHFull(&primitives[0], &primitives[0] + primitives.size(), aabb);
     rootIndex = (int)nodes.size() - 1;
     // Optimize();
 
     LOG_PLAIN(", & ms", timer.ElapsedMs());
     LOG_PLAIN(", & nodes(&.2 MB), & primitives(&.2 MB)\n", nodes.size(),
-                nodes.size() * sizeof(nodes[0]) / 1000000.0, primitives.size(),
-                primitives.size() * sizeof(primitives[0]) / 1000000.0);
+              nodes.size() * sizeof(nodes[0]) / 1000000.0, primitives.size(),
+              primitives.size() * sizeof(primitives[0]) / 1000000.0);
 }
 
 int BVHImpl::BuildSAHBinned(Primitive* begin, Primitive* end, AABB aabb) {
@@ -70,8 +70,8 @@ int BVHImpl::BuildSAHBinned(Primitive* begin, Primitive* end, AABB aabb) {
 
         for (int i = 0; i < numPrimitives; i++) {
             int b =
-                std::min(int(nBuckets * aabbCentroid.Offset(begin[i].aabb.Centroid(axis), axis)),
-                         nBuckets - 1);
+                pstd::min(int(nBuckets * aabbCentroid.Offset(begin[i].aabb.Centroid(axis), axis)),
+                          nBuckets - 1);
             buckets[b].count++;
             buckets[b].aabb.Extend(begin[i].aabb);
         }
@@ -171,14 +171,14 @@ int BVHImpl::BuildSAHFull(Primitive* begin, Primitive* end, AABB aabb) {
     float bestCost = FloatMax;
     int bestAxis = -1;
     int bestSplit = -1;
-    std::vector<float> costs(numSplits);
+    pstd::vector<float> costs(numSplits);
 
     for (int axis = 0; axis < 3; axis++) {
         if (!aabbCentroid.IsValid(axis))
             continue;
         {  // AABB lower
 
-            std::sort(begin, end, [&](const Primitive& l, const Primitive& r) {
+            pstd::sort(begin, end, [&](const Primitive& l, const Primitive& r) {
                 return l.aabb.lower[axis] < r.aabb.lower[axis];
             });
 
@@ -210,7 +210,7 @@ int BVHImpl::BuildSAHFull(Primitive* begin, Primitive* end, AABB aabb) {
         }
         {  // AABB upper
 
-            std::sort(begin, end, [&](const Primitive& l, const Primitive& r) {
+            pstd::sort(begin, end, [&](const Primitive& l, const Primitive& r) {
                 return l.aabb.upper[axis] < r.aabb.upper[axis];
             });
 
@@ -340,12 +340,12 @@ void BVHImpl::Optimize() {
     };
 
     RNG sampler;
-    float startCost = nodes[rootIndex].ComputeCost(nodes.data()) / 100000.0f;
+    float startCost = nodes[rootIndex].ComputeCost(&nodes[0]) / 100000.0f;
     float lastCost = startCost;
     int numConvergedPasses = 0;
     for (int pass = 0; pass < 256; pass++) {
         if (pass % 5 == 1) {
-            float cost = nodes[rootIndex].ComputeCost(nodes.data()) / 100000.0f;
+            float cost = nodes[rootIndex].ComputeCost(&nodes[0]) / 100000.0f;
             LOG_SAMELINE("[BVH]SAH cost after & optimization passes: &", pass, cost);
             if (cost < lastCost * 0.99f) {
                 numConvergedPasses = 0;
@@ -361,9 +361,9 @@ void BVHImpl::Optimize() {
             }
         }
 
-        std::vector<std::pair<int, int>> unusedNodes;
+        pstd::vector<pstd::pair<int, int>> unusedNodes;
         if (pass % 3 == 0) {
-            std::vector<Pair> inefficiencies(nodes.size());
+            pstd::vector<Pair> inefficiencies(nodes.size());
 
             for (int i = 0; i < (int)nodes.size(); i++)
                 inefficiencies[i] = {i, nodes[i].Inefficiency()};
@@ -389,7 +389,7 @@ void BVHImpl::Optimize() {
                 grandparent.children[parent.indexAsChild] = secondChildOfParent;
                 nodes[secondChildOfParent].indexAsChild = parent.indexAsChild;
                 nodes[secondChildOfParent].parent = grandparent.index;
-                grandparent.UpdateAABB(nodes.data());
+                grandparent.UpdateAABB(&nodes[0]);
 
                 nodes[node.children[0]].removed = true;
                 nodes[node.children[1]].removed = true;
@@ -419,7 +419,7 @@ void BVHImpl::Optimize() {
                 grandparent.children[parent.indexAsChild] = secondChildOfParent;
                 nodes[secondChildOfParent].indexAsChild = parent.indexAsChild;
                 nodes[secondChildOfParent].parent = grandparent.index;
-                grandparent.UpdateAABB(nodes.data());
+                grandparent.UpdateAABB(&nodes[0]);
 
                 nodes[node.children[0]].removed = true;
                 nodes[node.children[1]].removed = true;
@@ -429,12 +429,12 @@ void BVHImpl::Optimize() {
             }
         }
 
-        std::sort(unusedNodes.begin(), unusedNodes.end(),
-                  [&](std::pair<int, int> l, std::pair<int, int> r) {
-                      return nodes[l.first].SurfaceArea() > nodes[r.first].SurfaceArea();
-                  });
+        pstd::sort(unusedNodes.begin(), unusedNodes.end(),
+                   [&](pstd::pair<int, int> l, pstd::pair<int, int> r) {
+                       return nodes[l.first].SurfaceArea() > nodes[r.first].SurfaceArea();
+                   });
 
-        for (std::pair<int, int> node : unusedNodes) {
+        for (pstd::pair<int, int> node : unusedNodes) {
             int L = node.first;
             int N = node.second;
             Node& x = nodes[FindNodeForReinsertion(L)];
@@ -457,7 +457,7 @@ void BVHImpl::Optimize() {
             x.indexAsChild = 0;
             l.indexAsChild = 1;
             l.removed = false;
-            n.UpdateAABB(nodes.data());
+            n.UpdateAABB(&nodes[0]);
         }
     }
 }
@@ -613,7 +613,7 @@ void BVH::Initialize(const Scene* scene) {
 
     for (int i = 0; i < (int)scene->shapes.size(); i++) {
         if (scene->shapes[i].Is<TriangleMesh>()) {
-            std::vector<BVHImpl::Primitive> primitives;
+            pstd::vector<BVHImpl::Primitive> primitives;
             for (auto& t : scene->shapes[i].Be<TriangleMesh>().ToTriangles()) {
                 BVHImpl::Primitive primitive;
                 primitive.aabb = t.GetAABB();
@@ -621,13 +621,13 @@ void BVH::Initialize(const Scene* scene) {
                 primitives.push_back(primitive);
             }
             BVHImpl bvh;
-            bvh.Build(std::move(primitives));
-            lbvh.push_back(std::move(bvh));
+            bvh.Build(pstd::move(primitives));
+            lbvh.push_back(pstd::move(bvh));
             indices.push_back(i);
         }
     }
 
-    std::vector<BVHImpl::Primitive> primitives;
+    pstd::vector<BVHImpl::Primitive> primitives;
     for (auto& s : lbvh) {
         BVHImpl::Primitive primitive;
         primitive.aabb = s.GetAABB();

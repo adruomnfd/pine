@@ -4,9 +4,9 @@
 #include <core/defines.h>
 #include <util/log.h>
 
-#include <cstdint>
-#include <utility>
-#include <new>
+#include <pstd/type_traits.h>
+#include <pstd/move.h>
+#include <pstd/new.h>
 
 namespace pine {
 
@@ -28,24 +28,24 @@ struct Union {
 
     template <typename X>
     void Assign(X&& v) {
-        using Xy = std::decay_t<X>;
+        using Xy = pstd::decay_t<X>;
 
-        if constexpr (std::is_same<Xy, First>::value)
-            new (&first) Xy(std::forward<X>(v));
+        if constexpr (pstd::is_same<Xy, First>::value)
+            new (&first) Xy(pstd::forward<X>(v));
         else
-            rest.Assign(std::forward<X>(v));
+            rest.Assign(pstd::forward<X>(v));
     }
 
     template <typename X>
     X& Be() {
-        if constexpr (std::is_same<X, First>::value)
+        if constexpr (pstd::is_same<X, First>::value)
             return first;
         else
             return rest.template Be<X>();
     }
     template <typename X>
     const X& Be() const {
-        if constexpr (std::is_same<X, First>::value)
+        if constexpr (pstd::is_same<X, First>::value)
             return first;
         else
             return rest.template Be<X>();
@@ -73,21 +73,21 @@ struct Union<T> {
 
     template <typename X>
     void Assign(X&& v) {
-        using Xy = std::decay_t<X>;
-        static_assert(std::is_same<Xy, First>::value, "type X is not one of the Union's");
+        using Xy = pstd::decay_t<X>;
+        static_assert(pstd::is_same<Xy, First>::value, "type X is not one of the Union's");
 
-        new (&first) Xy(std::forward<X>(v));
+        new (&first) Xy(pstd::forward<X>(v));
     }
 
     template <typename X>
     X& Be() {
-        static_assert(std::is_same<X, First>::value, "type X is not one of the Union's");
+        static_assert(pstd::is_same<X, First>::value, "type X is not one of the Union's");
 
         return first;
     }
     template <typename X>
     const X& Be() const {
-        static_assert(std::is_same<X, First>::value, "type X is not one of the Union's");
+        static_assert(pstd::is_same<X, First>::value, "type X is not one of the Union's");
 
         return first;
     }
@@ -103,19 +103,19 @@ struct Union<T> {
 template <typename T>
 struct HasOpEq {
     template <typename U>
-    static constexpr std::true_type Check(decltype(U() == U())*);
+    static constexpr pstd::true_type Check(decltype(U() == U())*);
     template <typename U>
-    static constexpr std::false_type Check(...);
+    static constexpr pstd::false_type Check(...);
 
     static constexpr bool value = decltype(Check<T>(0))::value;
 };
 
 template <typename T, typename First, typename... Rest>
 constexpr int Index() {
-    static_assert(std::is_same<T, First>::value || sizeof...(Rest) != 0,
+    static_assert(pstd::is_same<T, First>::value || sizeof...(Rest) != 0,
                   "type T is not in the parameter pack");
 
-    if constexpr (std::is_same<T, First>::value)
+    if constexpr (pstd::is_same<T, First>::value)
         return 0;
     else
         return 1 + Index<T, Rest...>();
@@ -128,33 +128,33 @@ struct CommonType {
 
 template <typename F, typename U, typename T>
 constexpr decltype(auto) FuncWrapper(F&& f, U&& x) {
-    return f(std::forward<U>(x).template Be<T>());
+    return f(pstd::forward<U>(x).template Be<T>());
 }
 
 template <typename... Ts, typename F, typename U>
 decltype(auto) DispatchJumpTable(F&& f, int index, U&& value) {
     using T = typename CommonType<Ts...>::type;
-    using Fwt = std::decay_t<decltype(FuncWrapper<F, U, T>)>;
+    using Fwt = pstd::decay_t<decltype(FuncWrapper<F, U, T>)>;
     constexpr static Fwt table[] = {FuncWrapper<F, U, Ts>...};
 
-    return table[index](std::forward<F>(f), std::forward<U>(value));
+    return table[index](pstd::forward<F>(f), pstd::forward<U>(value));
 }
 
 template <typename... Ts, typename F, typename T>
 decltype(auto) DispatchIfElse(F&& f, int index, T&& value) {
-    using Ty = std::decay_t<T>;
+    using Ty = pstd::decay_t<T>;
 
     if constexpr (Ty::isFinal)
-        return f(std::forward<T>(value).first);
+        return f(pstd::forward<T>(value).first);
     else if (index == 0)
-        return f(std::forward<T>(value).first);
+        return f(pstd::forward<T>(value).first);
     else
-        return Dispatch(std::forward<F>(f), index - 1, std::forward<T>(value).rest);
+        return Dispatch(pstd::forward<F>(f), index - 1, pstd::forward<T>(value).rest);
 }
 
 template <typename... Ts, typename F, typename T>
 decltype(auto) Dispatch(F&& f, int index, T&& value) {
-    return DispatchJumpTable<Ts...>(std::forward<F>(f), index, std::forward<T>(value));
+    return DispatchJumpTable<Ts...>(pstd::forward<F>(f), index, pstd::forward<T>(value));
 }
 
 template <typename... Ts>
@@ -167,88 +167,64 @@ struct TaggedVariant {
         tag = rhs.tag;
     }
     TaggedVariant(TaggedVariant&& rhs) {
-        rhs.TryDispatch([&](auto&& x) { value.Assign(std::move(x)); });
-        tag = std::exchange(rhs.tag, tag);
+        rhs.TryDispatch([&](auto&& x) { value.Assign(pstd::move(x)); });
+        tag = pstd::exchange(rhs.tag, tag);
     }
     TaggedVariant& operator=(TaggedVariant rhs) {
         rhs.TryDispatch([&](auto& rx) {
             if (IsValid()) {
-                auto oldRx = std::move(rx);
-                Dispatch([&](auto& lx) { rhs.value.Assign(std::move(lx)); });
-                value.Assign(std::move(oldRx));
+                auto oldRx = pstd::move(rx);
+                Dispatch([&](auto& lx) { rhs.value.Assign(pstd::move(lx)); });
+                value.Assign(pstd::move(oldRx));
             } else {
-                value.Assign(std::move(rx));
+                value.Assign(pstd::move(rx));
             }
         });
 
-        std::swap(tag, rhs.tag);
+        pstd::swap(tag, rhs.tag);
         return *this;
     }
     ~TaggedVariant() {
         TryDispatch([](auto& x) {
-            using T = std::decay_t<decltype(x)>;
+            using T = pstd::decay_t<decltype(x)>;
             x.~T();
         });
     }
 
     template <typename T>
     TaggedVariant(T&& v) {
-        value.Assign(std::forward<T>(v));
-        tag = pine::Index<std::decay_t<T>, Ts...>();
+        value.Assign(pstd::forward<T>(v));
+        tag = pine::Index<pstd::decay_t<T>, Ts...>();
     }
+    
     template <typename T>
     TaggedVariant& operator=(T&& v) {
         this->~TaggedVariant();
-        value.Assign(std::forward<T>(v));
-        tag = Index<std::decay_t<T>, Ts...>();
+        value.Assign(pstd::forward<T>(v));
+        tag = Index<pstd::decay_t<T>, Ts...>();
         return *this;
-    }
-
-    friend bool operator==(const TaggedVariant& a, const TaggedVariant& b) {
-        if (a.Tag() != b.Tag())
-            return false;
-        return a.Dispatch([&](const auto& ax) {
-            return b.Dispatch([&](const auto& bx) {
-                if constexpr (std::is_same<std::decay_t<decltype(ax)>,
-                                           std::decay_t<decltype(ax)>>::value) {
-                    if constexpr (HasOpEq<std::decay_t<decltype(ax)>>::value) {
-                        return ax == bx;
-                    } else {
-                        LOG_FATAL("Try to compare type that don't have operator==()");
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            });
-        });
-    }
-    friend bool operator!=(const TaggedVariant& a, const TaggedVariant& b) {
-        return !(a == b);
     }
 
     template <typename F>
     decltype(auto) Dispatch(F&& f) {
-        CHECK(IsValid());
-        return pine::Dispatch<Ts...>(std::forward<F>(f), tag, value);
+        return pine::Dispatch<Ts...>(pstd::forward<F>(f), tag, value);
     }
 
     template <typename F>
     decltype(auto) Dispatch(F&& f) const {
-        CHECK(IsValid());
-        return pine::Dispatch<Ts...>(std::forward<F>(f), tag, value);
+        return pine::Dispatch<Ts...>(pstd::forward<F>(f), tag, value);
     }
 
     template <typename F>
     void TryDispatch(F&& f) {
         if (IsValid())
-            pine::Dispatch<Ts...>(std::forward<F>(f), tag, value);
+            pine::Dispatch<Ts...>(pstd::forward<F>(f), tag, value);
     }
 
     template <typename F>
     void TryDispatch(F&& f) const {
         if (IsValid())
-            pine::Dispatch<Ts...>(std::forward<F>(f), tag, value);
+            pine::Dispatch<Ts...>(pstd::forward<F>(f), tag, value);
     }
 
     bool IsValid() const {
@@ -271,17 +247,15 @@ struct TaggedVariant {
 
     template <typename T>
     T& Be() {
-        CHECK(IsValid());
         return value.template Be<T>();
     }
 
     template <typename T>
     const T& Be() const {
-        CHECK(IsValid());
         return value.template Be<T>();
     }
 
-    PINE_ARCHIVE(value, tag)
+    PSTD_ARCHIVE(value, tag)
 
   private:
     Aggregate value;

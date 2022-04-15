@@ -13,8 +13,8 @@ struct MltIntegrator : public Integrator {
   private:
     Spectrum L(Sampler& sampler, int depth, vec2& pFilm);
 
-    std::unique_ptr<RadianceIntegrator> integrator;
-    std::unique_ptr<class BDPTIntegrator> bdpt;
+    pstd::unique_ptr<RadianceIntegrator> integrator;
+    pstd::unique_ptr<class BDPTIntegrator> bdpt;
     int64_t nMutations = 0;
 
     float sigma = 0.0f;

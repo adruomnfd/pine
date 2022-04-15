@@ -2,10 +2,23 @@
 #define PINE_STD_MEMORY_H
 
 #include <pstd/type_traits.h>
-#include <pstd/stddef.h>
+#include <pstd/stdint.h>
 #include <pstd/move.h>
 
 namespace pstd {
+
+inline constexpr void memcpy(void* dst, const void* src, size_t size) {
+    auto csrc = (const char*)src;
+    auto cdst = (char*)dst;
+    for (size_t i = 0; i != size; ++i)
+        cdst[i] = csrc[i];
+}
+
+inline constexpr void memset(void* dst, char val, size_t size) {
+    auto cdst = (char*)dst;
+    for (size_t i = 0; i != size; ++i)
+        cdst[i] = val;
+}
 
 template <typename T>
 struct default_delete {
@@ -15,7 +28,7 @@ struct default_delete {
     default_delete(const default_delete<U>&) noexcept {
     }
 
-    void operator()(T* ptr) const {
+    void operator()(remove_extent_t<T>* ptr) const {
         if constexpr (is_array_v<T>)
             delete[] ptr;
         else
@@ -27,13 +40,15 @@ struct default_delete {
 template <typename T, typename Deleter = default_delete<T>>
 class unique_ptr {
   public:
-    using pointer = T*;
-    using reference = T;
+    using pointer = remove_extent_t<T>*;
+    using reference = remove_extent_t<T>&;
 
     template <typename U, typename UDeleter>
     friend class unique_ptr;
 
     unique_ptr() = default;
+    unique_ptr(nullptr_t) {
+    }
     explicit unique_ptr(pointer ptr, Deleter deleter = {}) : ptr(ptr), deleter(deleter) {
     }
     ~unique_ptr() {
@@ -52,11 +67,11 @@ class unique_ptr {
         return *this;
     }
 
-    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U, T>>>
+    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     unique_ptr(unique_ptr<U, UDeleter>&& rhs) : unique_ptr() {
         *this = move(rhs);
     }
-    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U, T>>>
+    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     unique_ptr& operator=(unique_ptr<U, UDeleter>&& rhs) {
         swap(rhs);
         return *this;
@@ -89,7 +104,7 @@ class unique_ptr {
     }
 
     void reset(pointer p = {}) {
-        swap(ptr, p);
+        pstd::swap(ptr, p);
         if (p != pointer())
             deleter(p);
     }
@@ -132,13 +147,16 @@ inline unique_ptr<T> make_unique(Args&&... args) {
 template <typename T, typename Deleter = default_delete<T>>
 class shared_ptr {
   public:
-    using pointer = T*;
-    using reference = T;
+    using pointer = remove_extent_t<T>*;
+    using reference = remove_extent_t<T>&;
 
     template <typename U, typename UDeleter>
     friend class shared_ptr;
 
     shared_ptr() = default;
+
+    shared_ptr(nullptr_t) {
+    }
     explicit shared_ptr(pointer ptr, Deleter deleter = {})
         : ptr(ptr), deleter(deleter), refcount(new size_t(1)) {
     }
@@ -161,20 +179,20 @@ class shared_ptr {
         return *this;
     }
 
-    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U, T>>>
+    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     shared_ptr(const shared_ptr<U, UDeleter>& rhs) : shared_ptr() {
         *this = rhs;
     }
-    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U, T>>>
+    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     shared_ptr(shared_ptr<U, UDeleter>&& rhs) : shared_ptr() {
         *this = move(rhs);
     }
-    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U, T>>>
+    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     shared_ptr& operator=(const shared_ptr<U, UDeleter>& rhs) {
         copy(rhs);
         return *this;
     }
-    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U, T>>>
+    template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     shared_ptr& operator=(shared_ptr<U, UDeleter>&& rhs) {
         swap(rhs);
         return *this;

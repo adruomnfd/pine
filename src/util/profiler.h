@@ -3,18 +3,18 @@
 
 #include <util/log.h>
 
-#include <map>
-#include <memory>
+#include <pstd/map.h>
+#include <pstd/memory.h>
 
 namespace pine {
 
 struct Profiler {
     static void Initialize() {
-        main = std::unique_ptr<Profiler>(new Profiler("Main"));
+        main = pstd::unique_ptr<Profiler>(new Profiler("Main"));
     }
     static void Finalize();
 
-    Profiler(std::string description);
+    Profiler(pstd::string description);
     ~Profiler();
     PINE_DELETE_COPY_MOVE(Profiler)
 
@@ -24,16 +24,16 @@ struct Profiler {
                    lhs.name == rhs.name;
         }
 
-        std::shared_ptr<Record> parent;
-        std::map<std::string, std::shared_ptr<Record>> children;
-        std::string name;
+        pstd::shared_ptr<Record> parent;
+        pstd::map<pstd::string, pstd::shared_ptr<Record>> children;
+        pstd::string name;
         double time = 0.0f;
         int sampleCount = 0;
     };
 
     Timer timer;
 
-    static inline std::unique_ptr<Profiler> main;
+    static inline pstd::unique_ptr<Profiler> main;
 };
 
 enum class ProfilePhase {

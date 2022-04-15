@@ -46,9 +46,9 @@ struct float16unsigned {
 }  // namespace pine
 
 template <>
-struct std::hash<pine::float16unsigned> {
+struct pstd::hash<pine::float16unsigned> {
     size_t operator()(pine::float16unsigned v) const {
-        return std::hash<uint16_t>()(v.bits);
+        return pstd::hash<uint16_t>()(v.bits);
     }
 };
 

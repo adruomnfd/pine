@@ -4,7 +4,8 @@
 
 namespace pine {
 
-std::optional<BSDFSample> DiffuseBSDF::Sample(vec3 wi, float, vec2 u, const NodeEvalCtx& nc) const {
+pstd::optional<BSDFSample> DiffuseBSDF::Sample(vec3 wi, float, vec2 u,
+                                               const NodeEvalCtx& nc) const {
     BSDFSample bs;
 
     vec3 wo = CosineWeightedSampling(u);
@@ -29,18 +30,18 @@ float DiffuseBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalCtx&) const {
     return AbsCosTheta(wo) / Pi;
 }
 
-std::optional<BSDFSample> ConductorBSDF::Sample(vec3 wi, float, vec2 u2,
-                                                const NodeEvalCtx& nc) const {
+pstd::optional<BSDFSample> ConductorBSDF::Sample(vec3 wi, float, vec2 u2,
+                                                 const NodeEvalCtx& nc) const {
     BSDFSample bs;
 
-    float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
+    float alpha = pstd::clamp(pstd::sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
     bs.isSpecular = alpha < 0.2f;
     TrowbridgeReitzDistribution distrib(alpha, alpha);
     vec3 wm = distrib.SampleWm(wi, u2);
 
     vec3 wo = Reflect(wi, wm);
     if (!SameHemisphere(wi, wo))
-        return std::nullopt;
+        return pstd::nullopt;
 
     vec3 fr = FrSchlick(albedo.EvalVec3(nc), AbsCosTheta(wm));
 
@@ -55,7 +56,7 @@ vec3 ConductorBSDF::F(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
     if (!SameHemisphere(wi, wo))
         return {};
 
-    float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
+    float alpha = pstd::clamp(pstd::sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
     TrowbridgeReitzDistribution distrib(alpha, alpha);
 
     vec3 wh = Normalize(wi + wo);
@@ -68,7 +69,7 @@ float ConductorBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
     if (!SameHemisphere(wi, wo))
         return {};
 
-    float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
+    float alpha = pstd::clamp(pstd::sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
     TrowbridgeReitzDistribution distrib(alpha, alpha);
 
     vec3 wh = Normalize(wi + wo);
@@ -76,15 +77,15 @@ float ConductorBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
     return distrib.PDF(wi, wh) / (4 * AbsDot(wi, wh));
 }
 
-std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
-                                                 const NodeEvalCtx& nc) const {
+pstd::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
+                                                  const NodeEvalCtx& nc) const {
     BSDFSample bs;
     float etap = eta.EvalFloat(nc);
     if (CosTheta(wi) < 0)
         etap = 1.0f / etap;
     float fr = FrDielectric(AbsCosTheta(wi), etap);
 
-    float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
+    float alpha = pstd::clamp(pstd::sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
     bs.isSpecular = alpha < 0.2f;
     TrowbridgeReitzDistribution distrib(alpha, alpha);
     vec3 wm = distrib.SampleWm(wi, u2);
@@ -92,7 +93,7 @@ std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
     if (u1 < fr) {
         vec3 wo = Reflect(wi, wm);
         if (!SameHemisphere(wi, wo))
-            return std::nullopt;
+            return pstd::nullopt;
 
         bs.wo = wo;
         bs.pdf = fr * distrib.PDF(wi, wm) / (4 * AbsDot(wi, wm));
@@ -101,10 +102,10 @@ std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
     } else {
         vec3 wo;
         if (!Refract(wi, wm, etap, wo))
-            return std::nullopt;
+            return pstd::nullopt;
         float cosThetaO = CosTheta(wo), cosThetaI = CosTheta(wi);
         bs.wo = wo;
-        float denom = Sqr(Dot(wo, wm) + Dot(wi, wm) / etap);
+        float denom = pstd::sqr(Dot(wo, wm) + Dot(wi, wm) / etap);
         float dwm_dwo = AbsDot(wo, wm) / denom;
         bs.pdf = (1.0f - fr) * distrib.PDF(wi, wm) * dwm_dwo;
         bs.f = albedo.EvalVec3(nc) * (1.0f - fr) * distrib.D(wm) * distrib.G(wi, wo) *
@@ -114,7 +115,7 @@ std::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
 }
 
 vec3 DielectricBSDF::F(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
-    float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
+    float alpha = pstd::clamp(pstd::sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
     TrowbridgeReitzDistribution distrib(alpha, alpha);
 
     float cosThetaO = CosTheta(wo), cosThetaI = CosTheta(wi);
@@ -133,13 +134,13 @@ vec3 DielectricBSDF::F(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
         return albedo.EvalVec3(nc) * fr * distrib.D(wm) * distrib.G(wo, wi) /
                (4 * cosThetaI * cosThetaO);
     } else {
-        float denom = Sqr(Dot(wo, wm) + Dot(wi, wm) / etap) * cosThetaI * cosThetaO;
+        float denom = pstd::sqr(Dot(wo, wm) + Dot(wi, wm) / etap) * cosThetaI * cosThetaO;
         return albedo.EvalVec3(nc) * (1.0f - fr) * distrib.D(wm) * distrib.G(wi, wo) *
                fabsf(Dot(wo, wm) * Dot(wi, wm) / denom);
     }
 }
 float DielectricBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
-    float alpha = Clamp(Sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
+    float alpha = pstd::clamp(pstd::sqr(roughness.EvalFloat(nc)), 0.001f, 1.0f);
     TrowbridgeReitzDistribution distrib(alpha, alpha);
 
     float cosThetaO = CosTheta(wo), cosThetaI = CosTheta(wi);
@@ -157,7 +158,7 @@ float DielectricBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
     if (reflect) {
         return fr * distrib.PDF(wi, wm) / (4 * AbsDot(wi, wm));
     } else {
-        float denom = Sqr(Dot(wo, wm) + Dot(wi, wm) / etap);
+        float denom = pstd::sqr(Dot(wo, wm) + Dot(wi, wm) / etap);
         float dwm_dwo = AbsDot(wo, wm) / denom;
         return (1.0f - fr) * distrib.PDF(wi, wm) * dwm_dwo;
     }
@@ -181,7 +182,7 @@ DielectricBSDF DielectricBSDF::Create(const Parameters& params) {
 }
 
 BSDF CreateBSDF(const Parameters& params) {
-    std::string type = params.GetString("type");
+    pstd::string type = params.GetString("type");
     SWITCH(type) {
         CASE("Diffuse") return DiffuseBSDF::Create(params);
         CASE("Dielectric") return DielectricBSDF::Create(params);

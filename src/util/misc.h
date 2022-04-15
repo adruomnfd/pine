@@ -3,7 +3,7 @@
 
 #include <core/defines.h>
 
-#include <optional>
+#include <pstd/optional.h>
 
 namespace pine {
 
@@ -13,9 +13,9 @@ auto Find(const T& x, const Key& key) {
     using Value = decltype(it->second);
 
     if (it != x.end())
-        return std::optional<Value>(it->second);
+        return pstd::optional<Value>(it->second);
     else
-        return std::optional<Value>(std::nullopt);
+        return pstd::optional<Value>(pstd::nullopt);
 }
 
 }  // namespace pine

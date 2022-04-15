@@ -7,7 +7,7 @@
 namespace pine {
 
 Accel* CreateAccel(const Parameters& params) {
-    std::string type = params.GetString("type", "BVH");
+    pstd::string type = params.GetString("type", "BVH");
     SWITCH(type) {
         CASE("BVH") return new BVH(params);
         // CASE("CWBVH") return new CWBVH(params);

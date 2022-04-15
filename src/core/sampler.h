@@ -6,7 +6,7 @@
 #include <util/profiler.h>
 #include <util/rng.h>
 
-#include <vector>
+#include <pstd/vector.h>
 
 namespace pine {
 
@@ -110,7 +110,7 @@ struct HaltonSampler {
     int dimension = 0;
     RandomizeStrategy randomizeStrategy;
 
-    static inline std::vector<uint16_t> radicalInversePermutations;
+    static inline pstd::vector<uint16_t> radicalInversePermutations;
 };
 
 struct ZeroTwoSequenceSampler {
@@ -134,8 +134,8 @@ struct ZeroTwoSequenceSampler {
 
     int currentSampleIndex = 0;
     int current1DDimension = 0, current2DDimension = 0;
-    std::vector<std::vector<float>> samples1D;
-    std::vector<std::vector<vec2>> samples2D;
+    pstd::vector<pstd::vector<float>> samples1D;
+    pstd::vector<pstd::vector<vec2>> samples2D;
     RNG rng;
 };
 
@@ -238,7 +238,7 @@ struct MltSampler {
 
     RNG rng;
     const float sigma, largeStepProbability;
-    std::vector<PrimarySample> X;
+    pstd::vector<PrimarySample> X;
     int64_t sampleIndex = 0;
     int64_t streamIndex = 0, streamCount = 0;
     int64_t dimension = 0;

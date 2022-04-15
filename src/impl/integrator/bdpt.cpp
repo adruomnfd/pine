@@ -29,7 +29,7 @@ float Vertex::ConvertDensity(float pdf, const Vertex &next) const {
     vec3 wo = Normalize(next.p() - p(), dist);
     if (next.IsOnSurface())
         pdf *= AbsDot(next.n(), wo);
-    pdf /= Sqr(dist);
+    pdf /= pstd::sqr(dist);
     return pdf;
 }
 float Vertex::Pdf(const Vertex *prev, const Vertex &next) const {
@@ -63,7 +63,7 @@ float Vertex::PdfLight(const Vertex &v) const {
         pdf = ei.light->PdfLe(Ray(p(), w)).dir;
     else
         pdf = 1.0f / Pi4;
-    pdf /= Sqr(dist);
+    pdf /= pstd::sqr(dist);
     if (v.IsOnSurface())
         pdf *= AbsDot(v.n(), w);
     return pdf;
@@ -191,7 +191,7 @@ int GenerateLightSubpath(const Scene *scene, const RayIntegrator &integrator, Sa
 Spectrum G(const RayIntegrator &integrator, Sampler &sampler, const Vertex &v0, const Vertex &v1) {
     vec3 d = v0.p() - v1.p();
     float g = 1.0f / LengthSquared(d);
-    d *= std::sqrt(g);
+    d *= pstd::sqrt(g);
     if (v0.IsOnSurface())
         g *= AbsDot(v0.n(), d);
     if (v1.IsOnSurface())
@@ -314,9 +314,9 @@ Spectrum ConnectBDPT(const RayIntegrator &integrator, Vertex *lightVertices, Ver
 BDPTIntegrator::BDPTIntegrator(const Parameters &params, Scene *scene)
     : PixelIntegrator(params, scene) {
     cameraVertices =
-        std::vector<std::vector<Vertex>>(NumThreads(), std::vector<Vertex>(maxDepth + 2));
+        pstd::vector<pstd::vector<Vertex>>(NumThreads(), pstd::vector<Vertex>(maxDepth + 2));
     lightVertices =
-        std::vector<std::vector<Vertex>>(NumThreads(), std::vector<Vertex>(maxDepth + 1));
+        pstd::vector<pstd::vector<Vertex>>(NumThreads(), pstd::vector<Vertex>(maxDepth + 1));
 }
 
 void BDPTIntegrator::Compute(vec2i p, Sampler &sampler) {

@@ -8,7 +8,7 @@
 
 namespace pine {
 
-Parameters Parse(std::string_view raw);
+Parameters Parse(pstd::string_view raw);
 
 }  // namespace pine
 

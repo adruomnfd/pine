@@ -6,7 +6,7 @@
 #include <util/parallel.h>
 #include <util/profiler.h>
 
-#include <memory>
+#include <pstd/memory.h>
 #include <atomic>
 #include <mutex>
 
@@ -20,7 +20,7 @@ struct Pixel {
 
 struct Film {
     Film() = default;
-    Film(vec2i size, Filter filter, std::string outputFileName, bool applyToneMapping,
+    Film(vec2i size, Filter filter, pstd::string outputFileName, bool applyToneMapping,
          bool reportAverageColor);
 
     void AddSample(vec2 pFilm, const Spectrum& sL) {
@@ -69,7 +69,7 @@ struct Film {
     }
     void Clear();
     void Finalize(float splatMultiplier = 1.0f);
-    void WriteToDisk(std::string filename) const;
+    void WriteToDisk(pstd::string filename) const;
 
   private:
     float GetFilterValue(vec2 p) {
@@ -82,13 +82,13 @@ struct Film {
 
     vec2i size;
     Filter filter;
-    std::shared_ptr<Pixel[]> pixels;
-    std::shared_ptr<vec4[]> rgba;
+    pstd::shared_ptr<Pixel[]> pixels;
+    pstd::shared_ptr<vec4[]> rgba;
 
     static constexpr int filterTableWidth = 16;
     float filterTable[filterTableWidth * filterTableWidth];
 
-    std::string outputFileName;
+    pstd::string outputFileName;
     bool applyToneMapping = true;
     bool reportAverageColor = false;
     int frameId = 0;

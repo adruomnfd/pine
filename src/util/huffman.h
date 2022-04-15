@@ -6,7 +6,8 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
-#include <vector>
+#include <pstd/vector.h>
+#include <pstd/algorithm.h>
 
 namespace pine {
 
@@ -16,13 +17,13 @@ T Id(const T& value) {
 }
 
 template <typename T, typename F>
-void Appendf(std::vector<T>& a, const std::vector<T>& b, F f) {
+void Appendf(pstd::vector<T>& a, const pstd::vector<T>& b, F f) {
     for (auto& x : b)
         a.push_back(f(x));
 }
 
 template <typename T>
-void Append(std::vector<T>& a, const std::vector<T>& b) {
+void Append(pstd::vector<T>& a, const pstd::vector<T>& b) {
     return Appendf(a, b, Id<T>);
 }
 
@@ -37,7 +38,7 @@ auto ComputeOccurrences(const Input& input) {
     std::unordered_map<T, int> result;
     for (auto& value : input)
         result[value]++;
-    return std::vector<std::pair<T, int>>(begin(result), end(result));
+    return pstd::vector<pstd::pair<T, int>>(begin(result), end(result));
 }
 
 template <typename Input>
@@ -50,26 +51,26 @@ auto BuildHuffmanTree(const Input& input) {
 
     struct Node {
         int frequency = 0;
-        std::vector<uint32_t> paths;
-        std::vector<uint32_t> indices;
+        pstd::vector<uint32_t> paths;
+        pstd::vector<uint32_t> indices;
     };
 
-    std::vector<Node> nodes(occurrences.size());
+    pstd::vector<Node> nodes(occurrences.size());
     for (size_t i = 0; i < occurrences.size(); i++) {
         nodes[i].frequency = occurrences[i].second;
         nodes[i].indices = {(uint32_t)i};
         nodes[i].paths = {1};
     }
 
-    auto predicate = [](auto& l, auto& r) { return l.frequency > r.frequency; };
-
-    sort(begin(nodes), end(nodes), predicate);
+    pstd::sort(pstd::begin(nodes), pstd::end(nodes),
+               [](auto& l, auto& r) { return l.frequency > r.frequency; });
 
     while (nodes.size() != 1) {
         const Node &n0 = nodes[nodes.size() - 1], &n1 = nodes[nodes.size() - 2];
         Node node;
         node.paths.reserve(n0.paths.size() + n1.paths.size());
         node.indices.reserve(n0.indices.size() + n1.indices.size());
+        auto predicate = [&](auto& x) { return x.frequency > node.frequency; };
 
         node.frequency = n0.frequency + n1.frequency;
         Appendf(node.paths, n0.paths, [](uint32_t p) { return (p << 1) + 0; });
@@ -77,7 +78,7 @@ auto BuildHuffmanTree(const Input& input) {
         Append(node.indices, n0.indices);
         Append(node.indices, n1.indices);
         nodes.resize(nodes.size() - 2);
-        nodes.insert(lower_bound(begin(nodes), end(nodes), node, predicate), node);
+        nodes.insert(pstd::lower_bound(pstd::begin(nodes), pstd::end(nodes), predicate), node);
     }
 
     HuffmanTree<T> tree;
@@ -88,25 +89,25 @@ auto BuildHuffmanTree(const Input& input) {
 }
 
 struct HuffmanEncoded {
-    std::vector<uint8_t> data;
+    pstd::vector<uint8_t> data;
     uint32_t nbits = 0;
     size_t nElements = 0;
 };
 
 template <typename T, typename Input>
 HuffmanEncoded HuffmanEncode(const HuffmanTree<T>& tree, const Input& input) {
-    std::vector<uint8_t> output;
+    pstd::vector<uint8_t> output;
     uint8_t bits = 0;
     int occupanied = 0;
 
     for (auto& x : input) {
         uint32_t ex = tree.encoder[x];
-        int h = HighestSetBit(ex);
+        int h = pstd::hsb(ex);
         ex ^= 1u << h;
 
         while (h) {
             bits |= ex << occupanied;
-            int used = std::min(h, 8 - occupanied);
+            int used = pstd::min(h, 8 - occupanied);
             ex >>= used;
             h -= used;
             occupanied += used;
@@ -141,8 +142,8 @@ Output HuffmanDecode(const HuffmanTree<T>& tree, const HuffmanEncoded& encoded) 
         uint32_t path;
         uint32_t index;
     };
-    std::vector<T> values;
-    std::vector<Path> paths;
+    pstd::vector<T> values;
+    pstd::vector<Path> paths;
     values.reserve(tree.encoder.size());
     paths.reserve(tree.encoder.size());
     for (auto& pair : tree.encoder) {
@@ -150,12 +151,12 @@ Output HuffmanDecode(const HuffmanTree<T>& tree, const HuffmanEncoded& encoded) 
         paths.push_back({pair.second, (uint32_t)paths.size()});
     }
 
-    std::vector<uint32_t> indices(paths.size() * 2);
+    pstd::vector<uint32_t> indices(paths.size() * 2);
 
     auto build = [&](auto me, Path* first, Path* last, uint32_t index) -> void {
         if (first + 1 == last) {
             if (index >= (uint32_t)indices.size())
-                indices.resize(RoundUpPow2(index));
+                indices.resize(pstd::roundup2(index));
             indices[index] = first->index + 1;
         } else {
             Path* pmid = std::partition(first, last, [](Path n) { return (n.path & 1) == 0; });
@@ -166,7 +167,7 @@ Output HuffmanDecode(const HuffmanTree<T>& tree, const HuffmanEncoded& encoded) 
         }
     };
 
-    build(build, paths.data(), paths.data() + paths.size(), 0);
+    build(build, &paths[0], &paths[0] + paths.size(), 0);
 
     uint8_t bits = 0;
     int used = 8;

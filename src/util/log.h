@@ -3,52 +3,48 @@
 
 #include <util/string.h>
 
+#include <pstd/iostream.h>
+
 #include <chrono>
 
 namespace pine {
 
-inline bool verbose = true;
-
 template <typename... Args>
 inline void LOG_PLAIN(const Args&... args) {
-    printf("%s", Fstring(args...).c_str());
+    (pstd::cout << ... << args);
+    pstd::cout << pstd::endl;
+    // printf("%s", Fstring(args...).c_str());
 }
 template <typename... Args>
 inline void LOG(const Args&... args) {
-    printf("%s\n", Fstring(args...).c_str());
+    (pstd::cout << ... << args);
+    pstd::cout << pstd::endl;
+    // printf("%s\n", Fstring(args...).c_str());
 }
 template <typename... Args>
 inline void LOG_SAMELINE(const Args&... args) {
-    printf("\33[2K\r%s\r", Fstring(args...).c_str());
-    fflush(stdout);
-}
-template <typename... Args>
-inline void LOG_VERBOSE(const Args&... args) {
-    if (!verbose)
-        return;
-    printf("%s\n", Fstring(args...).c_str());
-}
-template <typename... Args>
-inline void LOG_VERBOSE_SAMELINE(const Args&... args) {
-    if (!verbose)
-        return;
-    printf("\r\33[2K%s\r", Fstring(args...).c_str());
-    fflush(stdout);
+    (pstd::cout << ... << args);
+    pstd::cout << pstd::endl;
+    // printf("\33[2K\r%s\r", Fstring(args...).c_str());
 }
 template <typename... Args>
 inline void LOG_WARNING(const Args&... args) {
-    printf("\033[1;33m%s\033[0m\n", Fstring(args...).c_str());
+    (pstd::cout << ... << args);
+    pstd::cout << pstd::endl;
+    // printf("\033[1;33m%s\033[0m\n", Fstring(args...).c_str());
 }
 
 template <typename... Args>
 inline void LOG_FATAL(const Args&... args) {
-    printf("\033[1;31m%s\033[0m\n", Fstring(args...).c_str());
+    // printf("\033[1;31m%s\033[0m\n", Fstring(args...).c_str());
+    (pstd::cout << ... << args);
+    pstd::cout << pstd::endl;
     abort();
 }
 
 template <typename... Args>
 inline void print(const Args&... args) {
-    std::string format;
+    pstd::string format;
     for (size_t i = 0; i < sizeof...(args); i++)
         format += "& ";
     LOG(format.c_str(), args...);
@@ -100,7 +96,7 @@ struct Timer {
 
 struct ProgressReporter {
     ProgressReporter() = default;
-    ProgressReporter(std::string tag, std::string desc, std::string performance, int64_t total,
+    ProgressReporter(pstd::string tag, pstd::string desc, pstd::string performance, int64_t total,
                      int64_t multiplier = 1)
         : tag(tag), desc(desc), performance(performance), multiplier(multiplier), total(total) {
     }
@@ -108,7 +104,7 @@ struct ProgressReporter {
     void Report(int64_t current);
 
   private:
-    std::string tag, desc, performance;
+    pstd::string tag, desc, performance;
     Timer ETA, interval;
     int64_t multiplier = 1, previous = 0;
 

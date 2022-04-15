@@ -7,7 +7,7 @@
 #include <util/taggedvariant.h>
 #include <util/profiler.h>
 
-#include <vector>
+#include <pstd/vector.h>
 
 namespace pine {
 
@@ -129,7 +129,7 @@ struct Atmosphere {
     Spectrum sunColor;
     Spectrum sunSampledColor;
     vec2i size;
-    std::vector<vec3> colors;
+    pstd::vector<vec3> colors;
     bool interpolate = true;
 };
 

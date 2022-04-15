@@ -1,6 +1,12 @@
 #ifndef PINE_STD_STDDEF_H
 #define PINE_STD_STDDEF_H
 
+#if 1
+#include <stdint.h>
+#include <stddef.h>
+using nullptr_t = decltype(nullptr);
+
+#else
 namespace pstd {
 
 using int8_t = char;
@@ -26,5 +32,6 @@ using ptrdiff_t = int64_t;
 using nullptr_t = decltype(nullptr);
 
 }  // namespace pstd
+#endif
 
 #endif  // PINE_STD_STDDEF_H

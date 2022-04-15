@@ -3,21 +3,21 @@
 
 using namespace pine;
 
-size_t MaxLength(const std::vector<std::string>& names) {
+size_t MaxLength(const pstd::vector<pstd::string>& names) {
     size_t maxLen = 0;
     for (auto& name : names)
-        maxLen = std::max(name.size(), maxLen);
+        maxLen = pstd::max(name.size(), maxLen);
     return maxLen;
 }
 
-static void ConvertFormat(const std::vector<std::string>& filenames, std::string newFormat,
+static void ConvertFormat(const pstd::vector<pstd::string>& filenames, pstd::string newFormat,
                           bool inplace) {
     size_t maxLen = MaxLength(filenames);
     for (auto& from : filenames) {
-        std::string to = ChangeFileExtension(from, newFormat);
+        pstd::string to = ChangeFileExtension(from, newFormat);
         LOG("&      ======>      &", Format(maxLen), from, to);
         vec2i size;
-        std::unique_ptr<vec3u8[]> data(ReadLDRImage(from, size));
+        pstd::unique_ptr<vec3u8[]> data(ReadLDRImage(from, size));
 
         if (inplace)
             remove(from.c_str());
@@ -25,15 +25,15 @@ static void ConvertFormat(const std::vector<std::string>& filenames, std::string
     }
 };
 
-static void Scaling(const std::vector<std::string>& filenames, float scale, bool inplace) {
+static void Scaling(const pstd::vector<pstd::string>& filenames, float scale, bool inplace) {
     size_t maxLen = MaxLength(filenames);
     for (auto& from : filenames) {
-        std::string to = inplace ? from : AppendFileName(from, Fstring("_x&", scale));
+        pstd::string to = inplace ? from : AppendFileName(from, Fstring("_x&", scale));
         LOG("&      ===x&==>      &", Format(maxLen), from, scale, to);
         vec2i size;
-        std::unique_ptr<vec3u8[]> data(ReadLDRImage(from, size));
+        pstd::unique_ptr<vec3u8[]> data(ReadLDRImage(from, size));
         vec2i scaledSize = size * scale;
-        std::unique_ptr<vec3u8[]> scaled(new vec3u8[scaledSize.x * scaledSize.y]);
+        pstd::unique_ptr<vec3u8[]> scaled(new vec3u8[scaledSize.x * scaledSize.y]);
         for (int y = 0; y < size.y; y++)
             for (int x = 0; x < size.x; x++) {
                 int ix = min(x * scale, scaledSize.x - 1.0f);
@@ -44,7 +44,7 @@ static void Scaling(const std::vector<std::string>& filenames, float scale, bool
     }
 };
 
-static void Compress(std::string from, std::string to) {
+static void Compress(pstd::string from, pstd::string to) {
     auto input = ReadBinaryData(from);
     auto tree = BuildHuffmanTree(input);
     auto encoded = HuffmanEncode(tree, input);
@@ -53,10 +53,10 @@ static void Compress(std::string from, std::string to) {
     WriteBinaryData(to, serialized.data(), sizeof(serialized[0]) * serialized.size());
 }
 
-static void Decompress(std::string from, std::string to) {
+static void Decompress(pstd::string from, pstd::string to) {
     auto serialized = ReadBinaryData(from);
     auto [tree, encoded] = Unarchive<HuffmanTree<uint8_t>, HuffmanEncoded>(serialized);
-    auto input = HuffmanDecode<std::vector<uint8_t>>(tree, encoded);
+    auto input = HuffmanDecode<pstd::vector<uint8_t>>(tree, encoded);
 
     WriteBinaryData(to, input.data(), sizeof(input[0]) * input.size());
 }
@@ -65,13 +65,13 @@ int main(int argc, char* argv[]) {
     --argc;
     ++argv;
 
-    auto lookahead = [&]() -> std::string {
+    auto lookahead = [&]() -> pstd::string {
         if (argc == 0)
             return "";
         else
             return *argv;
     };
-    auto next = [&]() -> std::string {
+    auto next = [&]() -> pstd::string {
         if (argc == 0)
             return "";
         else {
@@ -85,13 +85,13 @@ int main(int argc, char* argv[]) {
     };
     auto isnumber = [&]() {
         try {
-            std::stof(lookahead());
+            pstd::stof(lookahead());
         } catch (...) {
             return false;
         }
         return true;
     };
-    auto files = [&]() { return std::vector<std::string>(argv, argv + argc); };
+    auto files = [&]() { return pstd::vector<pstd::string>(argv, argv + argc); };
 
     auto usage = [](auto msg) {
         LOG(msg);
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
         CASE("scaling")
             if(!isnumber())
                 usage("scaling [scale] [--inplace] [filename]...");
-            float scale = std::stof(next());
+            float scale = pstd::stof(next());
             SWITCH(next()){
                 CASE("--inplace") 
                     Scaling(files(), scale, true);

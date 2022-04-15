@@ -54,9 +54,6 @@ struct Interaction {
     const Medium* GetMedium(vec3 w) const {
         return Dot(w, n) > 0 ? mediumInterface.outside : mediumInterface.inside;
     }
-    Fstring Formatting(Format fmt) const {
-        return Fstring(fmt, "[Interaction]p & n & uv &", p, n, uv);
-    }
 
     vec3 p;
     vec3 n;

@@ -117,7 +117,7 @@ float Sphere::ComputeT(vec3 ro, vec3 rd, float tmin, vec3 p, float r) {
     float d = b * b - 4 * a * c;
     if (d <= 0.0f)
         return -1.0f;
-    d = std::sqrt(d);
+    d = pstd::sqrt(d);
     float t = (-b - d) / (2 * a);
     if (t < tmin)
         t = (-b + d) / (2 * a);
@@ -137,8 +137,8 @@ bool Sphere::Intersect(Ray& ray, Interaction& it) const {
     it.n = Normalize(ray(t) - this->c);
     it.p = this->c + it.n * r;
     auto [phi, theta] = CartesianToSpherical(it.n);
-    float sinTheta = std::sin(theta), cosTheta = std::cos(theta);
-    float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
+    float sinTheta = pstd::sin(theta), cosTheta = pstd::cos(theta);
+    float sinPhi = pstd::sin(phi), cosPhi = pstd::cos(phi);
     it.dpdu = vec3(sinTheta * -sinPhi, sinTheta * cosPhi, 0.0f);
     it.dpdv = vec3(cosTheta * cosPhi, cosTheta * sinPhi, -sinTheta);
     it.uv = vec2(phi, theta);
@@ -203,13 +203,13 @@ AABB Rect::GetAABB() const {
 
 bool Cylinder::Hit(const Ray& ray) const {
     vec3 o = ray.o - pos, d = ray.d;
-    float a = Sqr(d.x) + Sqr(d.z);
+    float a = pstd::sqr(d.x) + pstd::sqr(d.z);
     float b = 2 * (o.x * d.x + o.z * d.z);
-    float c = Sqr(o.x) + Sqr(o.z) - Sqr(r);
+    float c = pstd::sqr(o.x) + pstd::sqr(o.z) - pstd::sqr(r);
     float determinant = b * b - 4 * a * c;
     if (determinant <= 0)
         return false;
-    determinant = std::sqrt(determinant);
+    determinant = pstd::sqrt(determinant);
 
     float t = (-b - determinant) / (2 * a);
     vec3 ip = ray(t) - pos;
@@ -222,13 +222,13 @@ bool Cylinder::Hit(const Ray& ray) const {
 }
 bool Cylinder::Intersect(Ray& ray, Interaction& it) const {
     vec3 o = ray.o - pos, d = ray.d;
-    float a = Sqr(d.x) + Sqr(d.z);
+    float a = pstd::sqr(d.x) + pstd::sqr(d.z);
     float b = 2 * (o.x * d.x + o.z * d.z);
-    float c = Sqr(o.x) + Sqr(o.z) - Sqr(r);
+    float c = pstd::sqr(o.x) + pstd::sqr(o.z) - pstd::sqr(r);
     float determinant = b * b - 4 * a * c;
     if (determinant <= 0)
         return false;
-    determinant = std::sqrt(determinant);
+    determinant = pstd::sqrt(determinant);
 
     float t = (-b - determinant) / (2 * a);
     vec3 ip = ray(t) - pos;
@@ -256,7 +256,7 @@ bool Disk::Hit(const Ray& ray) const {
     if (t >= ray.tmax)
         return false;
     vec3 p = ray.o + t * ray.d - position;
-    if (LengthSquared(p) > Sqr(r))
+    if (LengthSquared(p) > pstd::sqr(r))
         return false;
     return true;
 }
@@ -267,7 +267,7 @@ bool Disk::Intersect(Ray& ray, Interaction& it) const {
     if (t >= ray.tmax)
         return false;
     vec3 p = ray.o + t * ray.d - position;
-    if (LengthSquared(p) > Sqr(r))
+    if (LengthSquared(p) > pstd::sqr(r))
         return false;
 
     ray.tmax = t;
@@ -275,7 +275,7 @@ bool Disk::Intersect(Ray& ray, Interaction& it) const {
     it.n = n;
     it.uv = vec2(Length(p), Phi2pi(p.x, p.z));
     it.dpdu = p / it.uv.x;
-    it.dpdv = vec3(std::cos(it.uv.y), 0.0f, std::sin(it.uv.y));
+    it.dpdv = vec3(pstd::cos(it.uv.y), 0.0f, pstd::sin(it.uv.y));
     return true;
 }
 
@@ -296,8 +296,8 @@ bool Line::Intersect(Ray& ray, Interaction& it) const {
     vec3 o = p0;
     vec3 d = p1 - p0;
     vec2 tz = Inverse(mat2(Dot(d, d), -d.z, -d.z, 1.0f)) * vec2(-Dot(o, d), o.z);
-    float t = Clamp(tz.x, 0.0f, 1.0f);
-    float z = Clamp(o.z + t * d.z, ray.tmin + thickness, ray.tmax);
+    float t = pstd::clamp(tz.x, 0.0f, 1.0f);
+    float z = pstd::clamp(o.z + t * d.z, ray.tmin + thickness, ray.tmax);
 
     float D = Length(o + t * d - vec3(0.0f, 0.0f, z));
 
@@ -363,7 +363,7 @@ TriangleMesh TriangleMesh::Create(const Parameters& params) {
 }
 
 Shape CreateShape(const Parameters& params, Scene* scene) {
-    std::string type = params.GetString("type");
+    pstd::string type = params.GetString("type");
     Shape shape;
 
     SWITCH(type) {

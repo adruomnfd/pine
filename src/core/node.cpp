@@ -17,9 +17,9 @@ vec3 NodeInput::EvalVec3(const NodeEvalCtx& c) const {
         return defaultVec3;
 }
 
-nodes::Texture::Texture(NodeInput texcoord, std::string filename) : texcoord(texcoord) {
-    LOG_VERBOSE("[Texture]Loading \"&\"", filename);
-    std::unique_ptr<vec3u8[]> ptr(ReadLDRImage(filename, size));
+nodes::Texture::Texture(NodeInput texcoord, pstd::string filename) : texcoord(texcoord) {
+    LOG("[Texture]Loading \"&\"", filename);
+    pstd::unique_ptr<vec3u8[]> ptr(ReadLDRImage(filename, size));
     texels.assign(ptr.get(), ptr.get() + Area(size));
 }
 
@@ -31,7 +31,7 @@ vec3 nodes::Texture::EvalVec3(const NodeEvalCtx& c) const {
 }
 
 Node* CreateNode(const Parameters& params) {
-    std::string type = params.GetString("type");
+    pstd::string type = params.GetString("type");
     SWITCH(type) {
         CASE("Constant")
         return new nodes::Constant(params.GetFloat("float"), params.GetVec3("vec3"));
@@ -59,7 +59,7 @@ Node* CreateNode(const Parameters& params) {
                                       CreateNode(params["addFactor"]));
         CASE("Length")
         return new nodes::Length(CreateNode(params["input"]));
-        CASE("Sqr")
+        CASE("pstd::sqr")
         return new nodes::Sqr(CreateNode(params["input"]));
         CASE("Sqrt")
         return new nodes::Sqrt(CreateNode(params["input"]));

@@ -72,7 +72,7 @@
 //     };
 
 //     struct Node8 {
-//         void Compress(std::vector<Node8Compressed>& nodes, std::vector<CompactTriangle>&
+//         void Compress(pstd::vector<Node8Compressed>& nodes, pstd::vector<CompactTriangle>&
 //         triangles,
 //                       uint32_t index);
 //         void Destory();
@@ -80,7 +80,7 @@
 //         AABB parentAABB;
 //         AABB aabb[8];
 //         Node8* children[8] = {};
-//         std::vector<CompactTriangle> triangles[8] = {};
+//         pstd::vector<CompactTriangle> triangles[8] = {};
 //     };
 
 //     struct Node2 {
@@ -104,7 +104,7 @@
 //             float mSum =
 //                 SurfaceArea() /
 //                 (2 * (nodes[children[0]].SurfaceArea() + nodes[children[1]].SurfaceArea()));
-//             float mMin = SurfaceArea() / std::min(nodes[children[0]].SurfaceArea(),
+//             float mMin = SurfaceArea() / pstd::min(nodes[children[0]].SurfaceArea(),
 //                                                   nodes[children[1]].SurfaceArea());
 //             float mArea = SurfaceArea();
 //             return mSum * mMin * mArea;
@@ -138,7 +138,7 @@
 //     };
 
 //     struct Cluster {
-//         int Flatten(std::vector<Node2>& nodes) const;
+//         int Flatten(pstd::vector<Node2>& nodes) const;
 //         void Destory();
 
 //         AABB aabb;
@@ -162,12 +162,12 @@
 //     bool Hit(Ray ray) const override;
 //     bool Intersect(Ray& ray, Interaction& it) const override;
 
-//     std::vector<Cluster> clusters;
-//     std::vector<Node2> nodes2;
+//     pstd::vector<Cluster> clusters;
+//     pstd::vector<Node2> nodes2;
 //     int node2Root = -1;
 //     Node8* wideTreeRoot = nullptr;
-//     std::vector<Node8Compressed> nodes;
-//     std::vector<CompactTriangle> triangles;
+//     pstd::vector<Node8Compressed> nodes;
+//     pstd::vector<CompactTriangle> triangles;
 //     const TriangleMesh* mesh;
 
 //     static constexpr float kCostPrimitive = 0.3f;

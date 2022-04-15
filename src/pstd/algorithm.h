@@ -1,7 +1,7 @@
 #ifndef PINE_STD_ALGORITHM_H
 #define PINE_STD_ALGORITHM_H
 
-#include <pstd/stddef.h>
+#include <pstd/stdint.h>
 #include <pstd/move.h>
 
 namespace pstd {
@@ -31,36 +31,6 @@ template <typename InputIt, typename T>
 inline void fill(InputIt first, InputIt last, const T& value) {
     for (; first != last; ++first)
         *first = value;
-}
-
-template <typename T>
-inline constexpr T min(const T& a, const T& b) {
-    return a < b ? a : b;
-}
-template <typename T>
-inline constexpr T max(const T& a, const T& b) {
-    return a > b ? a : b;
-}
-
-template <typename T, typename... Ts>
-inline constexpr T min(const T& a, const Ts&... b) {
-    return min(a, min(b...));
-}
-template <typename T, typename... Ts>
-inline constexpr T max(const T& a, const Ts&... b) {
-    return max(a, max(b...));
-}
-
-template <typename T>
-inline constexpr T roundup2(T x) {
-    if (x == 0)
-        return 1;
-    x -= 1;
-
-    for (size_t i = 1; i != sizeof(x) * 8; i <<= 1)
-        x |= x >> i;
-
-    return x + 1;
 }
 
 template <typename T>

@@ -8,8 +8,8 @@
 
 namespace pine {
 
-std::optional<BSDFSample> LayeredMaterial::Sample(const MaterialEvalCtx& c) const {
-    std::optional<BSDFSample> bs;
+pstd::optional<BSDFSample> LayeredMaterial::Sample(const MaterialEvalCtx& c) const {
+    pstd::optional<BSDFSample> bs;
     for (auto&& bsdf : bsdfs) {
         bs = bsdf.Sample(c.wi, c.u1, c.u2, c);
         if (bs && SameHemisphere(c.wi, bs->wo))
@@ -33,12 +33,12 @@ float LayeredMaterial::PDF(const MaterialEvalCtx& c) const {
 }
 
 LayeredMaterial::LayeredMaterial(const Parameters& params) {
-    std::vector<std::pair<int, Parameters>> layers;
+    pstd::vector<pstd::pair<int, Parameters>> layers;
     for (auto& layer : params)
         if (layer.first.substr(0, 5) == "layer")
-            layers.push_back({std::stoi(layer.first.substr(5)), layer.second.back()});
+            layers.push_back({pstd::stoi(layer.first.substr(5)), layer.second.back()});
 
-    std::sort(layers.begin(), layers.end(),
+    pstd::sort(layers.begin(), layers.end(),
               [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
 
     for (auto& layer : layers)
@@ -66,7 +66,7 @@ vec3 Material::BumpNormal(const MaterialEvalCtx& c) const {
 }
 
 Material CreateMaterial(const Parameters& params) {
-    std::string type = params.GetString("type");
+    pstd::string type = params.GetString("type");
     Material material;
 
     SWITCH(type) {

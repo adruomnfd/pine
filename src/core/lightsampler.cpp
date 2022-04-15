@@ -9,7 +9,7 @@ SampledLight UniformLightSampler::SampleLight(vec3, vec3, float ul) const {
 SampledLight UniformLightSampler::SampleLight(float ul) const {
     if (lights.size() == 0)
         return {};
-    uint32_t index = min(size_t(ul * lights.size()), lights.size() - 1);
+    uint32_t index = pstd::min(size_t(ul * lights.size()), lights.size() - 1);
 
     SampledLight sl;
     sl.light = &lights[index];
@@ -42,7 +42,7 @@ PowerLightSampler PowerLightSampler::Create(const Parameters&, const pstd::vecto
 }
 
 LightSampler CreateLightSampler(const Parameters& params, const pstd::vector<Light>& lights) {
-    std::string type = params.GetString("type", "Power");
+    pstd::string type = params.GetString("type", "Power");
     SWITCH(type) {
         CASE("Uniform") return UniformLightSampler(UniformLightSampler::Create(params, lights));
         CASE("Power") return PowerLightSampler(PowerLightSampler::Create(params, lights));

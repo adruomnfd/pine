@@ -5,9 +5,9 @@ project(pine LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast)
-# add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast -fsanitize=address)
-# add_link_options(-fsanitize=address)
+# add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast)
+add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast -fsanitize=address)
+add_link_options(-fsanitize=address)
 
 include_directories(
     ./
@@ -65,17 +65,17 @@ target_link_libraries(pinelib Threads::Threads)
 add_executable(pine src/cli/main.cpp)
 target_link_libraries(pine pinelib)
 
-#Image Tool
-add_executable(imgtool src/cli/imgtool.cpp)
-target_link_libraries(imgtool pinelib)
+# #Image Tool
+# add_executable(imgtool src/cli/imgtool.cpp)
+# target_link_libraries(imgtool pinelib)
 
-#Volume Tool
-add_executable(voltool src/cli/voltool.cpp)
-target_link_libraries(voltool pinelib)
+# #Volume Tool
+# add_executable(voltool src/cli/voltool.cpp)
+# target_link_libraries(voltool pinelib)
 
-#Pine Test
-add_executable(pine_test test/test_main.cpp)
-target_link_libraries(pine_test pinelib)
+# #Pine Test
+# add_executable(pine_test test/test_main.cpp)
+# target_link_libraries(pine_test pinelib)
 
-#Pstd Test
-add_executable(pstd_test test/pstd_test.cpp)
+# #Pstd Test
+# add_executable(pstd_test test/pstd_test.cpp)

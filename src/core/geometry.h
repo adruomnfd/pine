@@ -9,14 +9,14 @@
 #include <util/taggedvariant.h>
 #include <util/profiler.h>
 
-#include <vector>
+#include <pstd/vector.h>
 
 namespace pine {
 
 struct RayOctant {
     RayOctant(const Ray& ray)
-        : octantx3{(int)std::signbit(ray.d[0]) * 3, (int)std::signbit(ray.d[1]) * 3,
-                   (int)std::signbit(ray.d[2]) * 3},
+        : octantx3{(int)pstd::signbit(ray.d[0]) * 3, (int)pstd::signbit(ray.d[1]) * 3,
+                   (int)pstd::signbit(ray.d[2]) * 3},
           invDir(SafeRcp(ray.d)),
           negOrgDivDir(-ray.o * invDir) {
     }
@@ -83,9 +83,6 @@ struct AABB {
         CHECK_LE(it.upper[1], upper[1]);
         CHECK_LE(it.upper[2], upper[2]);
     }
-    Fstring Formatting(Format fmt) const {
-        return Fstring(fmt, "lower:& upper:&", lower, upper);
-    }
 
     bool Hit(const Ray& ray) const;
     bool Hit(Ray ray, float& tmin, float& tmax) const;
@@ -103,8 +100,8 @@ struct AABB {
         float tmax1 = p[4 - r.octantx3[1]] * r.invDir[1] + r.negOrgDivDir[1];
         float tmax2 = p[5 - r.octantx3[2]] * r.invDir[2] + r.negOrgDivDir[2];
 
-        tmin = max(max(max(tmin0, tmin1), tmin2), tmin);
-        *tmax = min(min(min(tmax0, tmax1), tmax2), *tmax);
+        tmin = pstd::max(pstd::max(pstd::max(tmin0, tmin1), tmin2), tmin);
+        *tmax = pstd::min(pstd::min(pstd::min(tmax0, tmax1), tmax2), *tmax);
         return tmin <= *tmax;
     }
 
@@ -164,7 +161,7 @@ struct Sphere {
         return ss;
     }
 
-    PINE_ARCHIVE(c, r)
+    PSTD_ARCHIVE(c, r)
 
     vec3 c;
     float r;
@@ -303,7 +300,6 @@ struct Triangle {
         case 1: return v1;
         case 2: return v2;
         default:
-            CHECK(false);
             return v0;
             break;
         }
@@ -332,7 +328,7 @@ struct Triangle {
         return ss;
     }
 
-    PINE_ARCHIVE(v0, v1, v2)
+    PSTD_ARCHIVE(v0, v1, v2)
 
     vec3 v0, v1, v2;
 };
@@ -370,8 +366,8 @@ struct Rect {
 struct TriangleMesh {
     static TriangleMesh Create(const Parameters& params);
     TriangleMesh() = default;
-    TriangleMesh(std::vector<vec3> vertices, std::vector<uint32_t> indices)
-        : vertices(std::move(vertices)), indices(std::move(indices)){};
+    TriangleMesh(pstd::vector<vec3> vertices, pstd::vector<uint32_t> indices)
+        : vertices(pstd::move(vertices)), indices(pstd::move(indices)){};
 
     bool Hit(const Ray&) const {
         return false;
@@ -401,8 +397,8 @@ struct TriangleMesh {
         return {vertices[indices[index * 3 + 0]], vertices[indices[index * 3 + 1]],
                 vertices[indices[index * 3 + 2]]};
     }
-    std::vector<Triangle> ToTriangles() const {
-        std::vector<Triangle> ts(GetNumTriangles());
+    pstd::vector<Triangle> ToTriangles() const {
+        pstd::vector<Triangle> ts(GetNumTriangles());
         for (int i = 0; i < GetNumTriangles(); i++)
             ts[i] = GetTriangle(i);
         return ts;
@@ -412,10 +408,10 @@ struct TriangleMesh {
         return {};
     }
 
-    std::vector<vec3> vertices;
-    std::vector<vec3> normals;
-    std::vector<vec2> texcoords;
-    std::vector<uint32_t> indices;
+    pstd::vector<vec3> vertices;
+    pstd::vector<vec3> normals;
+    pstd::vector<vec2> texcoords;
+    pstd::vector<uint32_t> indices;
 };
 
 struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line, TriangleMesh> {
@@ -436,27 +432,26 @@ struct Shape : TaggedVariant<Sphere, Plane, Triangle, Rect, Cylinder, Disk, Line
         return Dispatch([&](auto&& x) { return x.Area(); });
     }
     float Pdf(const Ray& ray, const Interaction& it) const {
-        return Sqr(ray.tmax) / (AbsDot(-ray.d, it.n) * Area());
+        return pstd::sqr(ray.tmax) / (AbsDot(-ray.d, it.n) * Area());
     }
     ShapeSample Sample(vec3 p, vec2 u) const {
-        CHECK(material);
         ShapeSample ss = Dispatch([&](auto&& x) { return x.Sample(p, u); });
         ss.wo = Normalize(ss.p - p, ss.distance);
         if (material->Is<EmissiveMaterial>())
             ss.Le = material->Le({ss.p, ss.n, ss.uv, vec3(), vec3(), -ss.wo});
-        ss.pdf = Sqr(ss.distance) / (AbsDot(-ss.wo, ss.n) * Area());
+        ss.pdf = pstd::sqr(ss.distance) / (AbsDot(-ss.wo, ss.n) * Area());
         return ss;
     }
-    std::optional<Light> GetLight() const {
+    pstd::optional<Light> GetLight() const {
         if (material && material->Is<EmissiveMaterial>())
             return AreaLight{this};
         else
-            return std::nullopt;
+            return pstd::nullopt;
     }
 
     AABB aabb;
-    std::shared_ptr<Material> material;
-    MediumInterface<std::shared_ptr<Medium>> mediumInterface;
+    pstd::shared_ptr<Material> material;
+    MediumInterface<pstd::shared_ptr<Medium>> mediumInterface;
 };
 
 Shape CreateShape(const Parameters& params, Scene* scene);

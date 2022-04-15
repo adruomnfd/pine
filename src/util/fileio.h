@@ -5,14 +5,14 @@
 #include <util/archive.h>
 
 #include <fstream>
-#include <string>
-#include <vector>
-#include <memory>
+#include <pstd/string.h>
+#include <pstd/vector.h>
+#include <pstd/memory.h>
 
 namespace pine {
 
 struct ScopedFile {
-    ScopedFile(std::string filename, std::ios::openmode mode);
+    ScopedFile(pstd::string filename, std::ios::openmode mode);
 
     void Write(const void* data, size_t size);
     void Read(void* data, size_t size);
@@ -35,37 +35,35 @@ struct ScopedFile {
     mutable size_t size = (size_t)-1;
 };
 
-bool IsFileExist(std::string filename);
-std::string GetFileDirectory(std::string filename);
-std::string GetFileExtension(std::string filename);
-std::string RemoveFileExtension(std::string filename);
-std::string ChangeFileExtension(std::string filename, std::string ext);
-std::string AppendFileName(std::string filename, std::string content);
-std::string ReadStringFile(std::string filename);
-void WriteBinaryData(std::string filename, const void* ptr, size_t size);
-std::vector<char> ReadBinaryData(std::string filename);
+bool IsFileExist(pstd::string filename);
+pstd::string GetFileDirectory(pstd::string filename);
+pstd::string GetFileExtension(pstd::string filename);
+pstd::string RemoveFileExtension(pstd::string filename);
+pstd::string ChangeFileExtension(pstd::string filename, pstd::string ext);
+pstd::string AppendFileName(pstd::string filename, pstd::string content);
+pstd::string ReadStringFile(pstd::string filename);
+void WriteBinaryData(pstd::string filename, const void* ptr, size_t size);
+pstd::vector<char> ReadBinaryData(pstd::string filename);
 
-void SaveImage(std::string filename, vec2i size, int nchannel, float* data);
-void SaveImage(std::string filename, vec2i size, int nchannel, uint8_t* data);
-vec3u8* ReadLDRImage(std::string filename, vec2i& size);
+void SaveImage(pstd::string filename, vec2i size, int nchannel, float* data);
+void SaveImage(pstd::string filename, vec2i size, int nchannel, uint8_t* data);
+vec3u8* ReadLDRImage(pstd::string filename, vec2i& size);
 
-TriangleMesh LoadObj(std::string filename);
-std::pair<std::vector<float>, vec3i> LoadVolume(std::string filename);
-void CompressVolume(std::string filename, const std::vector<float>& densityf, vec3i size);
-std::pair<std::vector<float>, vec3i> LoadCompressedVolume(std::string filename);
+TriangleMesh LoadObj(pstd::string filename);
+pstd::pair<pstd::vector<float>, vec3i> LoadVolume(pstd::string filename);
+void CompressVolume(pstd::string filename, const pstd::vector<float>& densityf, vec3i size);
+pstd::pair<pstd::vector<float>, vec3i> LoadCompressedVolume(pstd::string filename);
 
-Parameters LoadScene(std::string filename, Scene* scene);
+Parameters LoadScene(pstd::string filename, Scene* scene);
 
-template <typename T>
-void Serialize(std::string filename, const T& object) {
-    Serializer serializer;
-    auto data = serializer.Archive(object);
+template <typename... Ts>
+void Serialize(pstd::string filename, const Ts&... object) {
+    auto data = Archive(object...);
     WriteBinaryData(filename, data.data(), data.size() * sizeof(data[0]));
 }
-template <typename T>
-T Deserialize(std::string filename) {
-    Deserializer deserializer(ReadBinaryData(filename));
-    return deserializer.Unarchive<T>();
+template <typename... Ts>
+auto Deserialize(pstd::string filename) {
+    return Unarchive<Ts...>(ReadBinaryData(filename));
 }
 
 }  // namespace pine

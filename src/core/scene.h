@@ -18,8 +18,8 @@ namespace pine {
 struct Scene {
     pstd::shared_ptr<Integrator> integrator;
 
-    pstd::map<std::string, std::shared_ptr<Material>> materials;
-    pstd::map<std::string, std::shared_ptr<Medium>> mediums;
+    pstd::map<pstd::string, pstd::shared_ptr<Material>> materials;
+    pstd::map<pstd::string, pstd::shared_ptr<Medium>> mediums;
     pstd::vector<Shape> shapes;
     pstd::vector<Light> lights;
     pstd::optional<EnvironmentLight> envLight;

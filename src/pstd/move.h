@@ -4,20 +4,27 @@
 namespace pstd {
 
 template <typename T>
-T&& move(T& x) {
+inline T&& move(T& x) {
     return static_cast<T&&>(x);
 }
 
 template <typename T>
-T&& forward(T& x) {
+inline T&& forward(T& x) {
     return static_cast<T&&>(x);
 }
 
 template <typename T>
-void swap(T& x, T& y) {
+inline void swap(T& x, T& y) {
     T temp = move(x);
     x = move(y);
     y = move(temp);
+}
+
+template <typename T, typename U>
+inline T exchange(T& x, U&& newval) {
+    T old = move(x);
+    x = forward(newval);
+    return old;
 }
 
 }  // namespace pstd

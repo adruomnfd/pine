@@ -8,10 +8,11 @@ namespace pine {
 Film CreateFilm(const Parameters& params) {
     return Film(params.GetVec2i("size", vec2i(720, 480)), CreateFilter(params["filter"]),
                 params.GetString("outputFileName", "result.png"),
-                params.GetBool("applyToneMapping", true), params.GetBool("reportAverageColor", false));
+                params.GetBool("applyToneMapping", true),
+                params.GetBool("reportAverageColor", false));
 }
 
-Film::Film(vec2i size, Filter filter, std::string outputFileName, bool applyToneMapping,
+Film::Film(vec2i size, Filter filter, pstd::string outputFileName, bool applyToneMapping,
            bool reportAverageColor)
     : size(size),
       filter(filter),
@@ -25,8 +26,8 @@ Film::Film(vec2i size, Filter filter, std::string outputFileName, bool applyTone
                       (y + 0.5f) / filterTableWidth * filter.Radius().y};
             filterTable[offset++] = filter.Evaluate(p);
         }
-    pixels = std::shared_ptr<Pixel[]>(new Pixel[Area(size)]);
-    rgba = std::shared_ptr<vec4[]>(new vec4[Area(size)]);
+    pixels = pstd::shared_ptr<Pixel[]>(new Pixel[Area(size)]);
+    rgba = pstd::shared_ptr<vec4[]>(new vec4[Area(size)]);
 }
 
 void Film::Clear() {
@@ -43,7 +44,7 @@ void Film::Clear() {
 }
 void Film::Finalize(float splatMultiplier) {
     CopyToRGBArray(splatMultiplier);
-    
+
     if (reportAverageColor) {
         vec4 avg;
         for (int i = 0; i < Area(size); i++)
@@ -60,11 +61,11 @@ void Film::Finalize(float splatMultiplier) {
     if (frameId == 0)
         WriteToDisk(outputFileName);
     else
-        WriteToDisk(AppendFileName(outputFileName, ToString("_frame_", frameId)));
+        WriteToDisk(AppendFileName(outputFileName, pstd::to_string("_frame_", frameId)));
     frameId++;
 }
-void Film::WriteToDisk(std::string filename) const {
-    std::unique_ptr<vec4u8[]> rgba8 = std::unique_ptr<vec4u8[]>(new vec4u8[Area(size)]);
+void Film::WriteToDisk(pstd::string filename) const {
+    pstd::unique_ptr<vec4u8[]> rgba8 = pstd::unique_ptr<vec4u8[]>(new vec4u8[Area(size)]);
     for (int i = 0; i < Area(size); i++)
         rgba8[i] = rgba[i] * 255;
     SaveImage(filename, size, 4, (float*)&rgba[0]);

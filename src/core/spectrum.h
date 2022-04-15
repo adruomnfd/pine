@@ -91,25 +91,25 @@ class CoefficientSpectrum {
 
     friend CoefficientSpectrum Sqrt(CoefficientSpectrum s) {
         for (int i = 0; i < nSpectrumSamples; i++)
-            s.c[i] = std::sqrt(s.c[i]);
+            s.c[i] = pstd::sqrt(s.c[i]);
         return s;
     }
 
     friend CoefficientSpectrum Pow(CoefficientSpectrum s, float exp) {
         for (int i = 0; i < nSpectrumSamples; i++)
-            s.c[i] = std::pow(s.c[i], exp);
+            s.c[i] = pstd::pow(s.c[i], exp);
         return s;
     }
 
     friend CoefficientSpectrum Exp(CoefficientSpectrum s) {
         for (int i = 0; i < nSpectrumSamples; i++)
-            s.c[i] = std::exp(s.c[i]);
+            s.c[i] = pstd::exp(s.c[i]);
         return s;
     }
 
     friend CoefficientSpectrum Clamp(CoefficientSpectrum s, float low = 0, float high = Infinity) {
         for (int i = 0; i < nSpectrumSamples; i++)
-            s.c[i] = pine::Clamp(s.c[i], low, high);
+            s.c[i] = pstd::clamp(s.c[i], low, high);
         return s;
     }
 
@@ -151,14 +151,14 @@ class CoefficientSpectrum {
 
     bool HasNaNs() const {
         for (int i = 0; i < nSpectrumSamples; i++)
-            if (std::isnan(c[i]))
+            if (pstd::isnan(c[i]))
                 return true;
         return false;
     }
 
     bool HasInfs() const {
         for (int i = 0; i < nSpectrumSamples; i++)
-            if (std::isinf(c[i]))
+            if (pstd::isinf(c[i]))
                 return true;
         return false;
     }

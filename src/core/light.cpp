@@ -9,7 +9,7 @@ namespace pine {
 LightSample PointLight::Sample(vec3 p, vec2) const {
     LightSample ls;
     ls.wo = Normalize(position - p, ls.distance);
-    ls.pdf = Sqr(ls.distance);
+    ls.pdf = pstd::sqr(ls.distance);
     ls.Le = color;
     ls.isDelta = true;
     return ls;
@@ -117,10 +117,10 @@ Spectrum Atmosphere::Color(vec3 wo) const {
         vec2i st = Min(uv, size - vec2(1));
         return colors[st.y * size.x + st.x];
     }
-    vec2i st00 = {std::floor(uv.x), std::floor(uv.y)};
-    vec2i st01 = {std::ceil(uv.x), std::floor(uv.y)};
-    vec2i st10 = {std::floor(uv.x), std::ceil(uv.y)};
-    vec2i st11 = {std::ceil(uv.x), std::ceil(uv.y)};
+    vec2i st00 = {pstd::floor(uv.x), pstd::floor(uv.y)};
+    vec2i st01 = {pstd::ceil(uv.x), pstd::floor(uv.y)};
+    vec2i st10 = {pstd::floor(uv.x), pstd::ceil(uv.y)};
+    vec2i st11 = {pstd::ceil(uv.x), pstd::ceil(uv.y)};
     st00 %= size;
     st01 %= size;
     st10 %= size;
@@ -130,9 +130,9 @@ Spectrum Atmosphere::Color(vec3 wo) const {
     vec3 c01 = colors[st01.y * size.x + st01.x];
     vec3 c10 = colors[st10.y * size.x + st10.x];
     vec3 c11 = colors[st11.y * size.x + st11.x];
-    vec3 c0 = Lerp(p.x, c00, c01);
-    vec3 c1 = Lerp(p.x, c10, c11);
-    return Lerp(p.y, c0, c1);
+    vec3 c0 = pstd::lerp(p.x, c00, c01);
+    vec3 c1 = pstd::lerp(p.x, c10, c11);
+    return pstd::lerp(p.y, c0, c1);
 }
 float Atmosphere::Pdf(vec3) const {
     return 1.0f / Pi4;
@@ -157,7 +157,7 @@ Atmosphere Atmosphere::Create(const Parameters& params) {
 
 EnvironmentLight EnvironmentLight::Create(const Parameters& lightParams) {
     Parameters params = lightParams["environment"];
-    std::string type = params.GetString("type");
+    pstd::string type = params.GetString("type");
     SWITCH(type) {
         CASE("Atmosphere") return Atmosphere(Atmosphere::Create(params));
         CASE("Sky") return Sky(Sky::Create(params));
@@ -169,7 +169,7 @@ EnvironmentLight EnvironmentLight::Create(const Parameters& lightParams) {
 }
 
 Light CreateLight(const Parameters& params) {
-    std::string type = params.GetString("type");
+    pstd::string type = params.GetString("type");
     SWITCH(type) {
         CASE("Point") return PointLight(PointLight::Create(params));
         CASE("Directional") return DirectionalLight(DirectionalLight::Create(params));

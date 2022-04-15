@@ -3,7 +3,7 @@
 
 #include <core/math.h>
 
-#include <vector>
+#include <pstd/vector.h>
 
 namespace pine {
 
@@ -38,7 +38,7 @@ struct Distribution1D {
             du /= cdf[offset + 1] - cdf[offset];
         pdf = func[offset];
 
-        return min((offset + du) / Count(), OneMinusEpsilon);
+        return pstd::min((offset + du) / Count(), OneMinusEpsilon);
     }
 
     // return P(Xi)
@@ -53,7 +53,7 @@ struct Distribution1D {
         return offset;
     }
 
-    std::vector<float> func, cdf;
+    pstd::vector<float> func, cdf;
     float funcInt;
 };
 

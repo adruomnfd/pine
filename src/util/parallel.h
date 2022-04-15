@@ -2,8 +2,9 @@
 #define PINE_UTIL_PARALLEL_H
 
 #include <core/vecmath.h>
+#include <util/reflect.h>
 
-#include <vector>
+#include <pstd/vector.h>
 #include <thread>
 #include <atomic>
 
@@ -17,9 +18,9 @@ thread_local inline int threadIdx;
 
 template <typename F, typename... Args>
 void ParallelForImpl(int64_t nItems, F&& f) {
-    std::vector<std::thread> threads(NumThreads());
+    pstd::vector<std::thread> threads(NumThreads());
     std::atomic<int64_t> i{0};
-    int batchSize = max(nItems / NumThreads() / 64, (int64_t)1);
+    int batchSize = pstd::max(nItems / NumThreads() / 64, (int64_t)1);
     int tid = 0;
 
     for (auto& thread : threads)
@@ -49,25 +50,25 @@ void ParallelFor(int size, F&& f) {
 template <typename F, typename... Args>
 void ParallelFor(vec2i size, F&& f) {
     ParallelForImpl(Area(size), [&f, w = size.x](int idx) {
-        Invoke(std::forward<F>(f), vec2i{idx % w, idx / w});
+        Invoke(pstd::forward<F>(f), vec2i{idx % w, idx / w});
     });
 }
 
 struct AtomicFloat {
     explicit AtomicFloat(float v = 0) {
-        bits = Bitcast<uint32_t>(v);
+        bits = pstd::bitcast<uint32_t>(v);
     };
     operator float() const {
-        return Bitcast<float>(bits);
+        return pstd::bitcast<float>(bits);
     }
     AtomicFloat& operator=(float v) {
-        bits = Bitcast<uint32_t>(v);
+        bits = pstd::bitcast<uint32_t>(v);
         return *this;
     }
     void Add(float v) {
         uint32_t oldBits = bits, newBits;
         do {
-            newBits = Bitcast<uint32_t>(Bitcast<float>(oldBits) + v);
+            newBits = pstd::bitcast<uint32_t>(pstd::bitcast<float>(oldBits) + v);
         } while (!bits.compare_exchange_weak(oldBits, newBits));
     }
 

@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
     --argc;
     ++argv;
 
-    auto next = [&]() -> std::string {
+    auto next = [&]() -> pstd::string {
         if (argc == 0)
             return "";
         else {
@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
             return *(argv++);
         }
     };
-    auto files = [&]() { return std::vector<std::string>(argv, argv + argc); };
+    auto files = [&]() { return pstd::vector<pstd::string>(argv, argv + argc); };
     auto usage = [](auto msg) {
         LOG(msg);
         exit(0);

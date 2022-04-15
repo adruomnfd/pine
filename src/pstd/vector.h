@@ -5,6 +5,7 @@
 
 #include <pstd/new.h>
 #include <pstd/move.h>
+#include <pstd/math.h>
 #include <pstd/algorithm.h>
 
 namespace pstd {
@@ -22,6 +23,7 @@ struct default_alloc {
 template <typename T, typename Alloc>
 class vector_base : public Alloc {
   public:
+    using value_type = T;
     using pointer = T*;
     using reference = T&;
     using const_reference = const T&;
@@ -46,6 +48,10 @@ class vector_base : public Alloc {
     vector_base(std::initializer_list<T> list) : vector_base(list.size()) {
         copy(list.begin(), list.end(), begin());
     }
+    template <typename It>
+    vector_base(It first, It last) : vector_base(size_t(last - first)) {
+        pstd::copy(first, last, begin());
+    }
 
     vector_base(const vector_base& rhs) : vector_base() {
         *this = rhs;
@@ -56,9 +62,9 @@ class vector_base : public Alloc {
 
     vector_base& operator=(const vector_base& rhs) {
         clear();
-        ptr = alloc(rhs.len);
+        ptr = alloc(rhs.size());
         len = rhs.len;
-        reserved = rhs.reserved;
+        reserved = rhs.size();
         copy(rhs.begin(), rhs.end(), begin());
 
         return *this;
@@ -70,7 +76,12 @@ class vector_base : public Alloc {
         return *this;
     }
 
-    template <typename U>
+    void assign(const_iterator first, const_iterator last) {
+        resize(size_t(last - first));
+        copy(first, last, begin());
+    }
+
+    template <typename U = T>
     void push_back(U&& val) {
         reserve(size() + 1);
         *end() = forward<U>(val);
@@ -82,6 +93,10 @@ class vector_base : public Alloc {
         reserve(size() + 1);
         new (&ptr[size()]) T(forward<Args>(args)...);
         len += 1;
+    }
+
+    void pop_back() {
+        resize(size() - 1);
     }
 
     template <typename U>
@@ -105,6 +120,8 @@ class vector_base : public Alloc {
 
     void resize(size_t nlen) {
         reserve(nlen);
+        for (size_t i = nlen; i < size(); ++i)
+            ptr[i] = {};
         len = nlen;
     }
 

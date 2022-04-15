@@ -7,7 +7,7 @@
 #include <util/taggedvariant.h>
 #include <util/profiler.h>
 
-#include <vector>
+#include <pstd/vector.h>
 
 namespace pine {
 
@@ -35,21 +35,21 @@ struct MaterialEvalCtx : NodeEvalCtx {
 struct LayeredMaterial {
     LayeredMaterial(const Parameters& params);
 
-    std::optional<BSDFSample> Sample(const MaterialEvalCtx& c) const;
+    pstd::optional<BSDFSample> Sample(const MaterialEvalCtx& c) const;
     Spectrum F(const MaterialEvalCtx& c) const;
     float PDF(const MaterialEvalCtx& c) const;
     Spectrum Le(const MaterialEvalCtx&) const {
         return {};
     }
 
-    std::vector<BSDF> bsdfs;
+    pstd::vector<BSDF> bsdfs;
 };
 
 struct EmissiveMaterial {
     EmissiveMaterial(const Parameters& params);
 
-    std::optional<BSDFSample> Sample(const MaterialEvalCtx&) const {
-        return std::nullopt;
+    pstd::optional<BSDFSample> Sample(const MaterialEvalCtx&) const {
+        return pstd::nullopt;
     }
     Spectrum F(const MaterialEvalCtx&) const {
         return {};
@@ -73,14 +73,14 @@ struct Material : public TaggedVariant<LayeredMaterial, EmissiveMaterial> {
 
     vec3 BumpNormal(const MaterialEvalCtx& c) const;
 
-    std::optional<BSDFSample> Sample(const MaterialEvalCtx& c) const {
+    pstd::optional<BSDFSample> Sample(const MaterialEvalCtx& c) const {
         SampledProfiler _(ProfilePhase::MaterialSample);
         return Dispatch([&](auto&& x) {
-            std::optional<BSDFSample> bs = x.Sample(c);
+            pstd::optional<BSDFSample> bs = x.Sample(c);
             if (bs) {
                 bs->wo = c.n2w * bs->wo;
                 if (bs->f.IsBlack() || bs->pdf == 0.0f)
-                    bs = std::nullopt;
+                    bs = pstd::nullopt;
             }
             return bs;
         });
@@ -102,7 +102,7 @@ struct Material : public TaggedVariant<LayeredMaterial, EmissiveMaterial> {
         return Dispatch([&](auto&& x) { return x.Le(c); });
     }
 
-    std::optional<NodeInput> bumpMap;
+    pstd::optional<NodeInput> bumpMap;
 };
 
 Material CreateMaterial(const Parameters& params);

@@ -4,6 +4,8 @@
 #include <core/vecmath.h>
 #include <util/string.h>
 
+#include <pstd/tuple.h>
+
 namespace pine {
 
 struct Ray {
@@ -21,10 +23,6 @@ struct Ray {
         return o + t * d;
     }
 
-    Fstring Formatting(Format fmt) const {
-        return Fstring(fmt, "[Ray]origin & direction & tmin & tmax &", o, d, tmin, tmax);
-    }
-
     vec3 o;
     vec3 d;
     float tmin = 0.0f;
@@ -37,12 +35,12 @@ inline vec3 OffsetRayOrigin(vec3 p, vec3 n) {
     float floatScale = 1.0f / 65536.0f;
     float intScale = 256.0f;
     vec3i of_i = intScale * n;
-    vec3 p_i = Bitcast<vec3>(Bitcast<vec3i>(p) + vec3i(p.x < 0 ? -of_i.x : of_i.x,
-                                                       p.y < 0 ? -of_i.y : of_i.y,
-                                                       p.z < 0 ? -of_i.z : of_i.z));
-    return {std::abs(p.x) < origin ? p.x + n.x * floatScale : p_i.x,
-            std::abs(p.y) < origin ? p.y + n.y * floatScale : p_i.y,
-            std::abs(p.z) < origin ? p.z + n.z * floatScale : p_i.z};
+    vec3 p_i = pstd::bitcast<vec3>(pstd::bitcast<vec3i>(p) + vec3i(p.x < 0 ? -of_i.x : of_i.x,
+                                                                   p.y < 0 ? -of_i.y : of_i.y,
+                                                                   p.z < 0 ? -of_i.z : of_i.z));
+    return {pstd::abs(p.x) < origin ? p.x + n.x * floatScale : p_i.x,
+            pstd::abs(p.y) < origin ? p.y + n.y * floatScale : p_i.y,
+            pstd::abs(p.z) < origin ? p.z + n.z * floatScale : p_i.z};
 }
 
 inline Ray RayBetween(vec3 p0, vec3 p1) {
@@ -54,7 +52,7 @@ inline Ray RayBetween(vec3 p0, vec3 p1) {
     return ray;
 }
 
-inline std::pair<float, float> TAfterTransform(const mat3& transform, const Ray& ray) {
+inline pstd::pair<float, float> TAfterTransform(const mat3& transform, const Ray& ray) {
     vec3 p0 = transform * ray.o;
     return {Distance(p0, transform * ray(ray.tmin)),
             ray.tmax > FloatMax ? FloatMax : Distance(p0, transform * ray(ray.tmax))};

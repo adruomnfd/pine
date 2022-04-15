@@ -6,7 +6,7 @@ namespace pine {
 
 VizIntegrator::VizIntegrator(const Parameters& params, Scene* scene)
     : RadianceIntegrator(params, scene) {
-    std::string viztype = params.GetString("viztype");
+    pstd::string viztype = params.GetString("viztype");
     SWITCH(viztype) {
         CASE("Bvh") type = Type::Bvh;
         CASE("Position") type = Type::Position;

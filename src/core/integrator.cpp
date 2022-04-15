@@ -18,7 +18,7 @@
 namespace pine {
 
 Integrator* CreateIntegrator(const Parameters& params, Scene* scene) {
-    std::string type = params.GetString("type");
+    pstd::string type = params.GetString("type");
     SWITCH(type) {
         CASE("AO") return new AOIntegrator(params, scene);
         CASE("Viz") return new VizIntegrator(params, scene);
@@ -123,7 +123,7 @@ void PixelIntegrator::Render() {
     film->Clear();
 
     int total = Area(filmSize);
-    int groupSize = max(total / 100, 1);
+    int groupSize = pstd::max(total / 100, 1);
     int nGroups = (total + groupSize - 1) / groupSize;
 
     ProgressReporter pr("Rendering", "Pixels", "Samples", total, samplesPerPixel);

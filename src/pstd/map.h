@@ -8,33 +8,25 @@ namespace pstd {
 
 template <typename Key, typename Value, typename Pred = less<Key>>
 class map {
-    template <typename Key2, typename Value2, typename Pred2>
-    friend inline string to_string(const map<Key2, Value2, Pred2>& map);
-
   public:
-    template <typename Pair>
+    template <typename Pair = pair<Key, Value>>
     auto insert(Pair&& p) {
-        auto it = lower_bound(xs.begin(), xs.end(), [&](auto& x) { return pred(x.first, p.first); });
-
-        return xs.insert(it, p);
+        return xs.push_back(p);
     }
 
     auto find(const Key& key) const {
-        auto it = lower_bound(xs.begin(), xs.end(), [&](auto& x) { return pred(x.first, key); });
+        for (auto it = xs.begin(); it != xs.end(); ++it)
+            if (it->first == key)
+                return it;
 
-        if (it->first != key)
-            it = xs.end();
-
-        return it;
+        return xs.end();
     }
 
     Value& operator[](const Key& key) {
-        auto it = lower_bound(xs.begin(), xs.end(), [&](auto& x) { return pred(x.first, key); });
-
-        if (it == xs.end() || it->first != key)
-            it = insert(pair<Key, Value>{key, {}});
-
-        return it->second;
+        auto it = find(key);
+        if (it == xs.end())
+            xs.push_back(pair<Key, Value>{key, {}});
+        return xs.back().second;
     }
 
     auto begin() {
@@ -55,11 +47,6 @@ class map {
     vector<pair<Key, Value>> xs;
     Pred pred;
 };
-
-template <typename Key, typename Value, typename Pred>
-inline string to_string(const map<Key, Value, Pred>& map) {
-    return to_string(map.xs);
-}
 
 }  // namespace pstd
 
