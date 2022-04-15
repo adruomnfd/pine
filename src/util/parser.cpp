@@ -113,8 +113,9 @@ Parameters Parse(pstd::string_view raw) {
     Profiler _("Parse");
     Timer timer;
 
-    Parameters parameters = ParseBlock(raw);
-    return parameters;
+    Parameters params = ParseBlock(raw);
+
+    return params;
 }
 
 }  // namespace pine

@@ -5,7 +5,7 @@
 
 namespace pine {
 
-void Parameters::Summarize(int /*indent*/) const {
+void Parameters::Summarize(int indent) const {
     // for (const auto& v : values)
     //     LOG("& &: &", Format(indent), " ", v.first.c_str(), v.second.c_str());
     // for (const auto& s : subset) {
@@ -14,6 +14,15 @@ void Parameters::Summarize(int /*indent*/) const {
     //         ss.Summarize(indent + 2);
     //     }
     // }
+
+    for (const auto& v : values)
+        LOG(v.first.c_str(), ": ", v.second.c_str());
+    for (const auto& s : subset) {
+        for (auto& ss : s.second) {
+            LOG(s.first);
+            ss.Summarize(indent + 2);
+        }
+    }
 }
 
 const pstd::vector<Parameters>& Parameters::GetAll(pstd::string name) const {

@@ -23,10 +23,12 @@ class map {
     }
 
     Value& operator[](const Key& key) {
-        auto it = find(key);
-        if (it == xs.end())
+        if (find(key) == xs.end())
             xs.push_back(pair<Key, Value>{key, {}});
-        return xs.back().second;
+
+        for (auto it = xs.begin();; ++it)
+            if (it->first == key)
+                return it->second;
     }
 
     auto begin() {
@@ -41,6 +43,10 @@ class map {
     }
     auto end() const {
         return xs.end();
+    }
+
+    size_t size() const {
+        return xs.size();
     }
 
   private:

@@ -63,7 +63,7 @@ class vector_base : public Alloc {
     vector_base& operator=(const vector_base& rhs) {
         clear();
         ptr = alloc(rhs.size());
-        len = rhs.len;
+        len = rhs.size();
         reserved = rhs.size();
         copy(rhs.begin(), rhs.end(), begin());
 
@@ -171,7 +171,7 @@ class vector_base : public Alloc {
         return ptr;
     }
 
-  protected:
+//   protected:
     void reset(pointer nptr, size_t nlen, size_t nreserved) {
         if (ptr)
             free(ptr);

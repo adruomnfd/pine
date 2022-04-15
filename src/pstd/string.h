@@ -19,9 +19,12 @@ inline bool issame(const char* lhs, const char* rhs) {
     if (!lhs || !rhs)
         return !lhs && !rhs;
 
-    for (size_t i = 0;; ++i)
+    for (size_t i = 0;; ++i) {
+        if (lhs[i] != rhs[i])
+            return false;
         if (lhs[i] == '\0' || rhs[i] == '\0')
             return lhs[i] == '\0' && rhs[i] == '\0';
+    }
 }
 
 template <typename T>
@@ -150,10 +153,13 @@ class string_view {
             i++;
         }
 
+        if (i == size())
+            i = npos;
+
         return i;
     }
     size_t find_last_of(char c) const {
-        size_t i = 0, last = 0;
+        size_t i = 0, last = npos;
         while (i < size()) {
             if (str[i] == c)
                 last = i;

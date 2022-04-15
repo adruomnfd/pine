@@ -374,27 +374,24 @@ Parameters LoadScene(pstd::string filename, Scene *scene) {
 
     Timer timer;
 
-    for (auto &p : params.GetAll("Material")){
-        LOG(p.GetString("name"), " ", p.GetString("type"));
-    }
-    // for (auto &p : params.GetAll("Material"))
-    //     scene->materials[p.GetString("name")] = pstd::make_shared<Material>(CreateMaterial(p));
-    // for (auto &p : params.GetAll("Medium"))
-    //     scene->mediums[p.GetString("name")] = pstd::make_shared<Medium>(CreateMedium(p));
-    // for (auto &p : params.GetAll("Light"))
-    //     scene->lights.push_back(CreateLight(p));
-    // for (auto &p : params.GetAll("Shape"))
-    //     scene->shapes.push_back(CreateShape(p, scene));
-    // for (auto &shape : scene->shapes)
-    //     if (auto light = shape.GetLight())
-    //         scene->lights.push_back(*light);
-    // for (const Light &light : scene->lights)
-    //     if (light.Is<EnvironmentLight>())
-    //         scene->envLight = light.Be<EnvironmentLight>();
+    for (auto &p : params.GetAll("Material"))
+        scene->materials[p.GetString("name")] = pstd::make_shared<Material>(CreateMaterial(p));
+    for (auto &p : params.GetAll("Medium"))
+        scene->mediums[p.GetString("name")] = pstd::make_shared<Medium>(CreateMedium(p));
+    for (auto &p : params.GetAll("Light"))
+        scene->lights.push_back(CreateLight(p));
+    for (auto &p : params.GetAll("Shape"))
+        scene->shapes.push_back(CreateShape(p, scene));
 
-    // scene->camera = CreateCamera(params["Camera"], scene);
-    // scene->integrator = pstd::shared_ptr<Integrator>(CreateIntegrator(params["Integrator"],
-    // scene));
+    for (auto &shape : scene->shapes)
+        if (auto light = shape.GetLight())
+            scene->lights.push_back(*light);
+    for (const Light &light : scene->lights)
+        if (light.Is<EnvironmentLight>())
+            scene->envLight = light.Be<EnvironmentLight>();
+
+    scene->camera = CreateCamera(params["Camera"], scene);
+    scene->integrator = pstd::shared_ptr<Integrator>(CreateIntegrator(params["Integrator"], scene));
 
     return params;
 }
