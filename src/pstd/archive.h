@@ -20,7 +20,7 @@ template <typename T>
 struct has_archive_method {
     struct pseudo_archiver {
         template <typename... Ts>
-        void operator()(Ts&&...) const {};
+        void operator()(Ts&&...) const {}
     };
 
     template <typename U>

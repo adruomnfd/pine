@@ -19,7 +19,7 @@ VizIntegrator::VizIntegrator(const Parameters& params, Scene* scene)
             type = Type::Normal;
         }
     }
-};
+}
 
 Spectrum VizIntegrator::Li(Ray ray, Sampler&) {
     SampledProfiler _(ProfilePhase::EstimateLi);

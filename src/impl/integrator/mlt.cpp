@@ -22,7 +22,7 @@ MltIntegrator::MltIntegrator(const Parameters& params, Scene* scene) : Integrato
     nMutations = (int64_t)Area(filmSize) * params.GetInt("mutationsPerPixel", samplesPerPixel);
     sigma = params.GetFloat("sigma", 0.01f);
     largeStepProbability = params.GetFloat("largeStepProbability", 0.3f);
-};
+}
 
 static const int cameraStreamIndex = 0;
 static const int lightStreamIndex = 1;

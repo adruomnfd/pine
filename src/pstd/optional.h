@@ -2,6 +2,7 @@
 #define PINE_STD_OPTIONAL_H
 
 #include <pstd/move.h>
+#include <pstd/archive.h>
 
 namespace pstd {
 
@@ -34,9 +35,11 @@ struct optional {
         return &value_;
     }
 
-    operator bool() const {
+    explicit operator bool() const {
         return valid;
     }
+
+    PSTD_ARCHIVE(value_)
 
   private:
     T value_;

@@ -3,9 +3,9 @@
 
 #include <util/string.h>
 
+#include <pstd/chrono.h>
 #include <pstd/iostream.h>
-
-#include <chrono>
+#include <pstd/stacktrace.h>
 
 namespace pine {
 
@@ -39,6 +39,9 @@ inline void LOG_FATAL(const Args&... args) {
     // printf("\033[1;31m%s\033[0m\n", Fstring(args...).c_str());
     (pstd::cout << ... << args);
     pstd::cout << pstd::endl;
+
+    pstd::cout << pstd::stacktrace() << pstd::endl;
+
     abort();
 }
 
@@ -88,10 +91,12 @@ inline void print(const Args&... args) {
 #endif
 
 struct Timer {
-    using clock = std::chrono::high_resolution_clock;
     double ElapsedMs();
     double Reset();
-    clock::time_point start = clock::now();
+
+  private:
+    pstd::clock clock;
+    float t0 = clock.now();
 };
 
 struct ProgressReporter {

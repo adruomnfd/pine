@@ -11,46 +11,45 @@ class map {
   public:
     template <typename Pair = pair<Key, Value>>
     auto insert(Pair&& p) {
-        return xs.push_back(pstd::forward<Pair>(p));
+        return base.push_back(pstd::forward<Pair>(p));
     }
 
     auto find(const Key& key) const {
-        for (auto it = xs.begin(); it != xs.end(); ++it)
+        // TODO
+        for (auto it = begin(); it != end(); ++it)
             if (it->first == key)
                 return it;
-
-        return xs.end();
+        return end();
     }
 
     Value& operator[](const Key& key) {
-        if (find(key) == xs.end())
-            xs.push_back(pair<Key, Value>{key, {}});
-
-        for (auto it = xs.begin();; ++it)
+        for (auto it = begin(); it != end(); ++it)
             if (it->first == key)
                 return it->second;
+        insert({key, {}});
+        return base.back().second;
     }
 
     auto begin() {
-        return xs.begin();
+        return base.begin();
     }
     auto end() {
-        return xs.end();
+        return base.end();
     }
 
     auto begin() const {
-        return xs.begin();
+        return base.begin();
     }
     auto end() const {
-        return xs.end();
+        return base.end();
     }
 
     size_t size() const {
-        return xs.size();
+        return base.size();
     }
 
   private:
-    vector<pair<Key, Value>> xs;
+    pstd::vector<pstd::pair<Key, Value>> base;
     Pred pred;
 };
 

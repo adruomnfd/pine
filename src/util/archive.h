@@ -104,7 +104,7 @@ class ArchiverBase {
             for (size_t i = 0; i < object.size(); i++)
                 ArchiveImpl(pstd::forward<Ty>(object)[i]);
 
-        } else if constexpr (IsPointer<T>::value) {
+        } else if constexpr (pstd::is_pointerish_v<T>) {
             using Tv = pstd::decay_t<decltype(*object)>;
             if constexpr (IsUnarchive)
                 object = T(new Tv);

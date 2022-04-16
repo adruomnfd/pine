@@ -5,14 +5,24 @@ project(pine LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast)
-add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast -fsanitize=address)
-add_link_options(-fsanitize=address)
+add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast)
+# add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast -O0 -g)
+# add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast -O0 -g -fsanitize=address)
+# add_link_options(-fsanitize=address)
 
 include_directories(
     ./
     ./src
     ./ext
+)
+
+#pstd Library
+add_library(pstd 
+src/pstd/string.cpp
+src/pstd/chrono.cpp
+src/pstd/fstream.cpp
+src/pstd/iostream.cpp
+src/pstd/stacktrace.cpp
 )
 
 #Pine Core Library
@@ -41,6 +51,7 @@ src/util/string.cpp
 src/util/fileio.cpp
 src/util/parser.cpp
 src/util/profiler.cpp
+src/util/objloader.cpp
 src/util/parameters.cpp
 src/impl/integrator/ao.cpp
 src/impl/integrator/viz.cpp
@@ -59,7 +70,7 @@ ext/stb_image/stb_image_write.cpp
 
 set_target_properties(pinelib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 find_package(Threads REQUIRED)
-target_link_libraries(pinelib Threads::Threads)
+target_link_libraries(pinelib pstd Threads::Threads)
 
 #Pine CommandLine
 add_executable(pine src/cli/main.cpp)
@@ -79,3 +90,4 @@ target_link_libraries(pine pinelib)
 
 #Pstd Test
 add_executable(pstd_test test/pstd_test.cpp)
+target_link_libraries(pstd_test pstd pinelib)

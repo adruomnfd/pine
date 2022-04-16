@@ -54,7 +54,7 @@ enum class ProfilePhase {
     SampleEnvLight,
     NumPhase
 };
-static const char* profilePhaseName[] = {
+inline const char* profilePhaseName[] = {
     "GenerateRay",     "ShapeIntersect", "BoundingBoxIntersect", "IntersectClosest",
     "IntersectShadow", "IntersectTr",    "MaterialSample",       "EstimateDirect",
     "EstimateLi",      "MediumTr",       "MediumSample",         "SearchNeighbors",

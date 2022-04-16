@@ -4,22 +4,15 @@
 #include <core/geometry.h>
 #include <util/archive.h>
 
-#include <fstream>
+#include <pstd/fstream.h>
 #include <pstd/string.h>
 #include <pstd/vector.h>
-#include <pstd/memory.h>
 
 namespace pine {
 
 struct ScopedFile {
-    ScopedFile(pstd::string filename, std::ios::openmode mode);
+    ScopedFile(pstd::string_view filename, pstd::ios::openmode mode);
 
-    void Write(const void* data, size_t size);
-    void Read(void* data, size_t size);
-    size_t Size() const;
-    bool Success() const {
-        return file.is_open() && file.good();
-    }
     template <typename T>
     T Read() {
         T val;
@@ -31,38 +24,47 @@ struct ScopedFile {
         Write(&val, sizeof(T));
     }
 
-    mutable std::fstream file;
+    void Write(const void* data, size_t size);
+    void Read(void* data, size_t size);
+
+    size_t Size() const {
+        return file.size();
+    }
+    bool Success() const {
+        return file.is_open();
+    }
+
+    mutable pstd::fstream file;
     mutable size_t size = (size_t)-1;
 };
 
-bool IsFileExist(pstd::string filename);
-pstd::string GetFileDirectory(pstd::string filename);
-pstd::string GetFileExtension(pstd::string filename);
-pstd::string RemoveFileExtension(pstd::string filename);
-pstd::string ChangeFileExtension(pstd::string filename, pstd::string ext);
-pstd::string AppendFileName(pstd::string filename, pstd::string content);
-pstd::string ReadStringFile(pstd::string filename);
-void WriteBinaryData(pstd::string filename, const void* ptr, size_t size);
-pstd::vector<char> ReadBinaryData(pstd::string filename);
+bool IsFileExist(pstd::string_view filename);
+pstd::string GetFileDirectory(pstd::string_view filename);
+pstd::string GetFileExtension(pstd::string_view filename);
+pstd::string RemoveFileExtension(pstd::string_view filename);
+pstd::string ChangeFileExtension(pstd::string_view filename, pstd::string ext);
+pstd::string AppendFileName(pstd::string_view filename, pstd::string content);
+pstd::string ReadStringFile(pstd::string_view filename);
+void WriteBinaryData(pstd::string_view filename, const void* ptr, size_t size);
+pstd::vector<char> ReadBinaryData(pstd::string_view filename);
 
-void SaveImage(pstd::string filename, vec2i size, int nchannel, float* data);
-void SaveImage(pstd::string filename, vec2i size, int nchannel, uint8_t* data);
-vec3u8* ReadLDRImage(pstd::string filename, vec2i& size);
+void SaveImage(pstd::string_view filename, vec2i size, int nchannel, float* data);
+void SaveImage(pstd::string_view filename, vec2i size, int nchannel, uint8_t* data);
+vec3u8* ReadLDRImage(pstd::string_view filename, vec2i& size);
 
-TriangleMesh LoadObj(pstd::string filename);
-pstd::pair<pstd::vector<float>, vec3i> LoadVolume(pstd::string filename);
-void CompressVolume(pstd::string filename, const pstd::vector<float>& densityf, vec3i size);
-pstd::pair<pstd::vector<float>, vec3i> LoadCompressedVolume(pstd::string filename);
+pstd::pair<pstd::vector<float>, vec3i> LoadVolume(pstd::string_view filename);
+void CompressVolume(pstd::string_view filename, const pstd::vector<float>& densityf, vec3i size);
+pstd::pair<pstd::vector<float>, vec3i> LoadCompressedVolume(pstd::string_view filename);
 
-Parameters LoadScene(pstd::string filename, Scene* scene);
+Parameters LoadScene(pstd::string_view filename, Scene* scene);
 
 template <typename... Ts>
-void Serialize(pstd::string filename, const Ts&... object) {
+void Serialize(pstd::string_view filename, const Ts&... object) {
     auto data = Archive(object...);
     WriteBinaryData(filename, data.data(), data.size() * sizeof(data[0]));
 }
 template <typename... Ts>
-auto Deserialize(pstd::string filename) {
+auto Deserialize(pstd::string_view filename) {
     return Unarchive<Ts...>(ReadBinaryData(filename));
 }
 

@@ -27,16 +27,6 @@ struct IsMap<pstd::map<Key, Value>> {
 };
 
 template <typename T>
-struct IsPointer {
-    template <typename U>
-    static constexpr pstd::true_type Check(pstd::decay_t<decltype(*U())>*);
-    template <typename U>
-    static constexpr pstd::false_type Check(...);
-
-    static constexpr bool value = decltype(Check<T>(0))::value;
-};
-
-template <typename T>
 struct IsIterable {
     template <typename U>
     static constexpr pstd::true_type Check(decltype(pstd::begin(U()))*, decltype(pstd::end(U()))*);

@@ -8,24 +8,8 @@
 
 namespace pstd {
 
-inline size_t strlen(const char* str) {
-    size_t len = 0;
-    while (*(str++))
-        ++len;
-    return len;
-}
-
-inline bool strcmp(const char* lhs, const char* rhs) {
-    if (!lhs || !rhs)
-        return !lhs && !rhs;
-
-    for (size_t i = 0;; ++i) {
-        if (lhs[i] != rhs[i])
-            return false;
-        if (!lhs[i] || !rhs[i])
-            return !lhs[i] && !rhs[i];
-    }
-}
+size_t strlen(const char* str);
+int strcmp(const char* lhs, const char* rhs);
 
 template <typename T>
 struct string_allocator {
@@ -52,11 +36,11 @@ class string : public vector_base<char, string_allocator<char>> {
     using base::base;
 
     string(const char* cstr) : base(pstd::strlen(cstr)) {
-        pstd::copy(cstr, cstr + len, begin());
+        pstd::copy(cstr, cstr + size(), begin());
     }
 
     string(const char* cstr, size_t len) : base(len) {
-        pstd::copy(cstr, cstr + len, begin());
+        pstd::copy(cstr, cstr + size(), begin());
     }
 
     string& operator=(const char* str) {
@@ -66,38 +50,8 @@ class string : public vector_base<char, string_allocator<char>> {
     }
     string& operator=(class string_view str);
 
-    string substr(size_t pos) const {
-        return string(data() + pos, len - pos);
-    }
-    string substr(size_t pos, size_t len) const {
-        return string(data() + pos, len);
-    }
-
-    size_t find_first_of(char c) const {
-        size_t i = 0;
-        for (; i < size(); ++i)
-            if (ptr[i] == c)
-                break;
-        if (i == size())
-            return npos;
-
-        return i;
-    }
-    size_t find_last_of(char c) const {
-        size_t i = 0, last = npos;
-        for (; i < size(); ++i)
-            if (ptr[i] == c)
-                last = i;
-
-        return last;
-    }
-
     string& operator+=(const string& rhs) {
-        size_t oldlen = len;
-
-        resize(len + rhs.len);
-        pstd::copy(pstd::begin(rhs), pstd::end(rhs), begin() + oldlen);
-        return *this;
+        return (*this) += rhs.c_str();
     }
     string& operator+=(class string_view rhs);
     string& operator+=(const char* rhs);
@@ -114,16 +68,16 @@ class string : public vector_base<char, string_allocator<char>> {
     }
 
     friend bool operator==(const string& lhs, const string& rhs) {
-        return strcmp(lhs.data(), rhs.data());
+        return strcmp(lhs.c_str(), rhs.c_str()) == 0;
     }
     friend bool operator!=(const string& lhs, const string& rhs) {
-        return !strcmp(lhs.data(), rhs.data());
+        return strcmp(lhs.c_str(), rhs.c_str()) != 0;
     }
     friend bool operator<(const string& lhs, const string& rhs) {
-        return lhs.data() < rhs.data();
+        return strcmp(lhs.c_str(), rhs.c_str()) < 0;
     }
     friend bool operator>(const string& lhs, const string& rhs) {
-        return lhs.data() > rhs.data();
+        return strcmp(lhs.c_str(), rhs.c_str()) > 0;
     }
 
     inline static const size_t npos = (size_t)-1;
@@ -134,6 +88,8 @@ class string_view {
     using iterator = const char*;
 
     string_view() = default;
+    string_view(const char* first, const char* last) : str(first), len(last - first) {
+    }
     string_view(const char* str) : str(str), len(pstd::strlen(str)) {
     }
     string_view(const char* str, size_t len) : str(str), len(len) {
@@ -141,34 +97,12 @@ class string_view {
     string_view(const string& str) : str(str.c_str()), len(pstd::size(str)) {
     }
 
-    string_view substr(size_t pos) const {
-        return string_view(str + pos, len - pos);
-    }
-    string_view substr(size_t pos, size_t len) const {
-        return string_view(str + pos, len);
-    }
-
-    size_t find_first_of(char c) const {
-        size_t i = 0;
-        for (; i < size(); ++i)
-            if (str[i] == c)
-                break;
-        if (i == size())
-            return npos;
-
-        return i;
-    }
-    size_t find_last_of(char c) const {
-        size_t i = 0, last = npos;
-        for (; i < size(); ++i)
-            if (str[i] == c)
-                last = i;
-
-        return last;
-    }
-
     explicit operator string() const {
         return string(str, len);
+    }
+
+    explicit operator const char*() const {
+        return str;
     }
 
     char operator[](size_t i) const {
@@ -179,24 +113,31 @@ class string_view {
         return str;
     }
     const char* end() const {
-        return str + len;
+        return str + size();
+    }
+
+    const char* data() const {
+        return str;
+    }
+    const char* c_str() const {
+        return str;
     }
 
     size_t size() const {
         return len;
     }
 
-    friend bool operator==(string_view lhs, string_view rhs) {
-        return pstd::strcmp(lhs.str, rhs.str);
+    friend bool operator==(const string_view& lhs, const string_view& rhs) {
+        return strcmp(lhs.c_str(), rhs.c_str()) == 0;
     }
-    friend bool operator!=(string_view lhs, string_view rhs) {
-        return !pstd::strcmp(lhs.str, rhs.str);
+    friend bool operator!=(const string_view& lhs, const string_view& rhs) {
+        return strcmp(lhs.c_str(), rhs.c_str()) != 0;
     }
-    friend bool operator<(string_view lhs, string_view rhs) {
-        return lhs.str < rhs.str;
+    friend bool operator<(const string_view& lhs, const string_view& rhs) {
+        return strcmp(lhs.c_str(), rhs.c_str()) < 0;
     }
-    friend bool operator>(string_view lhs, string_view rhs) {
-        return lhs.str > rhs.str;
+    friend bool operator>(const string_view& lhs, const string_view& rhs) {
+        return strcmp(lhs.c_str(), rhs.c_str()) > 0;
     }
 
     const char* str = nullptr;
@@ -212,9 +153,9 @@ inline string& string::operator=(string_view str) {
 }
 
 inline string& string::operator+=(class string_view rhs) {
-    size_t oldlen = len;
+    size_t oldlen = size();
 
-    resize(len + pstd::size(rhs));
+    resize(size() + pstd::size(rhs));
     pstd::copy(pstd::begin(rhs), pstd::end(rhs), begin() + oldlen);
     return *this;
 }
@@ -231,7 +172,7 @@ inline string to_string(T val, enable_if_t<is_integral_v<T>>* = 0);
 template <typename T>
 inline string to_string(T val, enable_if_t<is_floating_point_v<T>>* = 0);
 template <typename T>
-inline string to_string(T* val, enable_if_t<is_pointerish_v<T>>* = 0);
+inline string to_string(const T* val);
 template <typename T>
 inline string to_string(const T& val, decltype(pstd::begin(pstd::declval<T>()))* = 0);
 template <typename T>
@@ -276,6 +217,10 @@ inline string to_string(T val, enable_if_t<is_integral_v<T>>*) {
 
 template <typename T>
 inline string to_string(T val, enable_if_t<is_floating_point_v<T>>*) {
+    if (val > (T)(corresponding_uint_t<T>)-1)
+        return "inf";
+    if (val < -(T)(corresponding_uint_t<T>)-1)
+        return "-inf";
     string str = pstd::to_string((corresponding_int_t<T>)val) + ".";
     val = pstd::absfract(val);
 
@@ -289,7 +234,7 @@ inline string to_string(T val, enable_if_t<is_floating_point_v<T>>*) {
 }
 
 template <typename T>
-inline string to_string(T* val, enable_if_t<is_pointerish_v<T>>*) {
+inline string to_string(const T* val) {
     return "*" + pstd::to_string(*val);
 }
 
@@ -329,37 +274,8 @@ inline string to_string(const Ts&... vals) {
     return (pstd::to_string(vals) + ...);
 }
 
-inline int stoi(string_view str) {
-    int number = 0;
-    bool is_neg = false;
-    for (size_t j = 0; j < pstd::size(str); j++) {
-        if (j == 0 && str[j] == '-')
-            is_neg = true;
-        else
-            number = number * 10 + str[j] - '0';
-    }
-    return is_neg ? -number : number;
-}
-
-inline float stof(string_view str) {
-    float number = 0.0f;
-    bool is_neg = false;
-    bool reached_dicimal_point = false;
-    float scale = 0.1f;
-    for (size_t j = 0; j < pstd::size(str); j++) {
-        if (j == 0 && str[j] == '-')
-            is_neg = true;
-        else if (!reached_dicimal_point && str[j] == '.')
-            reached_dicimal_point = true;
-        else if (!reached_dicimal_point)
-            number = number * 10 + str[j] - '0';
-        else {
-            number += (str[j] - '0') * scale;
-            scale *= 0.1f;
-        }
-    }
-    return is_neg ? -number : number;
-}
+int stoi(pstd::string str);
+float stof(pstd::string str);
 
 }  // namespace pstd
 

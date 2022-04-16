@@ -89,7 +89,7 @@ Atmosphere::Atmosphere(vec3 sundir, Spectrum suncol, vec2i size, bool interpolat
         }
     }
     sunSampledColor = AtmosphereColor(sunDirection, sunDirection, sunColor.ToRGB());
-};
+}
 
 LightSample Atmosphere::Sample(vec3, vec2 u) const {
     LightSample ls;

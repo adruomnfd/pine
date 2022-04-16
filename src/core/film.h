@@ -69,7 +69,7 @@ struct Film {
     }
     void Clear();
     void Finalize(float splatMultiplier = 1.0f);
-    void WriteToDisk(pstd::string filename) const;
+    void WriteToDisk(pstd::string_view filename) const;
 
   private:
     float GetFilterValue(vec2 p) {

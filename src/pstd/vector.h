@@ -139,15 +139,26 @@ class vector_base {
     }
 
     void reserve(size_t nreserved) {
+        nreserved = roundup2(nreserved);
         if (nreserved <= reserved)
             return;
-        pointer nptr = allocator.alloc(roundup2(nreserved));
-        pstd::memcpy(&(*begin()), nptr, pstd::distance(begin(), end()) * sizeof(T));
-        reset(nptr, size(), nreserved);
+
+        pointer nptr = allocator.alloc(nreserved);
+        pstd::memcpy(nptr, ptr, size() * sizeof(T));
+
+        ptr = nptr;
+        reserved = nreserved;
     }
 
     void clear() {
-        reset(pointer(), 0, 0);
+        if (ptr) {
+            for (size_t i = 0; i < size(); ++i)
+                allocator.destruct_at(&ptr[i]);
+            allocator.free(ptr);
+        }
+        ptr = nullptr;
+        len = 0;
+        reserved = 0;
     }
 
     reference operator[](size_t i) {
@@ -185,17 +196,6 @@ class vector_base {
     }
 
   protected:
-    void reset(pointer nptr, size_t nlen, size_t nreserved) {
-        if (ptr) {
-            for (size_t i = 0; i < size(); ++i)
-                allocator.destruct_at(&ptr[i]);
-            allocator.free(ptr);
-        }
-        ptr = nptr;
-        len = nlen;
-        reserved = nreserved;
-    }
-
     T* ptr = nullptr;
     size_t len = 0;
     size_t reserved = 0;

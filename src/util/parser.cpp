@@ -36,16 +36,15 @@ static pstd::optional<size_t> FirstOf(pstd::string_view str, const pstd::vector<
 
 static void EscapeSpace(pstd::string_view& str) {
     while (str.size() && std::isspace(str[0])) {
-        str = str.substr(1);
-        if (str.substr(0, 2) == "//") {
+        str = trim(str, 1);
+        if (trim(str, 0, 2) == "//") {
             while (str[0] != '\n' && str[0] != '\r')
-                str = str.substr(1);
-            str = str.substr(1);
+                str = trim(str, 1);
+            str = trim(str, 1);
         }
     }
 }
 
-// TODO
 static Parameters ParseBlock(pstd::string_view& block, int depth = 0) {
     Parameters params;
 
@@ -63,48 +62,43 @@ static Parameters ParseBlock(pstd::string_view& block, int depth = 0) {
 
         auto keyEnd = FirstOfF(block, [](char s) { return !IsLetter(s); });
         CHECK(keyEnd);
-        pstd::string key = (pstd::string)block.substr(0, *keyEnd);
-        pstd::string name = (pstd::string)block.substr(*keyEnd, *seperator - *keyEnd);
+        pstd::string key = (pstd::string)trim(block, 0, *keyEnd);
+        pstd::string name = (pstd::string)trim(block, *keyEnd, *seperator - *keyEnd);
 
-        // TODO
-        std::string name_std = std::string(pstd::begin(name), pstd::end(name));
-        name_std.erase(
-            std::remove_if(begin(name_std), end(name_std), [](char s) { return !IsLetter(s); }),
-            end(name_std));
-        name.assign(pstd::begin(name_std), pstd::end(name_std));
-        //
+        name = erase(name,
+                     pstd::remove_if(begin(name), end(name), [](char s) { return !IsLetter(s); }),
+                     end(name));
 
-        block = block.substr(*seperator);
+        block = trim(block, *seperator);
 
         bool isTyped = false;
         pstd::string value;
         if (block[0] != '{') {
             isTyped = true;
-            block = block.substr(1);
+            block = trim(block, 1);
             EscapeSpace(block);
             pstd::optional<size_t> valueEnd =
                 FirstOfF(block, [](char s) { return s == '\n' || s == '\r' || s == '{'; });
             CHECK(valueEnd);
 
-            value = (pstd::string)block.substr(0, *valueEnd);
+            value = (pstd::string)trim(block, 0, *valueEnd);
             params.Set(key, value);
-            block = block.substr(*valueEnd);
+            block = trim(block, *valueEnd);
         }
         EscapeSpace(block);
 
         if (block[0] == '{') {
-            block = block.substr(1);
+            block = trim(block, 1);
             auto& subset = params.AddSubset(key) = ParseBlock(block, depth + 1);
             if (isTyped)
                 subset.Set("@", value);
             if (name != "" && !subset.HasValue("name"))
                 subset.Set("name", name);
         }
-
     }
 
     if (auto blockEnd = FirstOf(block, {'}'}))
-        block = block.substr(*blockEnd + 1);
+        block = trim(block, *blockEnd + 1);
 
     return params;
 }

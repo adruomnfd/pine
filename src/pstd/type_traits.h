@@ -279,8 +279,8 @@ struct defered_bool {
 template <int I>
 struct priority_tag : priority_tag<I - 1> {};
 template <>
-struct pstd::priority_tag<0> {};
+struct priority_tag<0> {};
 
-};  // namespace pstd
+}  // namespace pstd
 
 #endif  // PINE_STD_TYPE_TRAITS_H

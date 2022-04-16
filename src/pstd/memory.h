@@ -297,6 +297,6 @@ inline shared_ptr<T> make_shared(Args&&... args) {
     return shared_ptr<T>(new T(pstd::forward<Args>(args)...));
 }
 
-};  // namespace pstd
+}  // namespace pstd
 
 #endif  // PINE_STD_MEMORY_H

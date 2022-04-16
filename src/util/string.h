@@ -11,7 +11,7 @@ inline bool IsNumber(char c) {
     return c >= '0' && c <= '9';
 }
 
-inline void StrToInts(pstd::string_view str, int* ptr, int N) {
+inline void StrToInts(pstd::string str, int* ptr, int N) {
     int dim = 0;
     int start = -1;
     for (int i = 0; i < (int)str.size(); i++) {
@@ -19,7 +19,7 @@ inline void StrToInts(pstd::string_view str, int* ptr, int N) {
             if (start == -1)
                 start = i;
         } else if (start != -1) {
-            ptr[dim++] = pstd::stof(str.substr(start, i - start));
+            ptr[dim++] = pstd::stoi(trim(str, start, i - start));
             start = -1;
             if (dim == N)
                 return;
@@ -27,7 +27,7 @@ inline void StrToInts(pstd::string_view str, int* ptr, int N) {
     }
 
     if (start != -1)
-        ptr[dim++] = pstd::stoi(str.substr(start));
+        ptr[dim++] = pstd::stoi(trim(str, start));
 
     if (dim == 0) {
         ptr[0] = 0;
@@ -37,7 +37,7 @@ inline void StrToInts(pstd::string_view str, int* ptr, int N) {
         ptr[i] = ptr[dim - 1];
 }
 
-inline void StrToFloats(pstd::string_view str, float* ptr, int N) {
+inline void StrToFloats(pstd::string str, float* ptr, int N) {
     int dim = 0;
     int start = -1;
     for (int i = 0; i < (int)str.size(); i++) {
@@ -45,7 +45,7 @@ inline void StrToFloats(pstd::string_view str, float* ptr, int N) {
             if (start == -1)
                 start = i;
         } else if (start != -1) {
-            ptr[dim++] = pstd::stof(str.substr(start, i - start));
+            ptr[dim++] = pstd::stof(trim(str, start, i - start));
             start = -1;
             if (dim == N)
                 return;
@@ -53,7 +53,7 @@ inline void StrToFloats(pstd::string_view str, float* ptr, int N) {
     }
 
     if (start != -1)
-        ptr[dim++] = pstd::stof(str.substr(start));
+        ptr[dim++] = pstd::stof(trim(str, start));
 
     if (dim == 0) {
         ptr[0] = 0;

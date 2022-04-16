@@ -1,16 +1,15 @@
 #include <util/log.h>
 
-#include <chrono>
 #include <mutex>
 
 namespace pine {
 
 double Timer::ElapsedMs() {
-    return std::chrono::duration<double>(clock::now() - start).count() * 1000.0;
+    return (clock.now() - t0) * 1000.0;
 }
 double Timer::Reset() {
     double elapsed = ElapsedMs();
-    start = clock::now();
+    t0 = clock.now();
     return elapsed;
 }
 

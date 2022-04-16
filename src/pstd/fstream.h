@@ -3,19 +3,22 @@
 
 #include <pstd/string.h>
 
-#include <stdio.h>
-
 namespace pstd {
 
 namespace ios {
 
-enum mode { in = 1 << 0, out = 1 << 1, binary = 1 << 2 };
+enum openmode { in = 1 << 0, out = 1 << 1, binary = 1 << 2 };
 
-};
+inline openmode operator|(openmode a, openmode b) {
+    return openmode((int)a | (int)b);
+}
+
+}  // namespace ios
 
 class fstream {
   public:
-    fstream(pstd::string_view filename, ios::mode mode) {
+    fstream() = default;
+    fstream(pstd::string_view filename, ios::openmode mode) {
         open(filename, mode);
     }
     ~fstream() {
@@ -27,32 +30,20 @@ class fstream {
     fstream& operator=(const fstream&) = delete;
     fstream& operator=(fstream&&) = delete;
 
-    void open(pstd::string_view filename, ios::mode mode) {
-        close();
-        if (mode & ios::in)
-            file = fopen(filename, mode & ios::binary ? "rb" : "r");
-        else if (mode & ios::out)
-            file = fopen(filename, mode & ios::binary ? "wb" : "w");
-        else
-            file = fopen(filename, mode & ios::binary ? "w+b" : "w+");
-    }
+    void open(pstd::string_view filename, ios::openmode mode);
 
-    void close() {
-        if (file) {
-            fclose(file);
-            file = nullptr;
-        }
-    }
+    void close();
 
-    void write(const void* data, size_t size) {
-        fwrite(data, size, 1, file);
-    }
-    void read(void* data, size_t size) const {
-        fread(data, size, 1, file);
-    }
+    bool is_open() const;
+
+    size_t size() const;
+
+    void write(const void* data, size_t size);
+    void read(void* data, size_t size) const;
 
   private:
-    FILE* file = nullptr;
+    void* file = nullptr;
+    mutable size_t size_ = -1;
 };
 
 }  // namespace pstd

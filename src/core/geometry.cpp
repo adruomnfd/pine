@@ -1,6 +1,7 @@
 #include <core/geometry.h>
 #include <core/scene.h>
 #include <util/parameters.h>
+#include <util/objloader.h>
 #include <util/fileio.h>
 #include <util/misc.h>
 

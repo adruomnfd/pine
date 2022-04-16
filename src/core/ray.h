@@ -23,6 +23,8 @@ struct Ray {
         return o + t * d;
     }
 
+    PSTD_ARCHIVE(o, d, tmin, tmax)
+
     vec3 o;
     vec3 d;
     float tmin = 0.0f;

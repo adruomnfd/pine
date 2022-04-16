@@ -35,11 +35,11 @@ float LayeredMaterial::PDF(const MaterialEvalCtx& c) const {
 LayeredMaterial::LayeredMaterial(const Parameters& params) {
     pstd::vector<pstd::pair<int, Parameters>> layers;
     for (auto& layer : params)
-        if (layer.first.substr(0, 5) == "layer")
-            layers.push_back({pstd::stoi(layer.first.substr(5)), layer.second.back()});
+        if (trim(layer.first, 0, 5) == "layer")
+            layers.push_back({pstd::stoi(trim(layer.first, 5)), layer.second.back()});
 
     pstd::sort(layers.begin(), layers.end(),
-              [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
+               [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
 
     for (auto& layer : layers)
         bsdfs.push_back(CreateBSDF(layer.second));

@@ -385,7 +385,7 @@ struct Invert : Node {
 
 struct Texture : Node {
     Texture() = default;
-    Texture(NodeInput texcoord, pstd::string filename);
+    Texture(NodeInput texcoord, pstd::string_view filename);
 
     vec3 EvalVec3(const NodeEvalCtx& c) const override;
     float EvalFloat(const NodeEvalCtx& c) const override {

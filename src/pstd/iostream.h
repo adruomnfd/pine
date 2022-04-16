@@ -1,8 +1,6 @@
 #ifndef PINE_STD_IOSTREAM_H
 #define PINE_STD_IOSTREAM_H
 
-#include <stdio.h>
-
 #include <pstd/string.h>
 
 namespace pstd {
@@ -12,9 +10,12 @@ class ostream {
     template <typename T>
     friend ostream& operator<<(ostream& os, T&& val) {
         string str = pstd::to_string(pstd::forward<T>(val));
-        fwrite(str.c_str(), pstd::size(str) * sizeof(str[0]), 1, stdout);
+        write(str.c_str(), pstd::size(str) * sizeof(str[0]));
         return os;
     }
+
+  private:
+    static void write(const char* str, size_t size);
 };
 
 inline ostream cout;

@@ -64,7 +64,7 @@ void Film::Finalize(float splatMultiplier) {
         WriteToDisk(AppendFileName(outputFileName, pstd::to_string("_frame_", frameId)));
     frameId++;
 }
-void Film::WriteToDisk(pstd::string filename) const {
+void Film::WriteToDisk(pstd::string_view filename) const {
     pstd::unique_ptr<vec4u8[]> rgba8 = pstd::unique_ptr<vec4u8[]>(new vec4u8[Area(size)]);
     for (int i = 0; i < Area(size); i++)
         rgba8[i] = rgba[i] * 255;
