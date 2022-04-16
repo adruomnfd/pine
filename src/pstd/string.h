@@ -8,6 +8,13 @@
 
 namespace pstd {
 
+inline bool isnumber(char c) {
+    return c >= '0' && c <= '9';
+}
+inline bool isspace(char c) {
+    return c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '\f';
+}
+
 size_t strlen(const char* str);
 int strcmp(const char* lhs, const char* rhs);
 
@@ -20,9 +27,11 @@ struct string_allocator {
         ::delete[] ptr;
     }
 
-    template <typename... Args>
-    void construct_at(T* ptr, Args&&... args) const {
-        pstd::construct_at(ptr, pstd::forward<Args>(args)...);
+    void construct_at(T* ptr) const {
+        *ptr = 0;
+    }
+    void construct_at(T* ptr, T c) const {
+        *ptr = c;
     }
 
     void destruct_at(T* ptr) const {
@@ -274,8 +283,10 @@ inline string to_string(const Ts&... vals) {
     return (pstd::to_string(vals) + ...);
 }
 
-int stoi(pstd::string str);
-float stof(pstd::string str);
+int stoi(pstd::string_view str);
+float stof(pstd::string_view str);
+void stois(pstd::string_view str, int* ptr, int n);
+void stofs(pstd::string_view str, float* ptr, int n);
 
 }  // namespace pstd
 

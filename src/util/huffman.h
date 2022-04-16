@@ -62,8 +62,7 @@ auto BuildHuffmanTree(const Input& input) {
         nodes[i].paths = {1};
     }
 
-    pstd::sort(pstd::begin(nodes), pstd::end(nodes),
-               [](auto& l, auto& r) { return l.frequency > r.frequency; });
+    pstd::sort(nodes, [](auto& l, auto& r) { return l.frequency > r.frequency; });
 
     while (nodes.size() != 1) {
         const Node &n0 = nodes[nodes.size() - 1], &n1 = nodes[nodes.size() - 2];

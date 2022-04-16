@@ -47,7 +47,7 @@ src/core/integrator.cpp
 src/util/log.cpp
 src/util/primes.cpp
 src/util/sobolmetrices.cpp
-src/util/string.cpp
+src/util/format.cpp
 src/util/fileio.cpp
 src/util/parser.cpp
 src/util/profiler.cpp

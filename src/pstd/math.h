@@ -38,12 +38,12 @@ inline constexpr T max(const T& a, const T& b) {
 }
 
 template <typename T, typename... Ts>
-inline constexpr T min(const T& a, const Ts&... b) {
-    return pstd::min(a, pstd::min(b...));
+inline constexpr T min(const T& a, const T& b, const Ts&... c) {
+    return pstd::min(a, pstd::min(b, c...));
 }
 template <typename T, typename... Ts>
-inline constexpr T max(const T& a, const Ts&... b) {
-    return pstd::max(a, pstd::max(b...));
+inline constexpr T max(const T& a, const T& b, const Ts&... c) {
+    return pstd::max(a, pstd::max(b, c...));
 }
 
 template <typename T>

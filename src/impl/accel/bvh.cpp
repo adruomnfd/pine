@@ -178,9 +178,10 @@ int BVHImpl::BuildSAHFull(Primitive* begin, Primitive* end, AABB aabb) {
             continue;
         {  // AABB lower
 
-            pstd::sort(begin, end, [&](const Primitive& l, const Primitive& r) {
-                return l.aabb.lower[axis] < r.aabb.lower[axis];
-            });
+            pstd::sort(pstd::wrap_iterators(begin, end),
+                       [&](const Primitive& l, const Primitive& r) {
+                           return l.aabb.lower[axis] < r.aabb.lower[axis];
+                       });
 
             AABB boundLeft;
             int countLeft = 0;
@@ -210,9 +211,10 @@ int BVHImpl::BuildSAHFull(Primitive* begin, Primitive* end, AABB aabb) {
         }
         {  // AABB upper
 
-            pstd::sort(begin, end, [&](const Primitive& l, const Primitive& r) {
-                return l.aabb.upper[axis] < r.aabb.upper[axis];
-            });
+            pstd::sort(pstd::wrap_iterators(begin, end),
+                       [&](const Primitive& l, const Primitive& r) {
+                           return l.aabb.upper[axis] < r.aabb.upper[axis];
+                       });
 
             AABB boundLeft;
             int countLeft = 0;
@@ -429,10 +431,9 @@ void BVHImpl::Optimize() {
             }
         }
 
-        pstd::sort(unusedNodes.begin(), unusedNodes.end(),
-                   [&](pstd::pair<int, int> l, pstd::pair<int, int> r) {
-                       return nodes[l.first].SurfaceArea() > nodes[r.first].SurfaceArea();
-                   });
+        pstd::sort(unusedNodes, [&](pstd::pair<int, int> l, pstd::pair<int, int> r) {
+            return nodes[l.first].SurfaceArea() > nodes[r.first].SurfaceArea();
+        });
 
         for (pstd::pair<int, int> node : unusedNodes) {
             int L = node.first;

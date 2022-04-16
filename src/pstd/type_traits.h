@@ -19,6 +19,14 @@ using true_type = integral_constant<bool, true>;
 // false_type
 using false_type = integral_constant<bool, false>;
 
+// voids
+template <typename...>
+struct voids {
+    using type = void;
+};
+template <typename... Ts>
+using voids_t = typename voids<Ts...>::type;
+
 // enable_if
 template <bool, typename T = void>
 struct enable_if {};
@@ -114,6 +122,18 @@ template <typename T>
 struct is_arithmetic : integral_constant<bool, is_integral_v<T> || is_floating_point_v<T>> {};
 template <typename T>
 inline constexpr bool is_arithmetic_v = is_arithmetic<T>::value;
+
+// is_pointer
+template <typename T>
+struct is_pointer {
+    static constexpr bool value = false;
+};
+template <typename T>
+struct is_pointer<T *> {
+    static constexpr bool value = true;
+};
+template <typename T>
+inline constexpr bool is_pointer_v = is_pointer<T>::value;
 
 // remove_const
 template <typename T>
@@ -257,17 +277,29 @@ template <typename T>
 using corresponding_uint_t = typename corresponding_uint<T>::type;
 
 // is_pointerish
-template <typename T>
+template <typename T, typename = void>
 struct is_pointerish {
-    template <typename U>
-    static constexpr true_type test(decltype(*pstd::declval<U>()) *);
-    template <typename U>
-    static constexpr true_type test(...);
-
-    static constexpr bool value = decltype(test<T>(0))::value;
+    static constexpr bool value = false;
+};
+template <typename T>
+struct is_pointerish<T, voids_t<decltype(*pstd::declval<T>())>> {
+    static constexpr bool value = true;
 };
 template <typename T>
 inline constexpr bool is_pointerish_v = is_pointerish<T>::value;
+
+// // is_iterable
+template <typename T, typename = void>
+struct is_iterable {
+    static constexpr bool value = false;
+};
+template <typename T>
+struct is_iterable<
+    T, voids_t<decltype(pstd::declval<T>().begin()), decltype(pstd::declval<T>().end())>> {
+    static constexpr bool value = true;
+};
+template <typename T>
+inline constexpr bool is_iterable_v = is_iterable<T>::value;
 
 // defered_bool
 template <typename T, bool Value>

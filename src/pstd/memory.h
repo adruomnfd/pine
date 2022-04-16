@@ -138,6 +138,12 @@ class unique_ptr {
     friend bool operator<(const unique_ptr& lhs, const unique_ptr<U, UDeleter>& rhs) {
         return lhs.get() < rhs.get();
     }
+    bool operator==(nullptr_t) const {
+        return ptr == nullptr;
+    }
+    bool operator!=(nullptr_t) const {
+        return ptr != nullptr;
+    }
 
     PSTD_ARCHIVE(ptr)
 
@@ -255,6 +261,12 @@ class shared_ptr {
     template <typename U, typename UDeleter>
     friend bool operator<(const shared_ptr& lhs, const shared_ptr<U, UDeleter>& rhs) {
         return lhs.get() < rhs.get();
+    }
+    bool operator==(nullptr_t) const {
+        return ptr == nullptr;
+    }
+    bool operator!=(nullptr_t) const {
+        return ptr != nullptr;
     }
 
     PSTD_ARCHIVE(ptr)

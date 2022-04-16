@@ -57,8 +57,8 @@ pstd::string GetFileExtension(pstd::string_view filename) {
     return (pstd::string)trim(filename, p + 1, filename.size() - p - 1);
 }
 pstd::string RemoveFileExtension(pstd::string_view filename) {
-    size_t p = pstd::find_first_of(begin(filename), end(filename), '.') - begin(filename);
-    if (pstd::find_first_of(begin(filename), end(filename), '.') == end(filename))
+    size_t p = pstd::find(begin(filename), end(filename), '.') - begin(filename);
+    if (pstd::find(begin(filename), end(filename), '.') == end(filename))
         return "";
 
     return (pstd::string)trim(filename, 0, p);

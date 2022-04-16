@@ -10,10 +10,41 @@ template <typename T, typename = decltype(pstd::declval<T>().begin())>
 inline auto begin(T&& x) {
     return x.begin();
 }
-
 template <typename T, typename = decltype(pstd::declval<T>().end())>
 inline auto end(T&& x) {
     return x.end();
+}
+
+template <typename T, size_t N>
+inline auto begin(T x[N]) {
+    return x;
+}
+template <typename T, size_t N>
+inline auto end(T x[N]) {
+    return x + N;
+}
+
+template <typename T>
+struct iterator_type {
+    using type = decltype(pstd::begin(pstd::declval<T>()));
+};
+template <typename T>
+using iterator_type_t = typename iterator_type<T>::type;
+
+template <typename It>
+inline auto wrap_iterators(It first, It last) {
+    struct wrapper {
+        It begin() const {
+            return first;
+        }
+        It end() const {
+            return last;
+        }
+
+        It first, last;
+    };
+
+    return wrapper{first, last};
 }
 
 template <typename T, typename = decltype(pstd::declval<T>().size())>
@@ -57,6 +88,12 @@ inline void fill(InputIt first, InputIt last, const T& value) {
         *first = value;
 }
 
+template <typename T, typename Value>
+inline void fill(T& xs, const Value& value) {
+    for (auto& x : xs)
+        x = value;
+}
+
 template <typename T>
 struct less {
     bool operator()(const T& l, const T& r) const {
@@ -78,8 +115,12 @@ inline It lower_bound(It first, It last, Pred&& pred) {
     return last;
 }
 
-template <typename It, typename Pred>
-inline void sort(It first, It last, Pred&& pred) {
+template <typename T, typename Pred>
+inline void sort(T&& x, Pred&& pred) {
+    using It = iterator_type_t<T>;
+    It first = pstd::begin(x);
+    It last = pstd::end(x);
+
     if (first == last)
         return;
     It pivot = first;
@@ -100,13 +141,13 @@ inline void sort(It first, It last, Pred&& pred) {
         }
     }
 
-    pstd::sort(first, pivot, pstd::forward<Pred>(pred));
+    pstd::sort(wrap_iterators(first, pivot), pstd::forward<Pred>(pred));
     ++pivot;
-    pstd::sort(pivot, last, pstd::forward<Pred>(pred));
+    pstd::sort(wrap_iterators(pivot, last), pstd::forward<Pred>(pred));
 }
 
 template <typename It, typename T>
-inline It find_first_of(It first, It last, const T& value) {
+inline It find(It first, It last, const T& value) {
     for (; first != last; ++first)
         if (*first == value)
             return first;

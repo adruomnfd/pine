@@ -25,7 +25,7 @@ inline void swap(T& x, T& y) {
 template <typename T, typename U>
 inline T exchange(T& x, U&& newval) {
     T old = pstd::move(x);
-    x = pstd::forward<T>(newval);
+    x = pstd::forward<U>(newval);
     return old;
 }
 

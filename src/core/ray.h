@@ -2,7 +2,6 @@
 #define PINE_CORE_RAY_H
 
 #include <core/vecmath.h>
-#include <util/string.h>
 
 #include <pstd/tuple.h>
 

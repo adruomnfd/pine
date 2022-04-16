@@ -5,11 +5,7 @@
 #include <pstd/math.h>
 #include <pstd/map.h>
 
-#include <util/parameters.h>
+#include <util/format.h>
 
 int main() {
-    pine::Parameters params;
-    params.Set("@", "World");
-
-    pine::print(params.GetString("@"));
 }

@@ -33,7 +33,7 @@ int strcmp(const char* lhs, const char* rhs) {
     }
 }
 
-int stoi(pstd::string str) {
+int stoi(pstd::string_view str) {
     int number = 0;
     bool is_neg = false;
     for (size_t j = 0; j < pstd::size(str); j++) {
@@ -47,7 +47,7 @@ int stoi(pstd::string str) {
     return is_neg ? -number : number;
 }
 
-float stof(pstd::string str) {
+float stof(pstd::string_view str) {
     float number = 0.0f;
     bool is_neg = false;
     bool reached_dicimal_point = false;
@@ -65,6 +65,59 @@ float stof(pstd::string str) {
         }
     }
     return is_neg ? -number : number;
+}
+
+// TODO
+void stois(pstd::string_view str, int* ptr, int N) {
+    int dim = 0;
+    int start = -1;
+    for (int i = 0; i < (int)str.size(); i++) {
+        if (pstd::isnumber(str[i]) || str[i] == '-') {
+            if (start == -1)
+                start = i;
+        } else if (start != -1) {
+            ptr[dim++] = pstd::stoi(pstd::string_view(str.data() + start, i - start));
+            start = -1;
+            if (dim == N)
+                return;
+        }
+    }
+
+    if (start != -1)
+        ptr[dim++] = pstd::stoi(pstd::trim(str, start, (int)str.size() - start));
+
+    if (dim == 0) {
+        ptr[0] = 0;
+        dim++;
+    }
+    for (int i = dim; i < N; i++)
+        ptr[i] = ptr[dim - 1];
+}
+
+void stofs(pstd::string_view str, float* ptr, int N) {
+    int dim = 0;
+    int start = -1;
+    for (int i = 0; i < (int)str.size(); i++) {
+        if (pstd::isnumber(str[i]) || str[i] == '-' || str[i] == '.') {
+            if (start == -1)
+                start = i;
+        } else if (start != -1) {
+            ptr[dim++] = pstd::stof(pstd::string_view(str.data() + start, i - start));
+            start = -1;
+            if (dim == N)
+                return;
+        }
+    }
+
+    if (start != -1)
+        ptr[dim++] = pstd::stof(pstd::trim(str, start, (int)str.size() - start));
+
+    if (dim == 0) {
+        ptr[0] = 0;
+        dim++;
+    }
+    for (int i = dim; i < N; i++)
+        ptr[i] = ptr[dim - 1];
 }
 
 }  // namespace pstd

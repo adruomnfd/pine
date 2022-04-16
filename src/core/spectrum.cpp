@@ -46,7 +46,7 @@ static void SortSpectrumSamples(float* lambda, float* v, int n) {
     pstd::vector<int> indices(n);
     for (int i = 0; i < n; i++)
         indices[i] = i;
-    pstd::sort(begin(indices), end(indices), [&](int a, int b) { return lambda[a] < lambda[b]; });
+    pstd::sort(indices, [&](int a, int b) { return lambda[a] < lambda[b]; });
     pstd::vector<float> lambda2(lambda, lambda + n), v2(v, v + n);
     for (int i = 0; i < n; i++) {
         lambda[i] = lambda2[indices[i]];

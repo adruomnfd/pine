@@ -38,8 +38,7 @@ LayeredMaterial::LayeredMaterial(const Parameters& params) {
         if (trim(layer.first, 0, 5) == "layer")
             layers.push_back({pstd::stoi(trim(layer.first, 5)), layer.second.back()});
 
-    pstd::sort(layers.begin(), layers.end(),
-               [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
+    pstd::sort(layers, [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
 
     for (auto& layer : layers)
         bsdfs.push_back(CreateBSDF(layer.second));

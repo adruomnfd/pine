@@ -105,7 +105,7 @@ pstd::optional<vec2i> Parameters::TryGetVec2i(const pstd::string& name) const {
     pstd::string str = iter->second;
 
     vec2i v;
-    StrToInts(str, &v[0], 2);
+    pstd::stois(str, &v[0], 2);
     return v;
 }
 pstd::optional<vec3i> Parameters::TryGetVec3i(const pstd::string& name) const {
@@ -115,7 +115,7 @@ pstd::optional<vec3i> Parameters::TryGetVec3i(const pstd::string& name) const {
     pstd::string str = iter->second;
 
     vec3i v;
-    StrToInts(str, &v[0], 3);
+    pstd::stois(str, &v[0], 3);
     return v;
 }
 pstd::optional<vec4i> Parameters::TryGetVec4i(const pstd::string& name) const {
@@ -125,7 +125,7 @@ pstd::optional<vec4i> Parameters::TryGetVec4i(const pstd::string& name) const {
     pstd::string str = iter->second;
 
     vec4i v;
-    StrToInts(str, &v[0], 4);
+    pstd::stois(str, &v[0], 4);
     return v;
 }
 
@@ -136,7 +136,7 @@ pstd::optional<vec2> Parameters::TryGetVec2(const pstd::string& name) const {
     pstd::string str = iter->second;
 
     vec2 v;
-    StrToFloats(str, &v[0], 2);
+    pstd::stofs(str, &v[0], 2);
     return v;
 }
 pstd::optional<vec3> Parameters::TryGetVec3(const pstd::string& name) const {
@@ -146,7 +146,7 @@ pstd::optional<vec3> Parameters::TryGetVec3(const pstd::string& name) const {
     pstd::string str = iter->second;
 
     vec3 v;
-    StrToFloats(str, &v[0], 3);
+    pstd::stofs(str, &v[0], 3);
     return v;
 }
 pstd::optional<vec4> Parameters::TryGetVec4(const pstd::string& name) const {
@@ -156,7 +156,7 @@ pstd::optional<vec4> Parameters::TryGetVec4(const pstd::string& name) const {
     pstd::string str = iter->second;
 
     vec4 v;
-    StrToFloats(str, &v[0], 4);
+    pstd::stofs(str, &v[0], 4);
     return v;
 }
 

@@ -1,7 +1,7 @@
 #ifndef PINE_UTIL_LOG_H
 #define PINE_UTIL_LOG_H
 
-#include <util/string.h>
+#include <util/format.h>
 
 #include <pstd/chrono.h>
 #include <pstd/iostream.h>
@@ -11,37 +11,25 @@ namespace pine {
 
 template <typename... Args>
 inline void LOG_PLAIN(const Args&... args) {
-    (pstd::cout << ... << args);
-    pstd::cout << pstd::endl;
-    // printf("%s", Fstring(args...).c_str());
+    pstd::cout << FormatIt(args...);
 }
 template <typename... Args>
 inline void LOG(const Args&... args) {
-    (pstd::cout << ... << args);
-    pstd::cout << pstd::endl;
-    // printf("%s\n", Fstring(args...).c_str());
+    pstd::cout << FormatIt(args...) << pstd::endl;
 }
 template <typename... Args>
 inline void LOG_SAMELINE(const Args&... args) {
-    (pstd::cout << ... << args);
-    pstd::cout << pstd::endl;
-    // printf("\33[2K\r%s\r", Fstring(args...).c_str());
+    pstd::cout << "\33[2K\r" << FormatIt(args...) << "\r";
 }
 template <typename... Args>
 inline void LOG_WARNING(const Args&... args) {
-    (pstd::cout << ... << args);
-    pstd::cout << pstd::endl;
-    // printf("\033[1;33m%s\033[0m\n", Fstring(args...).c_str());
+    pstd::cout << "\033[1;33m" << FormatIt(args...) << "\033[0m\n" << pstd::endl;
 }
 
 template <typename... Args>
 inline void LOG_FATAL(const Args&... args) {
-    // printf("\033[1;31m%s\033[0m\n", Fstring(args...).c_str());
-    (pstd::cout << ... << args);
-    pstd::cout << pstd::endl;
-
-    pstd::cout << pstd::stacktrace() << pstd::endl;
-
+    pstd::cout << "\033[1;31m" << FormatIt(args...) << "\033[0m\n" << pstd::endl;
+    pstd::cout << "\033[1;33m" << pstd::stacktrace() << "\033[0m\n" << pstd::endl;
     abort();
 }
 
@@ -50,20 +38,19 @@ inline void print(const Args&... args) {
     pstd::string format;
     for (size_t i = 0; i < sizeof...(args); i++)
         format += "& ";
-    LOG(format.c_str(), args...);
+    pstd::cout << FormatIt(format, args...) << pstd::endl;
 }
 
-#define CHECK(x)                                                                          \
-    if (!(x)) {                                                                           \
-        printf("\033[1;31m[CHECK Failure]%s failed[file %s, line %d, %s()]\033[0m\n", #x, \
-               __FILE__, __LINE__, __func__);                                             \
-        abort();                                                                          \
+#define CHECK(x)                                                                         \
+    if (!(x)) {                                                                          \
+        LOG_FATAL("[CHECK Failure]& failed[&:&:&()]", #x, __FILE__, __LINE__, __func__); \
+        abort();                                                                         \
     }
 
-#define CHECK_IMPL(name, op, a, b)                                                                \
-    if (!((a)op(b)))                                                                              \
-        LOG_FATAL("[" name " Failure]with & equal &, & equal & [file &, line &, &()]", #a, a, #b, \
-                  b, __FILE__, __LINE__, __func__);
+#define CHECK_IMPL(name, op, a, b)                                                                 \
+    if (!((a)op(b)))                                                                               \
+        LOG_FATAL("[" name " Failure]with & equal &, & equal & [&:&:&()]", #a, a, #b, b, __FILE__, \
+                  __LINE__, __func__);
 
 #define CHECK_EQ(a, b) CHECK_IMPL("CHECK_EQ", ==, a, b)
 #define CHECK_NE(a, b) CHECK_IMPL("CHECK_NE", !=, a, b)

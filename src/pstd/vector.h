@@ -145,6 +145,8 @@ class vector_base {
 
         pointer nptr = allocator.alloc(nreserved);
         pstd::memcpy(nptr, ptr, size() * sizeof(T));
+        if (ptr)
+            allocator.free(ptr);
 
         ptr = nptr;
         reserved = nreserved;
