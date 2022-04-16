@@ -7,7 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast)
 # add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast -O0 -g)
-# add_compile_options(-Wall -Wextra -pedantic -ffast-math -ffp-contract=fast -O0 -g -fsanitize=address)
+# add_compile_options(-Wall -Wextra -pedantic -O0 -g -fsanitize=address)
+# add_compile_options(-Wall -Wextra -pedantic -O0 -g)
 # add_link_options(-fsanitize=address)
 
 include_directories(
@@ -85,9 +86,9 @@ target_link_libraries(pine pinelib)
 # target_link_libraries(voltool pinelib)
 
 # #Pine Test
-# add_executable(pine_test test/test_main.cpp)
-# target_link_libraries(pine_test pinelib)
+add_executable(pine_test test/test_main.cpp)
+target_link_libraries(pine_test pinelib)
 
 #Pstd Test
 add_executable(pstd_test test/pstd_test.cpp)
-target_link_libraries(pstd_test pstd pinelib)
+target_link_libraries(pstd_test pinelib)

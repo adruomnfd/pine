@@ -6,21 +6,12 @@
 namespace pine {
 
 void Parameters::Summarize(int indent) const {
-    // for (const auto& v : values)
-    //     LOG("& &: &", Format(indent), " ", v.first.c_str(), v.second.c_str());
-    // for (const auto& s : subset) {
-    //     for (auto& ss : s.second) {
-    //         LOG("& &", Format(indent), " ", s.first);
-    //         ss.Summarize(indent + 2);
-    //     }
-    // }
-
     for (const auto& v : values)
-        LOG(v.first.c_str(), ": ", v.second.c_str());
+        LOG("& &: &", Format(indent), " ", v.first.c_str(), v.second.c_str());
     for (const auto& s : subset) {
         for (auto& ss : s.second) {
-            LOG(s.first);
-            ss.Summarize(indent + 2);
+            LOG("& &", Format(indent), " ", s.first);
+            ss.Summarize(indent + 4);
         }
     }
 }

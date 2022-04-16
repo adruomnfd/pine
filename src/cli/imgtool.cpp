@@ -28,7 +28,7 @@ static void ConvertFormat(const pstd::vector<pstd::string>& filenames, pstd::str
 static void Scaling(const pstd::vector<pstd::string>& filenames, float scale, bool inplace) {
     size_t maxLen = MaxLength(filenames);
     for (auto& from : filenames) {
-        pstd::string to = inplace ? from : AppendFileName(from, Fstring("_x&", scale));
+        pstd::string to = inplace ? from : AppendFileName(from, FormatIt("_x&", scale));
         LOG("&      ===x&==>      &", Format(maxLen), from, scale, to);
         vec2i size;
         pstd::unique_ptr<vec3u8[]> data(ReadLDRImage(from, size));
@@ -36,8 +36,8 @@ static void Scaling(const pstd::vector<pstd::string>& filenames, float scale, bo
         pstd::unique_ptr<vec3u8[]> scaled(new vec3u8[scaledSize.x * scaledSize.y]);
         for (int y = 0; y < size.y; y++)
             for (int x = 0; x < size.x; x++) {
-                int ix = min(x * scale, scaledSize.x - 1.0f);
-                int iy = min(y * scale, scaledSize.y - 1.0f);
+                int ix = pstd::min(x * scale, scaledSize.x - 1.0f);
+                int iy = pstd::min(y * scale, scaledSize.y - 1.0f);
                 scaled[iy * scaledSize.x + ix] = data[y * size.x + x];
             }
         SaveImage(to, scaledSize, 3, (uint8_t*)scaled.get());

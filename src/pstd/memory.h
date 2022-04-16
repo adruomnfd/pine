@@ -76,7 +76,7 @@ class unique_ptr {
         *this = pstd::move(rhs);
     }
     unique_ptr& operator=(unique_ptr&& rhs) {
-        swap(rhs);
+        take(rhs);
         return *this;
     }
 
@@ -86,7 +86,7 @@ class unique_ptr {
     }
     template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     unique_ptr& operator=(unique_ptr<U, UDeleter>&& rhs) {
-        swap(rhs);
+        take(rhs);
         return *this;
     }
 
@@ -149,9 +149,12 @@ class unique_ptr {
 
   private:
     template <typename U, typename UDeleter>
-    void swap(unique_ptr<U, UDeleter>& rhs) {
-        pstd::swap(ptr, (pointer&)rhs.ptr);
-        pstd::swap(deleter, (Deleter&)rhs.deleter);
+    void take(unique_ptr<U, UDeleter>& rhs) {
+        if (ptr != pointer())
+            deleter(ptr);
+
+        ptr = rhs.ptr;
+        rhs.ptr = {};
     }
 
     pointer ptr = {};
@@ -196,7 +199,7 @@ class shared_ptr {
         return *this;
     }
     shared_ptr& operator=(shared_ptr&& rhs) {
-        swap(rhs);
+        take(rhs);
         return *this;
     }
 
@@ -215,7 +218,7 @@ class shared_ptr {
     }
     template <typename U, typename UDeleter, typename = enable_if_t<is_convertible_v<U*, T*>>>
     shared_ptr& operator=(shared_ptr<U, UDeleter>&& rhs) {
-        swap(rhs);
+        take(rhs);
         return *this;
     }
 
@@ -285,10 +288,11 @@ class shared_ptr {
     }
 
     template <typename U, typename UDeleter>
-    void swap(shared_ptr<U, UDeleter>& rhs) {
-        pstd::swap(ptr, (pointer&)rhs.ptr);
-        pstd::swap(deleter, (Deleter&)rhs.deleter);
-        pstd::swap(refcount, rhs.refcount);
+    void take(shared_ptr<U, UDeleter>& rhs) {
+        decrement();
+
+        ptr = pstd::exchange(rhs.ptr, pointer());
+        refcount = pstd::exchange(rhs.refcount, nullptr);
     }
 
     void decrement() {

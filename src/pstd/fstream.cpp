@@ -26,6 +26,8 @@ bool fstream::is_open() const {
 }
 
 size_t fstream::size() const {
+    if (!file)
+        return 0;
     if (size_ == size_t(-1)) {
         size_t begin = ftell((FILE*)file);
         fseek((FILE*)file, 0, SEEK_END);
@@ -41,7 +43,8 @@ void fstream::write(const void* data, size_t size) {
     fwrite(data, size, 1, (FILE*)file);
 }
 void fstream::read(void* data, size_t size) const {
-    fread(data, size, 1, (FILE*)file);
+    size_t ret = fread(data, size, 1, (FILE*)file);
+    (void)ret;
 }
 
 }  // namespace pstd

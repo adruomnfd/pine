@@ -167,7 +167,10 @@ int BVHImpl::BuildSAHFull(Primitive* begin, Primitive* end, AABB aabb) {
     float surfaceArea = aabb.SurfaceArea();
 
     const int numSplits = numPrimitives - 1;
-    enum class UseLowerOrUpperBound { Lower, Upper } useLowerOrUpperBound;
+    enum class UseLowerOrUpperBound {
+        Lower,
+        Upper
+    } useLowerOrUpperBound = UseLowerOrUpperBound::Lower;
     float bestCost = FloatMax;
     int bestAxis = -1;
     int bestSplit = -1;

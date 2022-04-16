@@ -21,7 +21,8 @@ struct numeric_limits<float> {
         return 1.19209290e-7f;
     }
     static constexpr float infinity() {
-        return float(1e+300 * 1e+300);
+        // TODO
+        return max();
     }
 };
 

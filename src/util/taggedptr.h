@@ -289,15 +289,6 @@ struct TaggedPointer {
         return pine::DispatchConst<Ts...>(f, Tag(), Ptr());
     }
 
-    void InvokeDestructor() {
-        if (bits) {
-            Dispatch([](auto ptr) {
-                using T = pstd::decay_t<decltype(*ptr)>;
-                (ptr->~T)();
-            });
-        }
-    }
-
     TaggedPointer Clone() const {
         Dispatch([&](auto ptr) {
             using T = pstd::decay_t<decltype(*ptr)>;
@@ -310,11 +301,6 @@ struct TaggedPointer {
             Dispatch([](auto ptr) { delete ptr; });
             bits = 0;
         }
-    }
-
-    template <typename... Args>
-    void Reset(Args&&... args) {
-        Dispatch([&](auto ptr) { *ptr = {pstd::forward<Args>(args)...}; });
     }
 
   protected:

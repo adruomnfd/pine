@@ -204,7 +204,6 @@ Parameters LoadScene(pstd::string_view filename, Scene *scene) {
         if (light.Is<EnvironmentLight>())
             scene->envLight = light.Be<EnvironmentLight>();
 
-
     scene->camera = CreateCamera(params["Camera"], scene);
 
     scene->integrator = pstd::shared_ptr<Integrator>(CreateIntegrator(params["Integrator"], scene));

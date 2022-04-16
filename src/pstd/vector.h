@@ -109,7 +109,7 @@ class vector_base {
     }
 
     template <typename U>
-    iterator insert(iterator it, U&& val) {
+    void insert(iterator it, U&& val) {
         ptrdiff_t dist = it - begin();
         reserve(size() + 1);
         it = begin() + dist;
@@ -123,8 +123,6 @@ class vector_base {
 
         *it = pstd::forward<U>(val);
         ++len;
-
-        return it;
     }
 
     void resize(size_t nlen) {
