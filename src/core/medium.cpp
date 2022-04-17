@@ -116,7 +116,7 @@ Spectrum GridMedium::Sample(const Ray& r, Interaction& mi, Sampler& sampler) con
         }
 
     } else if (method == SamplingMethod::RayMarching) {
-        float lnXi = -log(1.0f - sampler.Get1D());
+        float lnXi = -pstd::log(1.0f - sampler.Get1D());
         float stepSize = rayMarchingStepSize;
         float jitter = stepSize * (sampler.Get1D() - 0.5f);
         float t = tmin;

@@ -1,24 +1,11 @@
 #ifndef PINE_STD_MATH_H
 #define PINE_STD_MATH_H
 
-#include <pstd/type_traits.h>
+#include <pstd/move.h>
 #include <pstd/stdint.h>
-#include <pstd/memory.h>
-
-#include <cmath>
+#include <pstd/type_traits.h>
 
 namespace pstd {
-
-using std::isinf;
-using std::isnan;
-
-using std::acos;
-using std::asin;
-using std::atan;
-using std::atan2;
-using std::cos;
-using std::sin;
-using std::tan;
 
 inline constexpr float E = 2.7182818284590452354f;
 inline constexpr float Log2E = 1.4426950408889634074f;
@@ -120,6 +107,7 @@ inline constexpr int sign(T v) {
     return v > 0 ? 1 : -1;
 }
 
+// TODO
 template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
 inline constexpr T floor(T v) {
     auto i = (corresponding_int_t<T>)v;
@@ -128,6 +116,7 @@ inline constexpr T floor(T v) {
     return i;
 }
 
+// TODO
 template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
 inline constexpr T ceil(T v) {
     auto i = (corresponding_int_t<T>)v;
@@ -181,7 +170,9 @@ inline constexpr T pow(T x, T e) {
     e -= ei;
     T y = ei > 0 ? pstd::powi(x, ei) : 1 / pstd::powi(x, -ei);
 
-    for (int i = 0; i < 32; ++i) {
+    const int n = 8;
+
+    for (int i = 0; i < n; ++i) {
         if (e > 1.0f) {
             y *= x;
             e -= 1.0f;
@@ -203,7 +194,9 @@ inline T log2(T y) {
     T expr = pstd::exp2i(logr);
     y /= pstd::exp2i(log);
 
-    for (int i = 0; i < 32; ++i) {
+    const int n = 8;
+
+    for (int i = 0; i < n; ++i) {
         T logm = (logl + logr) / 2;
         T expm = pstd::sqrt(expl * expr);
         if (expm < y) {
@@ -223,6 +216,11 @@ inline T log(T y) {
     return Ln2 * pstd::log2(y);
 }
 
+template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
+inline T log10(T y) {
+    return Ln2 / Ln10 * pstd::log2(y);
+}
+
 template <typename T>
 inline T log2int(T y) {
     return pstd::hsb(y);
@@ -232,10 +230,124 @@ template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
 inline T exp(T x) {
     T y = 0;
 
-    for (int i = 32; i > 0; --i)
+    const int n = 8;
+
+    for (int i = n; i > 0; --i)
         y = 1 + x * y / i;
 
     return y;
+}
+
+template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
+inline bool isnan(T x) {
+    return __builtin_isnan(x);
+}
+
+template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
+inline bool isinf(T x) {
+    return __builtin_isinf(x);
+}
+
+template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
+inline T cos_0_pi_2(T x) {
+    T y = 1;
+
+    const int n = 8;
+    for (int i = n; i > 0; i -= 2)
+        y = 1 - y * x * x / (i * (i - 1));
+
+    return y;
+}
+
+template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
+inline T cos(T x) {
+    if (x < 0)
+        x = -x;
+    // TODO
+    corresponding_uint_t<T> y = x / (Pi * 2);
+    x -= y * (Pi * 2);
+    if (x > Pi)
+        x = Pi * 2 - x;
+
+    if (x < Pi / 2)
+        return cos_0_pi_2(x);
+    else
+        return -cos_0_pi_2(Pi - x);
+}
+
+template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
+inline T sin(T x) {
+    return pstd::cos(x - Pi / 2);
+}
+
+template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
+inline T tan(T x) {
+    // TODO
+    return pstd::sin(x) / pstd::cos(x);
+}
+
+template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
+inline T acos(T y) {
+    // TODO
+    if (y < -1 || y > 1)
+        return 0;
+
+    T x = (1 - y) * Pi / 2;
+
+    const int n = 8;
+
+    for (int i = 0; i < n; ++i) {
+        T y_ = pstd::cos(x) - y;
+        T dydx = -pstd::sin(x);
+        x -= y_ / dydx;
+    }
+
+    return x;
+}
+
+template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
+inline T asin(T y) {
+    // TODO
+    if (y < -1 || y > 1)
+        return 0;
+
+    T x = y * Pi / 2;
+
+    const int n = 8;
+
+    for (int i = 0; i < n; ++i) {
+        T y_ = pstd::sin(x) - y;
+        T dydx = pstd::cos(x);
+        x -= y_ / dydx;
+    }
+
+    return x;
+}
+
+template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
+inline T atan(T y) {
+    // TODO
+    T x = (y > 0 ? 1 - 1 / (1 + y) : -1 + 1 / (1 - y)) * Pi / 2;
+
+    const int n = 8;
+
+    for (int i = 0; i < n; ++i) {
+        T y_ = pstd::tan(x) - y;
+        T dydx = 1.0f / pstd::sqr(pstd::cos(x));
+        x -= y_ / dydx;
+    }
+
+    return x;
+}
+
+template <typename T, typename = enable_if_t<is_floating_point_v<T>>>
+inline T atan2(T y, T x) {
+    if (x > 0)
+        return pstd::atan(y / x);
+    else if (y > 0)
+        return Pi - pstd::atan(-y / x);
+    else
+        return -Pi - pstd::atan(-y / x);
 }
 
 }  // namespace pstd

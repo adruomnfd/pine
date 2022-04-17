@@ -18,7 +18,7 @@ pstd::string sceneDirectory = "";
 ScopedFile::ScopedFile(pstd::string_view filename_view, pstd::ios::openmode mode) {
     auto filename = (pstd::string)filename_view;
     filename = sceneDirectory + filename;
-    std::replace(filename.begin(), filename.end(), '\\', '/');
+    pstd::replace(filename.begin(), filename.end(), '\\', '/');
     CHECK(filename != "");
     file.open(filename.c_str(), mode);
     if (file.is_open() == false)
@@ -35,13 +35,13 @@ void ScopedFile::Read(void *data, size_t size) {
 
 bool IsFileExist(pstd::string_view filename_view) {
     auto filename = (pstd::string)filename_view;
-    std::replace(filename.begin(), filename.end(), '\\', '/');
-    std::ifstream file(filename.c_str());
-    return file.good();
+    pstd::replace(filename.begin(), filename.end(), '\\', '/');
+    pstd::fstream file(filename, pstd::ios::in);
+    return file.is_open();
 }
 pstd::string GetFileDirectory(pstd::string_view filename_view) {
     auto filename = (pstd::string)filename_view;
-    std::replace(filename.begin(), filename.end(), '\\', '/');
+    pstd::replace(filename.begin(), filename.end(), '\\', '/');
 
     size_t forwardslash = pstd::find_last_of(begin(filename), end(filename), '/') - begin(filename);
     if (pstd::find_last_of(begin(filename), end(filename), '/') != end(filename))

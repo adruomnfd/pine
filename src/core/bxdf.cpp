@@ -109,7 +109,7 @@ pstd::optional<BSDFSample> DielectricBSDF::Sample(vec3 wi, float u1, vec2 u2,
         float dwm_dwo = AbsDot(wo, wm) / denom;
         bs.pdf = (1.0f - fr) * distrib.PDF(wi, wm) * dwm_dwo;
         bs.f = albedo.EvalVec3(nc) * (1.0f - fr) * distrib.D(wm) * distrib.G(wi, wo) *
-               fabsf(Dot(wo, wm) * Dot(wi, wm) / denom / cosThetaI / cosThetaO);
+               pstd::abs(Dot(wo, wm) * Dot(wi, wm) / denom / cosThetaI / cosThetaO);
     }
     return bs;
 }
@@ -136,7 +136,7 @@ vec3 DielectricBSDF::F(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {
     } else {
         float denom = pstd::sqr(Dot(wo, wm) + Dot(wi, wm) / etap) * cosThetaI * cosThetaO;
         return albedo.EvalVec3(nc) * (1.0f - fr) * distrib.D(wm) * distrib.G(wi, wo) *
-               fabsf(Dot(wo, wm) * Dot(wi, wm) / denom);
+               pstd::abs(Dot(wo, wm) * Dot(wi, wm) / denom);
     }
 }
 float DielectricBSDF::PDF(vec3 wi, vec3 wo, const NodeEvalCtx& nc) const {

@@ -3,8 +3,6 @@
 
 #include <core/math.h>
 
-#include <functional>
-
 namespace pine {
 
 struct float16unsigned {
@@ -44,12 +42,5 @@ struct float16unsigned {
 };
 
 }  // namespace pine
-
-template <>
-struct pstd::hash<pine::float16unsigned> {
-    size_t operator()(pine::float16unsigned v) const {
-        return pstd::hash<uint16_t>()(v.bits);
-    }
-};
 
 #endif  // PINE_UTIL_FLOAT_H

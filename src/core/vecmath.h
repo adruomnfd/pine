@@ -1241,12 +1241,12 @@ inline vec3 SphericalToCartesian(float phi, float theta) {
 }
 
 inline float Phi2pi(float x, float y) {
-    float phi = atan2f(y, x);
+    float phi = pstd::atan2(y, x);
     return phi < 0.0f ? Pi * 2 + phi : phi;
 }
 
 inline vec2 CartesianToSpherical(vec3 d) {
-    return vec2(Phi2pi(d.x, d.y), acosf(d.z));
+    return vec2(Phi2pi(d.x, d.y), pstd::acos(d.z));
 }
 
 inline vec3 FaceSameHemisphere(vec3 v, vec3 ref) {

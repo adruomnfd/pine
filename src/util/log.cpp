@@ -1,5 +1,7 @@
 #include <util/log.h>
 
+#include <pstd/math.h>
+
 #include <mutex>
 
 namespace pine {
@@ -18,7 +20,7 @@ void ProgressReporter::Report(int64_t current) {
     if (current < previous)
         return;
     std::lock_guard<std::mutex> lk(mutex);
-    int nDigit = pstd::max((int)log10(total) + 1, 1);
+    int nDigit = pstd::max((int)pstd::log10((float)total) + 1, 1);
     if (current == 0) {
         ETA.Reset();
         interval.Reset();

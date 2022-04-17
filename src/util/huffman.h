@@ -2,10 +2,7 @@
 
 #include <core/math.h>
 
-#include <unordered_map>
-#include <algorithm>
-#include <fstream>
-#include <sstream>
+#include <pstd/map.h>
 #include <pstd/vector.h>
 #include <pstd/algorithm.h>
 
@@ -29,13 +26,13 @@ void Append(pstd::vector<T>& a, const pstd::vector<T>& b) {
 
 template <typename T>
 struct HuffmanTree {
-    mutable std::unordered_map<T, uint32_t> encoder;
+    mutable pstd::map<T, uint32_t> encoder;
 };
 
 template <typename Input>
 auto ComputeOccurrences(const Input& input) {
     using T = typename Input::value_type;
-    std::unordered_map<T, int> result;
+    pstd::map<T, int> result;
     for (auto& value : input)
         result[value]++;
     return pstd::vector<pstd::pair<T, int>>(begin(result), end(result));
@@ -158,7 +155,7 @@ Output HuffmanDecode(const HuffmanTree<T>& tree, const HuffmanEncoded& encoded) 
                 indices.resize(pstd::roundup2(index));
             indices[index] = first->index + 1;
         } else {
-            Path* pmid = std::partition(first, last, [](Path n) { return (n.path & 1) == 0; });
+            Path* pmid = pstd::partition(first, last, [](Path n) { return (n.path & 1) == 0; });
             for (Path* it = first; it != last; ++it)
                 it->path >>= 1;
             me(me, first, pmid, index * 2 + 1);

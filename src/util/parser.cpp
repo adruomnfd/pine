@@ -4,9 +4,6 @@
 #include <util/profiler.h>
 #include <util/log.h>
 
-#include <locale>
-#include <algorithm>
-
 namespace pine {
 
 template <typename F>
@@ -35,7 +32,7 @@ static pstd::optional<size_t> FirstOf(pstd::string_view str, const pstd::vector<
 }
 
 static void EscapeSpace(pstd::string_view& str) {
-    while (str.size() && std::isspace(str[0])) {
+    while (str.size() && pstd::isspace(str[0])) {
         str = trim(str, 1);
         if (trim(str, 0, 2) == "//") {
             while (str[0] != '\n' && str[0] != '\r')

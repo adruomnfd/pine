@@ -3,7 +3,7 @@
 
 #include <core/defines.h>
 
-#include <cstdint>
+#include <pstd/stdint.h>
 
 namespace pine {
 

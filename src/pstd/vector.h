@@ -4,8 +4,8 @@
 #include <initializer_list>
 
 #include <pstd/new.h>
-#include <pstd/move.h>
 #include <pstd/math.h>
+#include <pstd/memory.h>
 #include <pstd/algorithm.h>
 
 namespace pstd {

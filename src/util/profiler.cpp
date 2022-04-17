@@ -1,11 +1,11 @@
 #include <util/profiler.h>
 
+#include <pstd/map.h>
 #include <pstd/vector.h>
 #include <pstd/memory.h>
 
 #include <mutex>
 #include <atomic>
-#include <unordered_map>
 
 #include <signal.h>
 #include <sys/time.h>
@@ -95,7 +95,7 @@ Profiler::~Profiler() {
 }
 
 static thread_local uint64_t profilePhase = {};
-static std::unordered_map<uint64_t, uint64_t> profilePhaseRecords = {};
+static pstd::map<uint64_t, uint64_t> profilePhaseRecords = {};
 static uint64_t profileTotalSamples = 0;
 static_assert(
     (int)ProfilePhase::NumPhase == sizeof(profilePhaseName) / sizeof(profilePhaseName[0]),

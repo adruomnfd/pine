@@ -43,7 +43,7 @@ Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
     const float mu = Dot(direction, sunDirection);
     const float phaseR = 3.0f / (16.0f * Pi) * (1.0f + mu * mu), g = 0.76f,
                 phaseM = 3.0f / (8.0f * Pi) * (1.0f - g * g) * (1.0f + mu * mu) /
-                         ((2.0f + g * g) * powf(1.0f + g * g - 2.0f * g * mu, 1.5f));
+                         ((2.0f + g * g) * pstd::pow(1.0f + g * g - 2.0f * g * mu, 1.5f));
 
     Ray ray = Ray(vec3(0.0f, earthRadius, 0.0f), direction);
     ray.tmax = Sphere::ComputeT(ray.o, ray.d, 0.0f, vec3(0.0f), atmosphereRadius);

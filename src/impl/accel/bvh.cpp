@@ -3,7 +3,6 @@
 #include <util/parameters.h>
 #include <util/profiler.h>
 
-#include <algorithm>
 #include <queue>
 
 namespace pine {
@@ -118,7 +117,7 @@ int BVHImpl::BuildSAHBinned(Primitive* begin, Primitive* end, AABB aabb) {
     if (minCost > leafCost)
         return MakeLeaf();
 
-    Primitive* pmid = std::partition(begin, end, [=](const Primitive& prim) {
+    Primitive* pmid = pstd::partition(begin, end, [=](const Primitive& prim) {
         int b = nBuckets * aabbCentroid.Offset(prim.aabb.Centroid(bestAxis), bestAxis);
         if (b == nBuckets)
             b = nBuckets - 1;
@@ -249,11 +248,11 @@ int BVHImpl::BuildSAHFull(Primitive* begin, Primitive* end, AABB aabb) {
 
     Primitive* nthElement = begin + bestSplit + 1;
     if (useLowerOrUpperBound == UseLowerOrUpperBound::Lower)
-        std::nth_element(begin, nthElement, end, [=](const Primitive& l, const Primitive& r) {
+        pstd::nth_element(begin, nthElement, end, [=](const Primitive& l, const Primitive& r) {
             return l.aabb.lower[bestAxis] < r.aabb.lower[bestAxis];
         });
     else if (useLowerOrUpperBound == UseLowerOrUpperBound::Upper)
-        std::nth_element(begin, nthElement, end, [=](const Primitive& l, const Primitive& r) {
+        pstd::nth_element(begin, nthElement, end, [=](const Primitive& l, const Primitive& r) {
             return l.aabb.upper[bestAxis] < r.aabb.upper[bestAxis];
         });
     else
@@ -372,8 +371,8 @@ void BVHImpl::Optimize() {
 
             for (int i = 0; i < (int)nodes.size(); i++)
                 inefficiencies[i] = {i, nodes[i].Inefficiency()};
-            std::partial_sort(inefficiencies.begin(), inefficiencies.begin() + nodes.size() / 200,
-                              inefficiencies.end());
+            pstd::partial_sort(inefficiencies.begin(), inefficiencies.begin() + nodes.size() / 200,
+                               inefficiencies.end(), pstd::less<Pair>{});
 
             for (int i = 0; i < (int)nodes.size() / 200; i++) {
                 int nodeIndex = inefficiencies[i].index;

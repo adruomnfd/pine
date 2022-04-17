@@ -1,7 +1,6 @@
 // #include <impl/accel/cwbvh.h>
 // #include <util/parallel.h>
 
-// #include <algorithm>
 // #include <queue>
 
 // namespace pine {
@@ -450,7 +449,7 @@
 
 //         auto& L = nodes2[nodeIndex];
 
-//         pstd::priority_queue<Item> queue;
+//         std::priority_queue<Item> queue;
 //         queue.push(Item(node2Root, 0.0f, FloatMax));
 
 //         while (queue.size()) {

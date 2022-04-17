@@ -23,7 +23,7 @@ src/pstd/string.cpp
 src/pstd/chrono.cpp
 src/pstd/fstream.cpp
 src/pstd/iostream.cpp
-src/pstd/stacktrace.cpp
+src/pstd/system.cpp
 )
 
 #Pine Core Library

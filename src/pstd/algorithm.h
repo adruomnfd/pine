@@ -146,6 +146,11 @@ inline void sort(T&& x, Pred&& pred) {
     pstd::sort(wrap_iterators(pivot, last), pstd::forward<Pred>(pred));
 }
 
+template <typename It, typename Pred>
+inline void partial_sort(It first, It, It end, Pred&& pred) {
+    pstd::sort(pstd::wrap_iterators(first, end), pstd::forward<Pred>(pred));
+}
+
 template <typename It, typename T>
 inline It find(It first, It last, const T& value) {
     for (; first != last; ++first)
@@ -209,6 +214,21 @@ It remove_if(It first, It last, F&& f) {
             *(tail++) = *first;
 
     return tail;
+}
+
+template <typename It, typename F>
+It partition(It first, It last, F&& f) {
+    It tail = first;
+    for (; first != last; ++first)
+        if (first != tail && f(*first))
+            *(tail++) = *first;
+
+    return tail;
+}
+
+template <typename It, typename F>
+void nth_element(It first, It, It last, F&& f) {
+    pstd::sort(pstd::wrap_iterators(first, last), pstd::forward<F>(f));
 }
 
 }  // namespace pstd

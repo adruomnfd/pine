@@ -4,8 +4,6 @@
 #include <util/parameters.h>
 #include <util/log.h>
 
-#include <algorithm>
-
 namespace pine {
 
 pstd::optional<BSDFSample> LayeredMaterial::Sample(const MaterialEvalCtx& c) const {

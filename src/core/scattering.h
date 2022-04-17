@@ -12,13 +12,13 @@ inline float Cos2Theta(vec3 w) {
     return pstd::sqr(w.z);
 }
 inline float AbsCosTheta(vec3 w) {
-    return fabsf(w.z);
+    return pstd::abs(w.z);
 }
 inline float Sin2Theta(vec3 w) {
     return pstd::max(1.0f - Cos2Theta(w), 0.0f);
 }
 inline float SinTheta(vec3 w) {
-    return sqrtf(Sin2Theta(w));
+    return pstd::sqrt(Sin2Theta(w));
 }
 inline float TanTheta(vec3 w) {
     return SinTheta(w) / CosTheta(w);
@@ -58,7 +58,7 @@ inline bool Refract(vec3 wi, vec3 n, float eta, vec3& wt, float* etap = nullptr)
     if (sin2ThetaT >= 1)
         return false;
 
-    float cosThetaT = sqrtf(1.0f - sin2ThetaT);
+    float cosThetaT = pstd::sqrt(1.0f - sin2ThetaT);
 
     wt = -wi / eta + (cosThetaI / eta - cosThetaT) * n;
     if (etap)
@@ -77,7 +77,7 @@ inline float FrDielectric(float cosThetaI, float eta) {
     float sin2ThetaT = sin2ThetaI / pstd::sqr(eta);
     if (sin2ThetaT >= 1.0f)
         return 1.0f;
-    float cosThetaT = sqrtf(1.0f - sin2ThetaT);
+    float cosThetaT = pstd::sqrt(1.0f - sin2ThetaT);
 
     float rParl = (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT);
     float rPerp = (cosThetaI - eta * cosThetaT) / (cosThetaI + eta * cosThetaT);
@@ -85,7 +85,7 @@ inline float FrDielectric(float cosThetaI, float eta) {
 }
 
 inline vec3 FrSchlick(vec3 F0, float cosTheta) {
-    return F0 + (vec3(1.0f) - F0) * powf(1.0f - cosTheta, 5.0f);
+    return F0 + (vec3(1.0f) - F0) * pstd::pow(1.0f - cosTheta, 5.0f);
 }
 
 struct TrowbridgeReitzDistribution {
@@ -104,7 +104,7 @@ struct TrowbridgeReitzDistribution {
     float Lambda(vec3 w) const {
         float tan2Theta = Tan2Theta(w);
         float alpha2 = pstd::sqr(CosPhi(w) * alphaX) + pstd::sqr(SinPhi(w) * alphaY);
-        return (sqrtf(1.0f + alpha2 * tan2Theta) - 1.0f) / 2.0f;
+        return (pstd::sqrt(1.0f + alpha2 * tan2Theta) - 1.0f) / 2.0f;
     }
 
     float G1(vec3 w) const {

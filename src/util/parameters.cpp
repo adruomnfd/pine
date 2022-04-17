@@ -1,8 +1,6 @@
 #include <util/parameters.h>
 #include <util/log.h>
 
-#include <sstream>
-
 namespace pine {
 
 void Parameters::Summarize(int indent) const {

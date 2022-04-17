@@ -1,6 +1,8 @@
 #ifndef PINE_STD_LIMITS_H
 #define PINE_STD_LIMITS_H
 
+#include <pstd/stdint.h>
+
 namespace pstd {
 
 template <typename T>

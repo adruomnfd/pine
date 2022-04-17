@@ -33,7 +33,7 @@ int strcmp(const char* lhs, const char* rhs) {
     }
 }
 
-int stoi(pstd::string_view str) {
+int stoi(string_view str) {
     int number = 0;
     bool is_neg = false;
     for (size_t j = 0; j < pstd::size(str); j++) {
@@ -47,7 +47,7 @@ int stoi(pstd::string_view str) {
     return is_neg ? -number : number;
 }
 
-float stof(pstd::string_view str) {
+float stof(string_view str) {
     float number = 0.0f;
     bool is_neg = false;
     bool reached_dicimal_point = false;
@@ -68,7 +68,7 @@ float stof(pstd::string_view str) {
 }
 
 // TODO
-void stois(pstd::string_view str, int* ptr, int N) {
+void stois(string_view str, int* ptr, int N) {
     int dim = 0;
     int start = -1;
     for (int i = 0; i < (int)str.size(); i++) {
@@ -76,7 +76,7 @@ void stois(pstd::string_view str, int* ptr, int N) {
             if (start == -1)
                 start = i;
         } else if (start != -1) {
-            ptr[dim++] = pstd::stoi(pstd::string_view(str.data() + start, i - start));
+            ptr[dim++] = pstd::stoi(string_view(str.data() + start, i - start));
             start = -1;
             if (dim == N)
                 return;
@@ -94,7 +94,7 @@ void stois(pstd::string_view str, int* ptr, int N) {
         ptr[i] = ptr[dim - 1];
 }
 
-void stofs(pstd::string_view str, float* ptr, int N) {
+void stofs(string_view str, float* ptr, int N) {
     int dim = 0;
     int start = -1;
     for (int i = 0; i < (int)str.size(); i++) {
@@ -102,7 +102,7 @@ void stofs(pstd::string_view str, float* ptr, int N) {
             if (start == -1)
                 start = i;
         } else if (start != -1) {
-            ptr[dim++] = pstd::stof(pstd::string_view(str.data() + start, i - start));
+            ptr[dim++] = pstd::stof(string_view(str.data() + start, i - start));
             start = -1;
             if (dim == N)
                 return;

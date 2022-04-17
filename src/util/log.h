@@ -3,9 +3,9 @@
 
 #include <util/format.h>
 
+#include <pstd/system.h>
 #include <pstd/chrono.h>
 #include <pstd/iostream.h>
-#include <pstd/stacktrace.h>
 
 namespace pine {
 
@@ -30,7 +30,7 @@ template <typename... Args>
 inline void LOG_FATAL(const Args&... args) {
     pstd::cout << "\033[1;31m" << FormatIt(args...) << "\033[0m\n" << pstd::endl;
     pstd::cout << "\033[1;33m" << pstd::stacktrace() << "\033[0m\n" << pstd::endl;
-    abort();
+    pstd::abort();
 }
 
 template <typename... Args>
@@ -44,7 +44,7 @@ inline void print(const Args&... args) {
 #define CHECK(x)                                                                         \
     if (!(x)) {                                                                          \
         LOG_FATAL("[CHECK Failure]& failed[&:&:&()]", #x, __FILE__, __LINE__, __func__); \
-        abort();                                                                         \
+        pstd::abort();                                                                   \
     }
 
 #define CHECK_IMPL(name, op, a, b)                                                                 \
