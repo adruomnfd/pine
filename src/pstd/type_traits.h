@@ -201,20 +201,20 @@ using remove_extent_t = typename remove_extent<T>::type;
 
 // decay
 template <typename T, bool IsArray = is_array_v<T>, bool IsFunction = is_function_v<T>>
-struct decay_delector;
+struct decay_selector;
 
 template <typename T>
-struct decay_delector<T, false, false> {
+struct decay_selector<T, false, false> {
     using type = remove_cv_t<T>;
 };
 
 template <typename T>
-struct decay_delector<T, true, false> {
+struct decay_selector<T, true, false> {
     using type = remove_extent_t<T> *;
 };
 
 template <typename T>
-struct decay_delector<T, false, true> {
+struct decay_selector<T, false, true> {
     using type = T *;
 };
 
@@ -224,7 +224,7 @@ struct decay {
     using U = remove_reference_t<T>;
 
   public:
-    using type = typename decay_delector<U>::type;
+    using type = typename decay_selector<U>::type;
 };
 template <typename T>
 using decay_t = typename decay<T>::type;
