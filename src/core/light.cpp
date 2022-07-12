@@ -112,6 +112,8 @@ LightSample Atmosphere::Sample(vec3, vec2 u) const {
 }
 
 Spectrum Atmosphere::Color(vec3 wo) const {
+    print(wo, sunDirection, sunColor.ToRGB(),AtmosphereColor(wo, sunDirection, sunColor.ToRGB()).ToRGB(), "\n");
+    return AtmosphereColor(wo, sunDirection, sunColor.ToRGB());
     vec2 uv = InverseUniformSphereMampling(wo) * size;
     if (!interpolate) {
         vec2i st = Min(uv, size - vec2(1));

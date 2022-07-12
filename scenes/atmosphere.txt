@@ -1,0 +1,26 @@
+Integrator: Path{
+    maxDepth: 2
+
+    sampler: Halton{
+        samplesPerPixel: 2
+    }
+}
+
+Camera: ThinLen{
+    film{
+        outputFileName: atmosphere.png
+        size: 600 600
+        filter: LanczosSinc{
+            radius: 0.5
+        }
+    }
+
+    from: 0 0 0
+    to: 0 1 1
+    fov: 0.4
+}
+
+Light: Environment{
+    environment: Atmosphere{
+    }
+}

@@ -45,6 +45,7 @@ pstd::string RemoveFileExtension(pstd::string_view filename);
 pstd::string ChangeFileExtension(pstd::string_view filename, pstd::string ext);
 pstd::string AppendFileName(pstd::string_view filename, pstd::string content);
 pstd::string ReadStringFile(pstd::string_view filename);
+
 void WriteBinaryData(pstd::string_view filename, const void* ptr, size_t size);
 pstd::vector<char> ReadBinaryData(pstd::string_view filename);
 
