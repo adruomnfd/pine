@@ -24,4 +24,4 @@ build/pine scenes/cloud.txt
 ## TODO
 - [ ] Implementing reading image in bmp format in `util/fileio.cpp` (can refer `WriteImageBMP():util/fileio.cpp`)  
 
-- [ ]  `isnan()` in `util/fileio.cpp` is implemented by a call to `__builtin_isnan()`, we should be able to do it ourself by comparing the bit pattern of the input floating-point number with bit pattern of nan number(https://docs.microsoft.com/en-us/cpp/build/ieee-floating-point-representation?view=msvc-170#nan---not-a-number)
+- [ ]  `isnan()` in `pstd/math.h` is implemented by a call to `__builtin_isnan()`, we should be able to do it ourself by comparing the bit pattern of the input floating-point number with bit pattern of nan number(https://docs.microsoft.com/en-us/cpp/build/ieee-floating-point-representation?view=msvc-170#nan---not-a-number)
