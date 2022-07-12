@@ -24,11 +24,11 @@ vec3 ACES(vec3 v) {
 
 vec3 ColorMap(float v) {
     if (v < 1 / 3.0f) {
-        return Lerp(v * 3.0f, vec3(0), vec3(0.0f, 0.0f, 0.5f));
+        return pstd::lerp(v * 3.0f, vec3(0), vec3(0.0f, 0.0f, 0.5f));
     } else if (v < 2 / 3.0f) {
-        return Lerp((v - 1 / 3.0f) * 3.0f, vec3(0.0f, 0.0f, 0.5f), vec3(0, 1, 0));
+        return pstd::lerp((v - 1 / 3.0f) * 3.0f, vec3(0.0f, 0.0f, 0.5f), vec3(0, 1, 0));
     } else if (v < 3 / 3.0f) {
-        return Lerp((v - 2 / 3.0f) * 3.0f, vec3(0, 1, 0), vec3(1, 0, 0));
+        return pstd::lerp((v - 2 / 3.0f) * 3.0f, vec3(0, 1, 0), vec3(1, 0, 0));
     } else {
         return vec3(1, 0, 0);
     }
@@ -43,12 +43,10 @@ Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
     const float mu = Dot(direction, sunDirection);
     const float phaseR = 3.0f / (16.0f * Pi) * (1.0f + mu * mu), g = 0.76f,
                 phaseM = 3.0f / (8.0f * Pi) * (1.0f - g * g) * (1.0f + mu * mu) /
-                         ((2.0f + g * g) * powf(1.0f + g * g - 2.0f * g * mu, 1.5f));
-    const Sphere atmosphere(vec3(0), atmosphereRadius);
+                         ((2.0f + g * g) * pstd::pow(1.0f + g * g - 2.0f * g * mu, 1.5f));
 
     Ray ray = Ray(vec3(0.0f, earthRadius, 0.0f), direction);
-    Interaction it;
-    atmosphere.Intersect(ray, it);
+    ray.tmax = Sphere::ComputeT(ray.o, ray.d, 0.0f, vec3(0.0f), atmosphereRadius);
     float segmentLength = ray.tmax / nSamples, tCurrent = 0.0f;
     float opticalDepthR = 0.0f, opticalDepthM = 0.0f;
     vec3 sumR, sumM;
@@ -56,26 +54,27 @@ Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
     for (int i = 0; i < nSamples; i++) {
         vec3 samplePosition = ray(tCurrent + segmentLength * 0.5f);
         float height = Length(samplePosition) - earthRadius;
-        float hr = std::exp(-height * Hr) * segmentLength,
-              hm = std::exp(-height * Hm) * segmentLength;
+        float hr = pstd::exp(-height * Hr) * segmentLength,
+              hm = pstd::exp(-height * Hm) * segmentLength;
         opticalDepthR += hr;
         opticalDepthM += hm;
 
-        Ray rayLight = Ray(samplePosition, sunDirection);
-        Interaction itLight;
-        atmosphere.Intersect(rayLight, itLight);
-        float segmentLengthLight = rayLight.tmax / nSamplesLight, tCurrentLight = 0.0f;
+        float ltmax =
+            Sphere::ComputeT(samplePosition, sunDirection, 0.0f, vec3(0.0f), atmosphereRadius);
+        float segmentLengthLight = ltmax / nSamplesLight;
         float opticalDepthRLight = 0.0f, opticalDepthMLight = 0.0f;
 
         int j = 0;
-        for (; j < nSamplesLight; j++) {
-            vec3 samplePositionLight = rayLight(tCurrentLight + segmentLengthLight * 0.5f);
-            float heightLight = Length(samplePositionLight) - earthRadius;
+        float lo2 = Dot(samplePosition, samplePosition);
+        float ld2 = Dot(sunDirection, sunDirection);
+        float lod = Dot(samplePosition, sunDirection);
+        float lt = segmentLengthLight * 0.5f;
+        for (; j < nSamplesLight; j++, lt += segmentLengthLight) {
+            float heightLight = lo2 + pstd::sqr(lt) * ld2 + 2 * lt * lod - earthRadius;
             if (heightLight < 0)
                 break;
-            opticalDepthRLight += std::exp(-heightLight * Hr) * segmentLengthLight;
-            opticalDepthMLight += std::exp(-heightLight * Hm) * segmentLengthLight;
-            tCurrentLight += segmentLengthLight;
+            opticalDepthRLight += pstd::exp(-heightLight * Hr) * segmentLengthLight;
+            opticalDepthMLight += pstd::exp(-heightLight * Hm) * segmentLengthLight;
         }
         if (j == nSamplesLight) {
             vec3 tau = betaR * (opticalDepthR + opticalDepthRLight) +
@@ -91,9 +90,12 @@ Spectrum AtmosphereColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
 
 Spectrum SkyColor(vec3 direction, vec3 sunDirection, vec3 sunColor) {
     if (sunDirection == direction)
-        return vec3(10.0f * sunColor);
+        return vec3(8.0f * sunColor);
+    pstd::swap(direction.y, direction.z);
+    auto [phi, theta] = CartesianToSpherical(direction);
+    theta /= Pi;
     return sunColor *
-           Sqr(Lerp(direction.y * 0.5f + 0.5f, vec3(0.4f, 0.6f, 0.8f), vec3(0.01f, 0.03f, 0.3f)));
+           pstd::sqr(pstd::lerp(theta, vec3(0.01f, 0.03f, 0.3f), vec3(0.3f, 0.5f, 0.8f)));
 }
 
 }  // namespace pine

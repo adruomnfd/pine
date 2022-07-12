@@ -5,37 +5,15 @@
 #define NOMINMAX
 #endif
 
-#define PINE_ARCHIVE(...)                    \
-    template <typename ArchiveT>             \
-    void Archive(ArchiveT&& archive) {       \
-        archive(__VA_ARGS__);                \
-    }                                        \
-    template <typename ArchiveT>             \
-    void Archive(ArchiveT&& archive) const { \
-        archive(__VA_ARGS__);                \
-    }
-
-#define PINE_ARCHIVE_(code)                  \
-    template <typename ArchiveT>             \
-    void Archive(ArchiveT&& archive) {       \
-        code                                 \
-    }                                        \
-    template <typename ArchiveT>             \
-    void Archive(ArchiveT&& archive) const { \
-        code                                 \
-    }
-
 #define PINE_DELETE_COPY_MOVE(ClassName)             \
     ClassName(const ClassName&) = delete;            \
     ClassName& operator=(const ClassName&) = delete; \
     ClassName(ClassName&&) = delete;                 \
     ClassName& operator=(ClassName&&) = delete;
 
-#define PINE_DELETE_COPY(ClassName)                  \
-    ClassName(const ClassName&) = delete;            \
-    ClassName& operator=(const ClassName&) = delete; \
-    ClassName(ClassName&&) = default;                \
-    ClassName& operator=(ClassName&&) = default;
+#define PINE_DELETE_COPY(ClassName)       \
+    ClassName(const ClassName&) = delete; \
+    ClassName& operator=(const ClassName&) = delete;
 
 #define SWITCH(x)                    \
     const auto& _switchVariable = x; \
@@ -75,13 +53,18 @@
 
 namespace pine {
 
-struct Scene;
-struct Ray;
-struct AABB;
+struct PhaseFunction;
 struct TriangleMesh;
 struct Interaction;
-struct RNG;
 struct Parameters;
+struct Material;
+struct Camera;
+struct Medium;
+struct Scene;
+struct Shape;
+struct AABB;
+struct Ray;
+struct RNG;
 
 class Integrator;
 class Accel;

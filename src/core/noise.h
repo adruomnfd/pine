@@ -3,7 +3,7 @@
 
 #include <core/vecmath.h>
 
-#include <vector>
+#include <pstd/vector.h>
 
 namespace pine {
 
@@ -15,8 +15,8 @@ float Turbulence(vec3 np, float frequency, int octaves);
 
 vec3 Turbulence3D(vec3 np, float frequency, int octaves);
 
-std::vector<vec2> GenerateWhiteNoise(vec2i size, int seed);
-std::vector<vec2> GenerateBlueNoise(vec2i size, int seed);
+pstd::vector<vec2> GenerateWhiteNoise(vec2i size, int seed);
+pstd::vector<vec2> GenerateBlueNoise(vec2i size, int seed);
 
 }  // namespace pine
 

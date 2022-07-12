@@ -6,13 +6,14 @@
 #include <util/profiler.h>
 #include <util/rng.h>
 
-#include <vector>
+#include <pstd/vector.h>
 
 namespace pine {
 
 struct UniformSampler {
     static UniformSampler Create(const Parameters& params);
-    UniformSampler(int samplesPerPixel) : samplesPerPixel(samplesPerPixel) {
+    UniformSampler(int samplesPerPixel, int seed = 0)
+        : samplesPerPixel(samplesPerPixel), rng(seed) {
     }
 
     int SamplesPerPixel() const {
@@ -50,6 +51,7 @@ struct StratifiedSampler {
     }
     void StartNextSample() {
         sampleIndex++;
+        dimension = 0;
     }
     float Get1D() {
         int stratum = (sampleIndex + Hash(pixel, dimension)) % samplesPerPixel;
@@ -82,15 +84,16 @@ struct HaltonSampler {
     enum class RandomizeStrategy { None, PermuteDigits };
 
     static HaltonSampler Create(const Parameters& params);
-    HaltonSampler(int samplesPerPixel, vec2i filmSize, RandomizeStrategy randomizeStrategy);
+    HaltonSampler(int samplesPerPixel, vec2i filmSize,
+                  RandomizeStrategy randomizeStrategy = RandomizeStrategy::PermuteDigits);
 
     int SamplesPerPixel() const {
         return samplesPerPixel;
     }
     void StartPixel(vec2i p, int sampleIndex);
     void StartNextSample() {
-        dimension = 2;
         haltonIndex += sampleStride;
+        dimension = 2;
     }
     float Get1D();
     vec2 Get2D();
@@ -107,7 +110,7 @@ struct HaltonSampler {
     int dimension = 0;
     RandomizeStrategy randomizeStrategy;
 
-    static inline std::vector<uint16_t> radicalInversePermutations;
+    static inline pstd::vector<uint16_t> radicalInversePermutations;
 };
 
 struct ZeroTwoSequenceSampler {
@@ -131,8 +134,8 @@ struct ZeroTwoSequenceSampler {
 
     int currentSampleIndex = 0;
     int current1DDimension = 0, current2DDimension = 0;
-    std::vector<std::vector<float>> samples1D;
-    std::vector<std::vector<vec2>> samples2D;
+    pstd::vector<pstd::vector<float>> samples1D;
+    pstd::vector<pstd::vector<vec2>> samples2D;
     RNG rng;
 };
 
@@ -140,7 +143,8 @@ struct SobolSampler {
     enum class RandomizeStrategy { None, BinaryPermutate, FastOwen, Owen };
 
     static SobolSampler Create(const Parameters& params);
-    SobolSampler(int samplesPerPixel, vec2i filmSize, RandomizeStrategy randomizeStrategy);
+    SobolSampler(int samplesPerPixel, vec2i filmSize,
+                 RandomizeStrategy randomizeStrategy = RandomizeStrategy::FastOwen);
 
     int SamplesPerPixel() const {
         return samplesPerPixel;
@@ -161,10 +165,91 @@ struct SobolSampler {
     int64_t sobolIndex = 0;
 };
 
+struct MltSampler {
+    MltSampler(float sigma, float largeStepProbability, int streamCount, int seed)
+        : rng(seed),
+          sigma(sigma),
+          largeStepProbability(largeStepProbability),
+          streamCount(streamCount){};
+
+    int SamplesPerPixel() const {
+        LOG_FATAL("[MltSampler]SamplesPerPixel() is not implemented");
+        return 0;
+    }
+
+    void StartPixel(vec2i, int) {
+        LOG_FATAL("[MltSampler]StartPixel() is not implemented");
+    }
+
+    void StartNextSample() {
+        sampleIndex++;
+        streamIndex = 0;
+        dimension = 0;
+        largeStep = rng.Uniformf() < largeStepProbability;
+    }
+
+    void StartStream(int index) {
+        streamIndex = index;
+        dimension = 0;
+    }
+
+    float Get1D() {
+        int dim = GetNextIndex();
+        EnsureReady(dim);
+        return X[dim].value;
+    }
+
+    vec2 Get2D() {
+        return {Get1D(), Get1D()};
+    }
+
+    void Accept() {
+        if (largeStep)
+            lastLargeStepIndex = sampleIndex;
+    }
+
+    void Reject() {
+        for (auto& Xi : X)
+            if (Xi.lastModificationIndex == sampleIndex)
+                Xi.Restore();
+        --sampleIndex;
+    }
+
+  private:
+    void EnsureReady(int dim);
+    int GetNextIndex() {
+        return streamIndex + streamCount * dimension++;
+    }
+
+    struct PrimarySample {
+        void Backup() {
+            valueBackup = value;
+            modifyBackup = lastModificationIndex;
+        }
+        void Restore() {
+            value = valueBackup;
+            lastModificationIndex = modifyBackup;
+        }
+
+        float value = 0, valueBackup = 0;
+        int64_t lastModificationIndex = 0;
+        int64_t modifyBackup = 0;
+    };
+
+    RNG rng;
+    const float sigma, largeStepProbability;
+    pstd::vector<PrimarySample> X;
+    int64_t sampleIndex = 0;
+    int64_t streamIndex = 0, streamCount = 0;
+    int64_t dimension = 0;
+
+    bool largeStep = true;
+    int64_t lastLargeStepIndex = 0;
+};
+
 struct Sampler : TaggedVariant<UniformSampler, StratifiedSampler, HaltonSampler,
-                               ZeroTwoSequenceSampler, SobolSampler> {
+                               ZeroTwoSequenceSampler, SobolSampler, MltSampler> {
     using TaggedVariant::TaggedVariant;
-    static Sampler Create(const Parameters& params);
 
     int SamplesPerPixel() const {
         SampledProfiler _(ProfilePhase::GenerateSamples);
@@ -190,6 +275,8 @@ struct Sampler : TaggedVariant<UniformSampler, StratifiedSampler, HaltonSampler,
         return Dispatch([&](auto&& x) { return Sampler(x); });
     }
 };
+
+Sampler CreateSampler(const Parameters& params);
 
 }  // namespace pine
 

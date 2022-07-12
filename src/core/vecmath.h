@@ -2,7 +2,8 @@
 #define PINE_CORE_VECMATH_H
 
 #include <core/math.h>
-#include <util/string.h>
+
+#include <pstd/archive.h>
 
 namespace pine {
 
@@ -62,13 +63,20 @@ struct Vector2 {
         y /= rhs.y;
         return *this;
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_integral<T>::value &&
+                                                              pstd::is_integral<U>::value>::type>
+    Vector2 &operator%=(Vector2<U> rhs) {
+        x %= rhs.x;
+        y %= rhs.y;
+        return *this;
+    }
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     Vector2 &operator*=(U rhs) {
         x *= rhs;
         y *= rhs;
         return *this;
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     Vector2 &operator/=(U rhs) {
         x /= rhs;
         y /= rhs;
@@ -91,19 +99,24 @@ struct Vector2 {
     friend Vector2<decltype(T{} / U{})> operator/(Vector2<T> lhs, Vector2<U> rhs) {
         return {lhs.x / rhs.x, lhs.y / rhs.y};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_integral<T>::value &&
+                                                              pstd::is_integral<U>::value>::type>
+    friend Vector2<decltype(T{} % U{})> operator%(Vector2<T> lhs, Vector2<U> rhs) {
+        return {lhs.x % rhs.x, lhs.y % rhs.y};
+    }
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector2<decltype(T{} * U{})> operator*(Vector2<T> lhs, U rhs) {
         return {lhs.x * rhs, lhs.y * rhs};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector2<decltype(T{} / U{})> operator/(Vector2<T> lhs, U rhs) {
         return {lhs.x / rhs, lhs.y / rhs};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector2<decltype(U{} * T{})> operator*(U lhs, Vector2<T> rhs) {
         return {lhs * rhs.x, lhs * rhs.y};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector2<decltype(U{} / T{})> operator/(U lhs, Vector2<T> rhs) {
         return {lhs / rhs.x, lhs / rhs.y};
     }
@@ -114,6 +127,9 @@ struct Vector2 {
     template <typename U>
     friend bool operator!=(Vector2<T> lhs, Vector2<U> rhs) {
         return lhs.x != rhs.x || lhs.y != rhs.y;
+    }
+    bool HasNaN() const {
+        return pstd::isnan(x) || pstd::isnan(y);
     }
 
     Vector2 operator-() const {
@@ -127,14 +143,7 @@ struct Vector2 {
         return (&x)[i];
     }
 
-    Fstring Formatting(Format fmt) const {
-        return Fstring(fmt, "[&, &]", x, y);
-    }
-    std::string ToString() const {
-        return pine::ToString('[', x, ", ", y, ']');
-    }
-
-    PINE_ARCHIVE(x, y)
+    PSTD_ARCHIVE(x, y)
 
     T x{}, y{};
 };
@@ -192,14 +201,22 @@ struct Vector3 {
         z /= rhs.z;
         return *this;
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_integral<T>::value &&
+                                                              pstd::is_integral<U>::value>::type>
+    Vector3 &operator%=(Vector3<U> rhs) {
+        x %= rhs.x;
+        y %= rhs.y;
+        z %= rhs.z;
+        return *this;
+    }
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     Vector3 &operator*=(U rhs) {
         x *= rhs;
         y *= rhs;
         z *= rhs;
         return *this;
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     Vector3 &operator/=(U rhs) {
         x /= rhs;
         y /= rhs;
@@ -223,19 +240,24 @@ struct Vector3 {
     friend Vector3<decltype(T{} / U{})> operator/(Vector3<T> lhs, Vector3<U> rhs) {
         return {lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_integral<T>::value &&
+                                                              pstd::is_integral<U>::value>::type>
+    friend Vector3<decltype(T{} % U{})> operator%(Vector3<T> lhs, Vector3<U> rhs) {
+        return {lhs.x % rhs.x, lhs.y % rhs.y, lhs.z % rhs.z};
+    }
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector3<decltype(T{} * U{})> operator*(Vector3<T> lhs, U rhs) {
         return {lhs.x * rhs, lhs.y * rhs, lhs.z * rhs};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector3<decltype(T{} / U{})> operator/(Vector3<T> lhs, U rhs) {
         return {lhs.x / rhs, lhs.y / rhs, lhs.z / rhs};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector3<decltype(U{} * T{})> operator*(U lhs, Vector3<T> rhs) {
         return {lhs * rhs.x, lhs * rhs.y, lhs * rhs.z};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector3<decltype(U{} / T{})> operator/(U lhs, Vector3<T> rhs) {
         return {lhs / rhs.x, lhs / rhs.y, lhs / rhs.z};
     }
@@ -248,6 +270,9 @@ struct Vector3 {
         return lhs.x != rhs.x || lhs.y != rhs.y || lhs.z != rhs.z;
     }
 
+    bool HasNaN() const {
+        return pstd::isnan(x) || pstd::isnan(y) || pstd::isnan(z);
+    }
     Vector3 operator-() const {
         return {-x, -y, -z};
     }
@@ -259,14 +284,7 @@ struct Vector3 {
         return (&x)[i];
     }
 
-    Fstring Formatting(Format fmt) const {
-        return Fstring(fmt, "[&, &, &]", x, y, z);
-    }
-    std::string ToString() const {
-        return pine::ToString('[', x, ", ", y, ", ", z, ']');
-    }
-
-    PINE_ARCHIVE(x, y, z)
+    PSTD_ARCHIVE(x, y, z)
 
     T x{}, y{}, z{};
 };
@@ -334,8 +352,16 @@ struct Vector4 {
         w /= rhs.w;
         return *this;
     }
-
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_integral<T>::value &&
+                                                              pstd::is_integral<U>::value>::type>
+    Vector4 &operator%=(Vector4<U> rhs) {
+        x %= rhs.x;
+        y %= rhs.y;
+        z %= rhs.z;
+        w %= rhs.w;
+        return *this;
+    }
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     Vector4 &operator*=(U rhs) {
         x *= rhs;
         y *= rhs;
@@ -343,7 +369,7 @@ struct Vector4 {
         w *= rhs;
         return *this;
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     Vector4 &operator/=(U rhs) {
         x /= rhs;
         y /= rhs;
@@ -368,19 +394,24 @@ struct Vector4 {
     friend Vector4<decltype(T{} / U{})> operator/(Vector4<T> lhs, Vector4<U> rhs) {
         return {lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z, lhs.w / rhs.w};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_integral<T>::value &&
+                                                              pstd::is_integral<U>::value>::type>
+    friend Vector4<decltype(T{} % U{})> operator%(Vector4<T> lhs, Vector4<U> rhs) {
+        return {lhs.x % rhs.x, lhs.y % rhs.y, lhs.z % rhs.z, lhs.w % rhs.w};
+    }
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector4<decltype(T{} * U{})> operator*(Vector4<T> lhs, U rhs) {
         return {lhs.x * rhs, lhs.y * rhs, lhs.z * rhs, lhs.w * rhs};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector4<decltype(T{} / U{})> operator/(Vector4<T> lhs, U rhs) {
         return {lhs.x / rhs, lhs.y / rhs, lhs.z / rhs, lhs.w / rhs};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector4<decltype(U{} * T{})> operator*(U lhs, Vector4<T> rhs) {
         return {lhs * rhs.x, lhs * rhs.y, lhs * rhs.z, lhs * rhs.w};
     }
-    template <typename U, typename = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+    template <typename U, typename = typename pstd::enable_if<pstd::is_arithmetic<U>::value>::type>
     friend Vector4<decltype(U{} / T{})> operator/(U lhs, Vector4<T> rhs) {
         return {lhs / rhs.x, lhs / rhs.y, lhs / rhs.z, lhs / rhs.w};
     }
@@ -393,6 +424,9 @@ struct Vector4 {
         return lhs.x != rhs.x || lhs.y != rhs.y || lhs.z != rhs.z || lhs.w != rhs.w;
     }
 
+    bool HasNaN() const {
+        return pstd::isnan(x) || pstd::isnan(y) || pstd::isnan(z) || pstd::isnan(w);
+    }
     Vector4 operator-() const {
         return {-x, -y, -z, -w};
     }
@@ -404,11 +438,7 @@ struct Vector4 {
         return (&x)[i];
     }
 
-    Fstring Formatting(Format fmt) const {
-        return Fstring(fmt, "[&, &, &, &]", x, y, z, w);
-    }
-
-    PINE_ARCHIVE(x, y, z, w)
+    PSTD_ARCHIVE(x, y, z, w)
 
     T x{}, y{}, z{}, w{};
 };
@@ -504,11 +534,7 @@ struct Matrix2 {
         return m0.x != m1.x || m0.y != m1.y;
     }
 
-    Fstring Formatting(Format fmt) const {
-        return Fstring(fmt, "\n[&,\n &,\n]", x, y);
-    }
-
-    PINE_ARCHIVE(x, y)
+    PSTD_ARCHIVE(x, y)
 
     static constexpr int N = 2;
     Vector2<T> x, y;
@@ -606,11 +632,7 @@ struct Matrix3 {
         return m0.x != m1.x || m0.y != m1.y || m0.z != m1.z;
     }
 
-    Fstring Formatting(Format fmt) const {
-        return Fstring(fmt, "\n[&,\n &,\n &]", x, y, z);
-    }
-
-    PINE_ARCHIVE(x, y, z)
+    PSTD_ARCHIVE(x, y, z)
 
     static constexpr int N = 3;
     Vector3<T> x, y, z;
@@ -712,11 +734,7 @@ struct Matrix4 {
         return m0.x != m1.x || m0.y != m1.y || m0.z != m1.z || m0.w != m1.w;
     }
 
-    Fstring Formatting(Format fmt) const {
-        return Fstring(fmt, "\n[&,\n &,\n &,\n &]", x, y, z, w);
-    }
-
-    PINE_ARCHIVE(x, y, z, w)
+    PSTD_ARCHIVE(x, y, z, w)
 
     static constexpr int N = 4;
     Vector4<T> x, y, z, w;
@@ -810,15 +828,15 @@ inline T LengthSquared(Vector4<T> v) {
 
 template <typename T>
 inline T Length(Vector2<T> v) {
-    return std::sqrt(LengthSquared(v));
+    return pstd::sqrt(LengthSquared(v));
 }
 template <typename T>
 inline T Length(Vector3<T> v) {
-    return std::sqrt(LengthSquared(v));
+    return pstd::sqrt(LengthSquared(v));
 }
 template <typename T>
 inline T Length(Vector4<T> v) {
-    return std::sqrt(LengthSquared(v));
+    return pstd::sqrt(LengthSquared(v));
 }
 
 template <typename T>
@@ -862,7 +880,7 @@ inline T Dot(Vector4<T> lhs, Vector4<T> rhs) {
 }
 template <typename T>
 inline auto AbsDot(T lhs, T rhs) {
-    return std::abs(Dot(lhs, rhs));
+    return pstd::abs(Dot(lhs, rhs));
 }
 template <typename T>
 inline auto ClampedDot(T lhs, T rhs) {
@@ -877,154 +895,168 @@ inline Vector3<T> Cross(Vector3<T> lhs, Vector3<T> rhs) {
 }
 
 template <typename T>
+inline T Area(Vector2<T> v) {
+    return v.x * v.y;
+}
+
+template <typename T>
+inline T Volume(Vector3<T> v) {
+    return v.x * v.y * v.z;
+}
+
+template <typename T>
 inline Vector2<T> Min(Vector2<T> lhs, Vector2<T> rhs) {
-    return {std::min(lhs.x, rhs.x), std::min(lhs.y, rhs.y)};
+    return {pstd::min(lhs.x, rhs.x), pstd::min(lhs.y, rhs.y)};
 }
 template <typename T>
 inline Vector3<T> Min(Vector3<T> lhs, Vector3<T> rhs) {
-    return {std::min(lhs.x, rhs.x), std::min(lhs.y, rhs.y), std::min(lhs.z, rhs.z)};
+    return {pstd::min(lhs.x, rhs.x), pstd::min(lhs.y, rhs.y), pstd::min(lhs.z, rhs.z)};
 }
 template <typename T>
 inline Vector4<T> Min(Vector4<T> lhs, Vector4<T> rhs) {
-    return {std::min(lhs.x, rhs.x), std::min(lhs.y, rhs.y), std::min(lhs.z, rhs.z),
-            std::min(lhs.w, rhs.w)};
+    return {pstd::min(lhs.x, rhs.x), pstd::min(lhs.y, rhs.y), pstd::min(lhs.z, rhs.z),
+            pstd::min(lhs.w, rhs.w)};
 }
 
 template <typename T>
 inline Vector2<T> Max(Vector2<T> lhs, Vector2<T> rhs) {
-    return {std::max(lhs.x, rhs.x), std::max(lhs.y, rhs.y)};
+    return {pstd::max(lhs.x, rhs.x), pstd::max(lhs.y, rhs.y)};
 }
 template <typename T>
 inline Vector3<T> Max(Vector3<T> lhs, Vector3<T> rhs) {
-    return {std::max(lhs.x, rhs.x), std::max(lhs.y, rhs.y), std::max(lhs.z, rhs.z)};
+    return {pstd::max(lhs.x, rhs.x), pstd::max(lhs.y, rhs.y), pstd::max(lhs.z, rhs.z)};
 }
 template <typename T>
 inline Vector4<T> Max(Vector4<T> lhs, Vector4<T> rhs) {
-    return {std::max(lhs.x, rhs.x), std::max(lhs.y, rhs.y), std::max(lhs.z, rhs.z),
-            std::max(lhs.w, rhs.w)};
+    return {pstd::max(lhs.x, rhs.x), pstd::max(lhs.y, rhs.y), pstd::max(lhs.z, rhs.z),
+            pstd::max(lhs.w, rhs.w)};
 }
 
 template <typename T>
 inline Vector2<T> Clamp(Vector2<T> val, Vector2<T> min, Vector2<T> max) {
-    return {pine::Clamp(val.x, min.x, max.x), pine::Clamp(val.y, min.y, max.y)};
+    return {pstd::clamp(val.x, min.x, max.x), pstd::clamp(val.y, min.y, max.y)};
 }
 template <typename T>
 inline Vector3<T> Clamp(Vector3<T> val, Vector3<T> min, Vector3<T> max) {
-    return {pine::Clamp(val.x, min.x, max.x), pine::Clamp(val.y, min.y, max.y),
-            pine::Clamp(val.z, min.z, max.z)};
+    return {pstd::clamp(val.x, min.x, max.x), pstd::clamp(val.y, min.y, max.y),
+            pstd::clamp(val.z, min.z, max.z)};
 }
 template <typename T>
 inline Vector4<T> Clamp(Vector4<T> val, Vector4<T> min, Vector4<T> max) {
-    return {pine::Clamp(val.x, min.x, max.x), pine::Clamp(val.y, min.y, max.y),
-            pine::Clamp(val.z, min.z, max.z), pine::Clamp(val.w, min.w, max.w)};
+    return {pstd::clamp(val.x, min.x, max.x), pstd::clamp(val.y, min.y, max.y),
+            pstd::clamp(val.z, min.z, max.z), pstd::clamp(val.w, min.w, max.w)};
 }
 
 template <typename T>
 inline Vector2<T> Fract(Vector2<T> val) {
-    return {Fract(val.x), Fract(val.y)};
+    return {pstd::fract(val.x), pstd::fract(val.y)};
 }
 template <typename T>
 inline Vector3<T> Fract(Vector3<T> val) {
-    return {Fract(val.x), Fract(val.y), Fract(val.z)};
+    return {pstd::fract(val.x), pstd::fract(val.y), pstd::fract(val.z)};
 }
 template <typename T>
 inline Vector4<T> Fract(Vector4<T> val) {
-    return {Fract(val.x), Fract(val.y), Fract(val.z), Fract(val.w)};
+    return {pstd::fract(val.x), pstd::fract(val.y), pstd::fract(val.z), pstd::fract(val.w)};
 }
 
 template <typename T>
 inline Vector2<T> Floor(Vector2<T> val) {
-    return {std::floor(val.x), std::floor(val.y)};
+    return {pstd::floor(val.x), pstd::floor(val.y)};
 }
 template <typename T>
 inline Vector3<T> Floor(Vector3<T> val) {
-    return {std::floor(val.x), std::floor(val.y), std::floor(val.z)};
+    return {pstd::floor(val.x), pstd::floor(val.y), pstd::floor(val.z)};
 }
 template <typename T>
 inline Vector4<T> Floor(Vector4<T> val) {
-    return {std::floor(val.x), std::floor(val.y), std::floor(val.z), std::floor(val.w)};
+    return {pstd::floor(val.x), pstd::floor(val.y), pstd::floor(val.z), pstd::floor(val.w)};
 }
 
 template <typename T>
 inline Vector2<T> Ceil(Vector2<T> val) {
-    return {std::ceil(val.x), std::ceil(val.y)};
+    return {pstd::ceil(val.x), pstd::ceil(val.y)};
 }
 template <typename T>
 inline Vector3<T> Ceil(Vector3<T> val) {
-    return {std::ceil(val.x), std::ceil(val.y), std::ceil(val.z)};
+    return {pstd::ceil(val.x), pstd::ceil(val.y), pstd::ceil(val.z)};
 }
 template <typename T>
 inline Vector4<T> Ceil(Vector4<T> val) {
-    return {std::ceil(val.x), std::ceil(val.y), std::ceil(val.z), std::ceil(val.w)};
+    return {pstd::ceil(val.x), pstd::ceil(val.y), pstd::ceil(val.z), pstd::ceil(val.w)};
 }
 
 template <typename T>
 inline Vector2<T> Sqrt(Vector2<T> val) {
-    return {std::sqrt(val.x), std::sqrt(val.y)};
+    return {pstd::sqrt(val.x), pstd::sqrt(val.y)};
 }
 template <typename T>
 inline Vector3<T> Sqrt(Vector3<T> val) {
-    return {std::sqrt(val.x), std::sqrt(val.y), std::sqrt(val.z)};
+    return {pstd::sqrt(val.x), pstd::sqrt(val.y), pstd::sqrt(val.z)};
 }
 template <typename T>
 inline Vector4<T> Sqrt(Vector4<T> val) {
-    return {std::sqrt(val.x), std::sqrt(val.y), std::sqrt(val.z), std::sqrt(val.w)};
+    return {pstd::sqrt(val.x), pstd::sqrt(val.y), pstd::sqrt(val.z), pstd::sqrt(val.w)};
 }
 
 template <typename T>
 inline Vector2<T> Exp(Vector2<T> val) {
-    return {std::exp(val.x), std::exp(val.y)};
+    return {pstd::exp(val.x), pstd::exp(val.y)};
 }
 template <typename T>
 inline Vector3<T> Exp(Vector3<T> val) {
-    return {std::exp(val.x), std::exp(val.y), std::exp(val.z)};
+    return {pstd::exp(val.x), pstd::exp(val.y), pstd::exp(val.z)};
 }
 template <typename T>
 inline Vector4<T> Exp(Vector4<T> val) {
-    return {std::exp(val.x), std::exp(val.y), std::exp(val.z), std::exp(val.w)};
+    return {pstd::exp(val.x), pstd::exp(val.y), pstd::exp(val.z), pstd::exp(val.w)};
 }
 
 template <typename T>
 inline Vector2<T> Pow(Vector2<T> val, T p) {
-    return {std::pow(val.x, p), std::pow(val.y, p)};
+    return {pstd::pow(val.x, p), pstd::pow(val.y, p)};
 }
 template <typename T>
 inline Vector3<T> Pow(Vector3<T> val, T p) {
-    return {std::pow(val.x, p), std::pow(val.y, p), std::pow(val.z, p)};
+    return {pstd::pow(val.x, p), pstd::pow(val.y, p), pstd::pow(val.z, p)};
 }
 template <typename T>
 inline Vector4<T> Pow(Vector4<T> val, T p) {
-    return {std::pow(val.x, p), std::pow(val.y, p), std::pow(val.z, p), std::pow(val.w, p)};
+    return {pstd::pow(val.x, p), pstd::pow(val.y, p), pstd::pow(val.z, p), pstd::pow(val.w, p)};
 }
 
 template <typename T>
 inline Vector2<T> Abs(Vector2<T> val) {
-    return {std::abs(val.x), std::abs(val.y)};
+    return {pstd::abs(val.x), pstd::abs(val.y)};
 }
 template <typename T>
 inline Vector3<T> Abs(Vector3<T> val) {
-    return {std::abs(val.x), std::abs(val.y), std::abs(val.z)};
+    return {pstd::abs(val.x), pstd::abs(val.y), pstd::abs(val.z)};
 }
 template <typename T>
 inline Vector4<T> Abs(Vector4<T> val) {
-    return {std::abs(val.x), std::abs(val.y), std::abs(val.z), std::abs(val.w)};
+    return {pstd::abs(val.x), pstd::abs(val.y), pstd::abs(val.z), pstd::abs(val.w)};
 }
 
 template <typename T>
 inline bool Inside(Vector2<T> p, Vector2<T> minInclude, Vector2<T> maxExclude) {
     return p.x >= minInclude.x && p.y >= minInclude.y && p.x < maxExclude.x && p.y < maxExclude.y;
 }
-
 template <typename T>
-inline T TrilinearInterp(T c[2][2][2], Vector3<T> uvw) {
+inline bool Inside(Vector3<T> p, Vector3<T> minInclude, Vector3<T> maxExclude) {
+    return p.x >= minInclude.x && p.x < maxExclude.x && p.y >= minInclude.y && p.y < maxExclude.y &&
+           p.z >= minInclude.z && p.z < maxExclude.z;
+}
+
+template <typename T, typename U>
+inline T TrilinearInterp(T c[2][2][2], Vector3<U> uvw) {
     T ret = 0;
     for (int x = 0; x < 2; x++)
         for (int y = 0; y < 2; y++)
-            for (int z = 0; z < 2; z++) {
+            for (int z = 0; z < 2; z++)
                 ret += (x * uvw.x + (1 - x) * (1.0 - uvw.x)) *
                        (y * uvw.y + (1 - y) * (1.0 - uvw.y)) *
                        (z * uvw.z + (1 - z) * (1.0 - uvw.z)) * c[x][y][z];
-            }
     return ret;
 }
 
@@ -1057,6 +1089,9 @@ inline Matrix4<T> Transpose(const Matrix4<T> &m) {
 
 // Floating-point vecmath
 
+inline float SafeRcp(float v) {
+    return v == 0.0f ? 1e+20f : 1.0f / v;
+}
 inline vec3 SafeRcp(vec3 v) {
     v.x = v.x == 0.0f ? 1e+20f : 1.0f / v.x;
     v.y = v.y == 0.0f ? 1e+20f : 1.0f / v.y;
@@ -1177,7 +1212,7 @@ inline mat4 Scale(vec3 v) {
 inline mat4 LookAt(vec3 from, vec3 at, vec3 up = vec3(0, 1, 0)) {
     vec3 z = Normalize(at - from);
 
-    if (std::abs(Dot(z, up)) > 0.999f)
+    if (pstd::abs(Dot(z, up)) > 0.999f)
         z = Normalize(z + vec3(0.0f, 0.0f, 1e-5f));
 
     vec3 x = Normalize(Cross(up, z));
@@ -1185,31 +1220,37 @@ inline mat4 LookAt(vec3 from, vec3 at, vec3 up = vec3(0, 1, 0)) {
     return mat4((vec4)x, (vec4)y, (vec4)z, vec4(from, 1.0f));
 }
 
-inline mat3 CoordinateSystem(vec3 n) {
-    vec3 t;
-    if (std::abs(n.x) > std::abs(n.y))
+inline void CoordinateSystem(vec3 n, vec3 &t, vec3 &b) {
+    if (pstd::abs(n.x) > pstd::abs(n.y))
         t = Normalize(Cross(n, vec3(0, 1, 0)));
     else
         t = Normalize(Cross(n, vec3(1, 0, 0)));
-    vec3 b = Cross(n, t);
-    return mat3(t, b, n);
+    b = Cross(n, t);
+}
+
+inline mat3 CoordinateSystem(vec3 n) {
+    mat3 m;
+    m.z = n;
+    CoordinateSystem(n, m.x, m.y);
+    return m;
 }
 
 inline vec3 SphericalToCartesian(float phi, float theta) {
-    float sinTheta = std::sin(theta);
-    return vec3(sinTheta * std::cos(phi), sinTheta * std::sin(phi), std::cos(theta));
+    float sinTheta = pstd::sin(theta);
+    return vec3(sinTheta * pstd::cos(phi), sinTheta * pstd::sin(phi), pstd::cos(theta));
 }
 
 inline float Phi2pi(float x, float y) {
-    float phi = atan2f(y, x);
+    float phi = pstd::atan2(y, x);
     return phi < 0.0f ? Pi * 2 + phi : phi;
 }
 
 inline vec2 CartesianToSpherical(vec3 d) {
-    float phi = atan2f(d.y, d.x);
-    if (phi < 0.0f)
-        phi = Pi * 2 + phi;
-    return vec2(phi, acosf(d.z));
+    return vec2(Phi2pi(d.x, d.y), pstd::acos(d.z));
+}
+
+inline vec3 FaceSameHemisphere(vec3 v, vec3 ref) {
+    return Dot(v, ref) < 0 ? -v : v;
 }
 
 inline uint32_t LeftShift32(uint32_t x) {

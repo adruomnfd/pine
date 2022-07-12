@@ -1,110 +1,94 @@
 #include <core/scene.h>
+#include <util/profiler.h>
+#include <util/archive.h>
+#include <util/huffman.h>
 #include <util/fileio.h>
 #include <util/parser.h>
-#include <util/archive.h>
-#include <util/profiler.h>
-#include <util/log.h>
 #include <util/misc.h>
-
-#include <algorithm>
-#include <sstream>
-#include <vector>
-
-#include <ext/stb_image_write.h>
-#include <ext/stb_image.h>
+#include <util/log.h>
 
 namespace pine {
 
-std::string sceneDirectory = "";
+pstd::string sceneDirectory = "";
 
-ScopedFile::ScopedFile(std::string filename, std::ios::openmode mode) {
-    std::replace(filename.begin(), filename.end(), '\\', '/');
+ScopedFile::ScopedFile(pstd::string_view filename_view, pstd::ios::openmode mode) {
+    auto filename = (pstd::string)filename_view;
+    filename = sceneDirectory + filename;
+    pstd::replace(filename.begin(), filename.end(), '\\', '/');
     CHECK(filename != "");
-    file.open(filename, mode);
+    file.open(filename.c_str(), mode);
     if (file.is_open() == false)
         LOG_WARNING("[ScopedFile]Can not open file \"&\"", filename.c_str());
-
-    if (file.bad())
-        LOG_WARNING("[ScopedFile]Bad file \"&\"", filename.c_str());
 }
 void ScopedFile::Write(const void *data, size_t size) {
-    if (file.is_open() && file.good())
+    if (file.is_open())
         file.write((char *)data, size);
 }
 void ScopedFile::Read(void *data, size_t size) {
-    if (file.is_open() && file.good())
+    if (file.is_open())
         file.read((char *)data, size);
 }
-size_t ScopedFile::Size() const {
-    if (size != (size_t)-1)
-        return size;
 
-    size_t pos = file.tellg();
-    file.seekg(0, file.end);
-    size = file.tellg();
-    file.seekg(pos);
-    return size;
+bool IsFileExist(pstd::string_view filename_view) {
+    auto filename = (pstd::string)filename_view;
+    pstd::replace(filename.begin(), filename.end(), '\\', '/');
+    pstd::fstream file(filename, pstd::ios::in);
+    return file.is_open();
 }
+pstd::string GetFileDirectory(pstd::string_view filename_view) {
+    auto filename = (pstd::string)filename_view;
+    pstd::replace(filename.begin(), filename.end(), '\\', '/');
 
-bool IsFileExist(std::string filename) {
-    std::replace(filename.begin(), filename.end(), '\\', '/');
-    std::ifstream file(filename);
-    return file.good();
+    size_t forwardslash = pstd::find_last_of(begin(filename), end(filename), '/') - begin(filename);
+    if (pstd::find_last_of(begin(filename), end(filename), '/') != end(filename))
+        filename = trim(filename, 0, forwardslash);
+
+    return (pstd::string)filename + "/";
 }
-std::string GetFileDirectory(std::string filename) {
-    std::replace(filename.begin(), filename.end(), '\\', '/');
-
-    size_t forwardslash = filename.find_last_of('/');
-    if (forwardslash != filename.npos)
-        filename = filename.substr(0, forwardslash);
-
-    return filename + '/';
-}
-std::string GetFileExtension(std::string filename) {
-    size_t p = filename.find_last_of('.');
-    if (p == filename.npos)
+pstd::string GetFileExtension(pstd::string_view filename) {
+    size_t p = pstd::find_last_of(begin(filename), end(filename), '.') - begin(filename);
+    if (pstd::find_last_of(begin(filename), end(filename), '.') == end(filename))
         return "";
 
-    return filename.substr(p + 1, filename.size() - p - 1);
+    return (pstd::string)trim(filename, p + 1, filename.size() - p - 1);
 }
-std::string RemoveFileExtension(std::string filename) {
-    size_t p = filename.find_last_of('.');
-    if (p == filename.npos)
+pstd::string RemoveFileExtension(pstd::string_view filename) {
+    size_t p = pstd::find(begin(filename), end(filename), '.') - begin(filename);
+    if (pstd::find(begin(filename), end(filename), '.') == end(filename))
         return "";
 
-    return filename.substr(0, p);
+    return (pstd::string)trim(filename, 0, p);
 }
-std::string ChangeFileExtension(std::string filename, std::string ext) {
+pstd::string ChangeFileExtension(pstd::string_view filename, pstd::string ext) {
     return RemoveFileExtension(filename) + "." + ext;
 }
-std::string AppendFileName(std::string filename, std::string content) {
+pstd::string AppendFileName(pstd::string_view filename, pstd::string content) {
     return RemoveFileExtension(filename) + content + "." + GetFileExtension(filename);
 }
 
-std::string ReadStringFile(std::string filename) {
-    ScopedFile file(filename, std::ios::in | std::ios::binary);
+pstd::string ReadStringFile(pstd::string_view filename) {
+    ScopedFile file(filename, pstd::ios::in | pstd::ios::binary);
     size_t size = file.Size();
-    std::string str;
+    pstd::string str;
     str.resize(size);
-    file.Read(str.data(), size);
+    file.Read(&str[0], size);
     return str;
 }
-void WriteBinaryData(std::string filename, const char *ptr, size_t size) {
-    ScopedFile file(filename, std::ios::binary | std::ios::out);
-    file.Write(ptr, size);
+void WriteBinaryData(pstd::string_view filename, const void *ptr, size_t size) {
+    ScopedFile file(filename, pstd::ios::binary | pstd::ios::out);
+    file.Write((const char *)ptr, size);
 }
-std::vector<char> ReadBinaryData(std::string filename) {
-    ScopedFile file(filename, std::ios::binary | std::ios::in);
-    std::vector<char> data(file.Size());
+pstd::vector<char> ReadBinaryData(pstd::string_view filename) {
+    ScopedFile file(filename, pstd::ios::binary | pstd::ios::in);
+    pstd::vector<char> data(file.Size());
     file.Read(&data[0], file.Size());
     return data;
 }
 
-void SaveBMPImage(std::string filename, vec2i size, int nchannel, uint8_t *data) {
-    LOG_VERBOSE("[FileIO]Saving image \"&\"", filename);
-    ScopedFile file(filename, std::ios::out);
+void WriteImageBMP(pstd::string_view filename, vec2i size, int nchannel, const uint8_t *data) {
+    ScopedFile file(filename, pstd::ios::out);
 
-    std::vector<vec3u8> colors(size.x * size.y);
+    pstd::vector<vec3u8> colors(size.x * size.y);
     for (int x = 0; x < size.x; x++)
         for (int y = 0; y < size.y; y++) {
             vec3u8 c;
@@ -182,195 +166,116 @@ void SaveBMPImage(std::string filename, vec2i size, int nchannel, uint8_t *data)
         }
     }
 }
-void SaveImage(std::string filename, vec2i size, int nchannel, float *data) {
-    std::vector<uint8_t> pixels(size.x * size.y * nchannel);
+void SaveImage(pstd::string_view filename, vec2i size, int nchannel, const float *data) {
+    pstd::vector<uint8_t> pixels(Area(size) * nchannel);
     for (int x = 0; x < size.x; x++)
         for (int y = 0; y < size.y; y++)
             for (int c = 0; c < nchannel; c++)
-                pixels[y * size.x * nchannel + x * nchannel + c] =
-                    Clamp(data[y * size.x * nchannel + x * nchannel + c] * 256.0f, 0.0f, 255.0f);
-
+                pixels[y * size.x * nchannel + x * nchannel + c] = pstd::clamp(
+                    data[y * size.x * nchannel + x * nchannel + c] * 256.0f, 0.0f, 255.0f);
+    SaveImage(filename, size, nchannel, pixels.data());
+}
+void SaveImage(pstd::string_view filename, vec2i size, int nchannel, const uint8_t *data) {
     SWITCH(GetFileExtension(filename)) {
-        CASE("bmp") SaveBMPImage(filename, size, nchannel, (uint8_t *)pixels.data());
-        CASE("png")
-        stbi_write_png(filename.c_str(), size.x, size.y, nchannel, pixels.data(),
-                       size.x * nchannel);
+        CASE("bmp") WriteImageBMP(filename, size, nchannel, data);
         DEFAULT
         LOG_WARNING("& has unsupported image file extension", filename);
     }
 }
-void SaveImage(std::string filename, vec2i size, int nchannel, uint8_t *data) {
-    SWITCH(GetFileExtension(filename)) {
-        CASE("bmp") SaveBMPImage(filename, size, nchannel, data);
-        CASE("png")
-        stbi_write_png(filename.c_str(), size.x, size.y, nchannel, data, size.x * nchannel);
-        DEFAULT
-        LOG_WARNING("& has unsupported image file extension", filename);
-    }
-}
-vec3u8 *ReadLDRImage(std::string filename, vec2i &size) {
-    int nchannel = 0;
-    uint8_t *data = (uint8_t *)stbi_load(filename.c_str(), &size.x, &size.y, &nchannel, 3);
+vec3u8 *ReadLDRImage(pstd::string_view filename, vec2i & /*size*/) {
+    //int nchannel = 0;
+    uint8_t *data = nullptr;
+    LOG_WARNING("[FileIO]Sorry, but image loading is not yet supported");
     if (!data)
         LOG_WARNING("[FileIO]Failed to load \"&\"", filename);
     return (vec3u8 *)data;
 }
 
-std::vector<TriangleMesh> LoadObj(std::string filename, Scene *) {
-    Profiler _("LoadObj");
-    LOG_VERBOSE("[FileIO]Loading \"&\"", filename);
-    Timer timer;
+pstd::pair<pstd::vector<float>, vec3i> LoadVolume(pstd::string_view filename) {
+    if (GetFileExtension(filename) == "compressed")
+        return LoadCompressedVolume(filename);
+    ScopedFile file(filename, pstd::ios::in | pstd::ios::binary);
+    vec3i size = file.Read<vec3i>();
+    pstd::vector<float> density(Volume(size));
+    file.Read(&density[0], density.size() * sizeof(density[0]));
 
-    std::vector<TriangleMesh> meshes;
-    std::string raw = ReadStringFile(filename);
-    std::string_view str = raw;
-    LOG_VERBOSE("[FileIO]Reading .obj into & MB string in & ms", str.size() / 1000000.0,
-                timer.ElapsedMs());
+    return {pstd::move(density), size};
+}
+void CompressVolume(pstd::string /*filename*/, const pstd::vector<float> & /*densityf*/,
+                    vec3i /*size*/) {
+    // ScopedFile file(filename, pstd::ios::out | pstd::ios::binary);
 
-    TriangleMesh mesh;
-    std::string face;
-    face.reserve(64);
+    // for (size_t i = 0; i < densityf.size(); i++)
+    //     if (densityf[i] > 32) {
+    //         LOG_WARNING("Original density has voxel with value larger than 32, which will be "
+    //                     "clamped to 32 for compression");
+    //         break;
+    //     }
 
-    while (true) {
-        size_t pos = str.find_first_of('\n');
-        if (pos == str.npos)
-            break;
-        std::string_view line = str.substr(0, pos);
-        if (line[0] == 'v' && line[1] != 't' && line[1] != 'n') {
-            vec3 v;
-            StrToFloats(line.substr(2), &v[0], 3);
-            mesh.vertices.push_back(v);
+    // pstd::vector<uint16_t> densityi(densityf.size());
+    // for (size_t i = 0; i < densityf.size(); i++)
+    //     densityi[i] =
+    //         pstd::min(densityf[i], 32.0f) * int(pstd::numeric_limits<uint16_t>::max()) / 32;
 
-        } else if (line[0] == 'f') {
-            line = line.substr(2);
-            size_t forwardSlashCount = std::count(line.begin(), line.end(), '/');
-            if (forwardSlashCount == 0) {
-                face = line;
-            } else if (forwardSlashCount == 6) {
-                face += line.substr(0, line.find_first_of('/'));
-                line = line.substr(line.find_first_of(' ') + 1);
-                face += ' ';
-                face += line.substr(0, line.find_first_of('/'));
-                line = line.substr(line.find_first_of(' ') + 1);
-                face += ' ';
-                face += line.substr(0, line.find_first_of('/'));
-            } else {
-                face += line.substr(0, line.find_first_of('/'));
-                line = line.substr(line.find_first_of(' ') + 1);
-                face += ' ';
-                face += line.substr(0, line.find_first_of('/'));
-                line = line.substr(line.find_first_of(' ') + 1);
-                face += ' ';
-                face += line.substr(0, line.find_first_of('/'));
-                line = line.substr(line.find_first_of(' ') + 1);
-                face += ' ';
-                face += line.substr(0, line.find_first_of('/'));
-            }
+    // auto tree = BuildHuffmanTree(densityi);
+    // auto encoded = HuffmanEncode(tree, densityi);
+    // auto treeData = Archive(tree);
+    // auto encodedData = Archive(encoded);
+    // file.Write(size);
+    // file.Write(treeData.size());
+    // file.Write(encodedData.size());
+    // file.Write(treeData.data(), treeData.size() * sizeof(treeData[0]));
+    // file.Write(encodedData.data(), encodedData.size() * sizeof(encodedData[0]));
+}
+pstd::pair<pstd::vector<float>, vec3i> LoadCompressedVolume(pstd::string_view /*filename*/) {
+    // ScopedFile file(filename, pstd::ios::in | pstd::ios::binary);
+    // vec3i size = file.Read<vec3i>();
+    // size_t treeSize = file.Read<size_t>();
+    // size_t encodedSize = file.Read<size_t>();
+    // ArchiveBufferType treeData(treeSize);
+    // ArchiveBufferType encodedData(encodedSize);
+    // file.Read(&treeData[0], treeSize * sizeof(treeData[0]));
+    // file.Read(&encodedData[0], encodedSize * sizeof(encodedData[0]));
+    // auto tree = Unarchive<HuffmanTree<uint16_t>>(treeData);
+    // auto encoded = Unarchive<HuffmanEncoded>(encodedData);
+    // auto densityi = HuffmanDecode<pstd::vector<uint16_t>>(tree, encoded);
 
-            size_t spaceCount = std::count(face.begin(), face.end(), ' ');
-            if (spaceCount == 2) {
-                vec3i f;
-                StrToInts(face, &f[0], 3);
-                for (int i = 0; i < 3; i++) {
-                    if (f[i] < 0)
-                        f[i] = mesh.vertices.size() + f[i];
-                    else
-                        f[i] -= 1;
-                }
-                mesh.indices.push_back(f.x);
-                mesh.indices.push_back(f.y);
-                mesh.indices.push_back(f.z);
-            } else if (spaceCount == 3) {
-                vec4i f;
-                StrToInts(face.c_str(), &f[0], 4);
-                for (int i = 0; i < 4; i++) {
-                    if (f[i] < 0)
-                        f[i] = mesh.vertices.size() + f[i];
-                    else
-                        f[i] -= 1;
-                }
-                mesh.indices.push_back(f[0]);
-                mesh.indices.push_back(f[1]);
-                mesh.indices.push_back(f[2]);
-                mesh.indices.push_back(f[0]);
-                mesh.indices.push_back(f[2]);
-                mesh.indices.push_back(f[3]);
-            }
-        }
-        face.clear();
-        str = str.substr(pos + 1);
-    }
-    LOG("[FileIO]Loaded mesh has & M triangles", mesh.indices.size() / 3 / 1000000.0);
-    meshes.push_back(mesh);
+    // pstd::vector<float> densityf(densityi.size());
+    // for (size_t i = 0; i < densityi.size(); i++)
+    //     densityf[i] = densityi[i] / float(int(pstd::numeric_limits<uint16_t>::max()) / 32);
 
-    LOG_VERBOSE("[FileIO]Obj loaded in & ms", timer.Reset());
-    return meshes;
+    // return {densityf, size};
+    return {};
 }
 
-Parameters LoadScene(std::string filename, Scene *scene) {
+Parameters LoadScene(pstd::string_view filename, Scene *scene) {
+    LOG("[FileIO]Loading \"&\"", filename);
+
     Parameters params = Parse(ReadStringFile(filename));
-    LOG_VERBOSE("[FileIO]Creating scene from parameters");
+
     sceneDirectory = GetFileDirectory(filename);
 
     Timer timer;
 
-    scene->camera = Camera::Create(params["Camera"]["singleton"], scene);
+    for (auto &p : params.GetAll("Material"))
+        scene->materials[p.GetString("name")] = pstd::make_shared<Material>(CreateMaterial(p));
+    for (auto &p : params.GetAll("Medium"))
+        scene->mediums[p.GetString("name")] = pstd::make_shared<Medium>(CreateMedium(p));
+    for (auto &p : params.GetAll("Light"))
+        scene->lights.push_back(CreateLight(p));
+    for (auto &p : params.GetAll("Shape"))
+        scene->shapes.push_back(CreateShape(p, scene));
 
-    for (auto &[name, param] : params["Material"])
-        scene->materials[name] = std::make_shared<Material>(Material::Create(param));
-    for (auto &[name, param] : params["Medium"])
-        scene->mediums[name] = std::make_shared<Medium>(Medium::Create(param));
-    for (auto &[name, param] : params["Light"])
-        scene->lights.push_back(Light::Create(param));
-
-    for (const auto &[name, param] : params["Shape"]) {
-        if (param.GetString("type") == "TriangleMesh") {
-            std::vector<TriangleMesh> meshes =
-                LoadObj(GetFileDirectory(filename) + param.GetString("file"), scene);
-            for (auto &mesh : meshes) {
-                if (auto material = Find(scene->materials, param.GetString("material")))
-                    mesh.material = *material;
-                if (auto mediumInside = Find(scene->mediums, param.GetString("mediumInside")))
-                    mesh.mediumInterface.inside = *mediumInside;
-                if (auto mediumOutside = Find(scene->mediums, param.GetString("mediumOutside")))
-                    mesh.mediumInterface.outside = *mediumOutside;
-                mesh.o2w = Translate(param.GetVec3("translate", vec3(0.0f))) *
-                           Scale(param.GetVec3("scale", vec3(1.0f)));
-                scene->meshes.push_back(mesh);
-            }
-        } else {
-            scene->shapes.push_back(Shape::Create(param, scene));
-        }
-    }
-
-    int lightId = 0;
-    for (const Light &light : scene->lights) {
-        if (light.Tag() == Light::Index<AreaLight>()) {
-            const AreaLight &areaLight = light.Be<AreaLight>();
-            Parameters materialParams;
-            std::string materialName = "areaLightMaterial" + ToString(lightId++);
-            materialParams.Set("type", "Emissive");
-            materialParams["color"].Set("type", "Constant");
-            materialParams["color"].Set("vec3", areaLight.color.ToRGB());
-            scene->materials[materialName] =
-                std::make_shared<Material>(Material::Create(materialParams));
-
-            Parameters shapeParams;
-            shapeParams.Set("type", "Rect");
-            shapeParams.Set("position", areaLight.position);
-            shapeParams.Set("ex", areaLight.ex);
-            shapeParams.Set("ey", areaLight.ey);
-            shapeParams.Set("material", materialName);
-            scene->shapes.push_back(Shape::Create(shapeParams, scene));
-        }
-        if (light.Tag() == Light::Index<EnvironmentLight>()) {
+    for (auto &shape : scene->shapes)
+        if (auto light = shape.GetLight())
+            scene->lights.push_back(*light);
+    for (const Light &light : scene->lights)
+        if (light.Is<EnvironmentLight>())
             scene->envLight = light.Be<EnvironmentLight>();
-        }
-    }
 
-    scene->integrator = Integrator::Create(params["Integrator"]["singleton"], scene);
+    scene->camera = CreateCamera(params["Camera"], scene);
 
-    LOG_VERBOSE("[FileIO]Scene created in & ms", timer.ElapsedMs());
+    scene->integrator = pstd::shared_ptr<Integrator>(CreateIntegrator(params["Integrator"], scene));
 
     return params;
 }

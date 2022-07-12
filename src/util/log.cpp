@@ -1,24 +1,26 @@
 #include <util/log.h>
 
-#include <iostream>
-#include <chrono>
-#include <cmath>
+#include <pstd/math.h>
+
+#include <mutex>
 
 namespace pine {
 
-bool verbose = true;
-
 double Timer::ElapsedMs() {
-    return std::chrono::duration<double>(clock::now() - start).count() * 1000.0;
+    return (clock.now() - t0) * 1000.0;
 }
 double Timer::Reset() {
     double elapsed = ElapsedMs();
-    start = clock::now();
+    t0 = clock.now();
     return elapsed;
 }
 
 void ProgressReporter::Report(int64_t current) {
-    int nDigit = std::max((int)log10(total) + 1, 1);
+    static std::mutex mutex;
+    if (current < previous)
+        return;
+    std::lock_guard<std::mutex> lk(mutex);
+    int nDigit = pstd::max((int)pstd::log10((float)total) + 1, 1);
     if (current == 0) {
         ETA.Reset();
         interval.Reset();
@@ -27,7 +29,7 @@ void ProgressReporter::Report(int64_t current) {
     } else {
         LOG_SAMELINE("[&]&[&/&]  Progress[&2.1%]  ETA[&.0s] &3.3M &/s", tag, desc, Format(nDigit),
                      current, Format(nDigit), total, 100.0 * current / total,
-                     std::ceil((total - current) * ETA.ElapsedMs() / (1000.0 * current)),
+                     pstd::ceil((total - current) * ETA.ElapsedMs() / (1000.0 * current)),
                      (current - previous) * multiplier / (interval.Reset() * 1000.0f), performance);
     }
     if (current == total)

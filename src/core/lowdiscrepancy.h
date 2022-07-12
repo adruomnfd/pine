@@ -6,7 +6,7 @@
 #include <util/sobolmetrices.h>
 #include <util/rng.h>
 
-#include <vector>
+#include <pstd/vector.h>
 
 namespace pine {
 
@@ -22,7 +22,7 @@ inline float RadicalInverse(int baseIndex, uint64_t a) {
         a = next;
     }
 
-    return min(reversedDigits * invBaseN, OneMinusEpsilon);
+    return pstd::min(reversedDigits * invBaseN, OneMinusEpsilon);
 }
 
 inline float ScrambledRadicalInverse(int baseIndex, uint64_t a, const uint16_t* perm) {
@@ -38,7 +38,7 @@ inline float ScrambledRadicalInverse(int baseIndex, uint64_t a, const uint16_t* 
     }
 
     float series = perm[0] / (base + 1.0f);
-    return min((reversedDigits + series) * invBaseN, OneMinusEpsilon);
+    return pstd::min((reversedDigits + series) * invBaseN, OneMinusEpsilon);
 }
 
 inline uint64_t InverseRadicalInverse(uint64_t inverse, int base, int nDigits) {
@@ -57,11 +57,11 @@ void Shuffle(T* samp, int count, int nDimensions, RNG& rng) {
     for (int i = 0; i < count; i++) {
         int other = i + rng.Uniform32u(count - i);
         for (int j = 0; j < nDimensions; j++)
-            std::swap(samp[nDimensions * i + j], samp[nDimensions * other + j]);
+            pstd::swap(samp[nDimensions * i + j], samp[nDimensions * other + j]);
     }
 }
 
-std::vector<uint16_t> ComputeRadicalInversePermutations(RNG& rng);
+pstd::vector<uint16_t> ComputeRadicalInversePermutations(RNG& rng);
 
 inline uint32_t MultiplyGenerator(const uint32_t* C, uint32_t a) {
     uint32_t v = 0;
@@ -72,14 +72,14 @@ inline uint32_t MultiplyGenerator(const uint32_t* C, uint32_t a) {
 }
 
 inline float SampleGeneratorMatrix(const uint32_t* C, uint32_t a, uint32_t scramble = 0) {
-    return min((MultiplyGenerator(C, a) ^ scramble) * 0x1p-32f, OneMinusEpsilon);
+    return pstd::min((MultiplyGenerator(C, a) ^ scramble) * 0x1p-32f, OneMinusEpsilon);
 }
 
 inline void GrayCodeSample(const uint32_t* C, uint32_t n, uint32_t scramble, float* p) {
     uint32_t v = scramble;
     for (uint32_t i = 0; i < n; i++) {
-        p[i] = min(v * 0x1p-32f, OneMinusEpsilon);
-        v ^= C[CountTrailingZero(i + 1)];
+        p[i] = pstd::min(v * 0x1p-32f, OneMinusEpsilon);
+        v ^= C[pstd::ctz(i + 1)];
     }
 }
 
@@ -87,10 +87,10 @@ inline void GrayCodeSample(const uint32_t* C0, const uint32_t* C1, uint32_t n, v
                            vec2* p) {
     uint32_t v[2] = {scramble.x, scramble.y};
     for (uint32_t i = 0; i < n; i++) {
-        p[i].x = min(v[0] * 0x1p-32f, OneMinusEpsilon);
-        p[i].y = min(v[1] * 0x1p-32f, OneMinusEpsilon);
-        v[0] ^= C0[CountTrailingZero(i + 1)];
-        v[1] ^= C1[CountTrailingZero(i + 1)];
+        p[i].x = pstd::min(v[0] * 0x1p-32f, OneMinusEpsilon);
+        p[i].y = pstd::min(v[1] * 0x1p-32f, OneMinusEpsilon);
+        v[0] ^= C0[pstd::ctz(i + 1)];
+        v[1] ^= C1[pstd::ctz(i + 1)];
     }
 }
 
@@ -133,7 +133,7 @@ inline float SobolSample(int64_t a, int dimension, F&& randomizer) {
         if (a & 1)
             v ^= SobolMatrices32[i];
     v = randomizer(v);
-    return min(v * 0x1p-32f, OneMinusEpsilon);
+    return pstd::min(v * 0x1p-32f, OneMinusEpsilon);
 }
 
 inline uint64_t SobolIntervalToIndex(uint32_t m, uint64_t frame, vec2u32 p) {

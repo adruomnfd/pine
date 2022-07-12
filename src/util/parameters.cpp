@@ -1,37 +1,61 @@
 #include <util/parameters.h>
 #include <util/log.h>
 
-#include <sstream>
-
 namespace pine {
 
 void Parameters::Summarize(int indent) const {
-    size_t maxWidth = 0;
     for (const auto& v : values)
-        maxWidth = std::max(v.first.size(), maxWidth);
-    for (const auto& v : values)
-        LOG_VERBOSE("[Parameters]& &<: &", Format(indent), " ", Format(maxWidth), v.first.c_str(),
-                    v.second.c_str());
+        LOG("& &: &", Format(indent), " ", v.first.c_str(), v.second.c_str());
     for (const auto& s : subset) {
-        LOG("[Parameters]&", s.first);
-        s.second.Summarize(indent + 2);
+        for (auto& ss : s.second) {
+            LOG("& &", Format(indent), " ", s.first);
+            ss.Summarize(indent + 4);
+        }
     }
 }
 
-void Parameters::Override(const Parameters& it) {
-    for (const auto& v : it.values)
-        values[v.first] = v.second;
+const pstd::vector<Parameters>& Parameters::GetAll(pstd::string name) const {
+    return subset[name];
+}
+Parameters& Parameters::AddSubset(pstd::string name) {
+    auto& sub = subset[name];
+    sub.resize(sub.size() + 1);
+    return sub.back();
 }
 
-bool Parameters::Has(const std::string& name) const {
+Parameters& Parameters::operator[](pstd::string name) {
+    auto& ss = subset[name];
+
+    if (HasValue(name) && ss.size() == 0)
+        AddSubset(name).Set("@", GetString(name));
+
+    if (ss.size() == 0) {
+        ss.resize(1);
+        return ss[0];
+    }
+    if (ss.size() != 1) {
+        LOG_WARNING("[Parameters][GetSubset]Find & subsets with name \"&\", returns the last one",
+                    ss.size(), name);
+    }
+    return subset[name].back();
+}
+const Parameters& Parameters::operator[](pstd::string name) const {
+    return (*const_cast<Parameters*>(this))[name];
+}
+
+bool Parameters::HasValue(const pstd::string& name) const {
     return values.find(name) != values.end();
 }
 
-bool Parameters::GetBool(const std::string& name, bool fallback) const {
+bool Parameters::HasSubset(const pstd::string& name) const {
+    return subset.find(name) != subset.end() || HasValue(name);
+}
+
+pstd::optional<bool> Parameters::TryGetBool(const pstd::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
-    std::string str = iter->second;
+        return pstd::nullopt;
+    pstd::string str = iter->second;
     for (size_t i = 0; i < str.size(); i++)
         if ('A' <= str[i] && str[i] <= 'Z')
             str[i] += 'a' - 'A';
@@ -41,124 +65,98 @@ bool Parameters::GetBool(const std::string& name, bool fallback) const {
     else if (str == "false")
         return false;
     else
-        return (bool)std::stoi(str);
+        return (bool)pstd::stoi(str);
 }
-int Parameters::GetInt(const std::string& name, int fallback) const {
+pstd::optional<int> Parameters::TryGetInt(const pstd::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
-    std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetInt]& do not have a value", name.c_str());
-        return fallback;
-    }
+        return pstd::nullopt;
+    pstd::string str = iter->second;
 
-    return std::stoi(str);
+    int val = pstd::stoi(str);
+
+    return val;
 }
-float Parameters::GetFloat(const std::string& name, float fallback) const {
+pstd::optional<float> Parameters::TryGetFloat(const pstd::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
-    std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetFloat]& do not have a value", name.c_str());
-        return fallback;
-    }
+        return pstd::nullopt;
+    pstd::string str = iter->second;
 
-    return std::stof(str);
+    float val = pstd::stof(str);
+    return val;
 }
 
-vec2i Parameters::GetVec2i(const std::string& name, vec2i fallback) const {
+pstd::optional<vec2i> Parameters::TryGetVec2i(const pstd::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
-    std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec2i]& do not have a value", name.c_str());
-        return fallback;
-    }
+        return pstd::nullopt;
+    pstd::string str = iter->second;
 
     vec2i v;
-    StrToInts(str, &v[0], 2);
+    pstd::stois(str, &v[0], 2);
     return v;
 }
-vec3i Parameters::GetVec3i(const std::string& name, vec3i fallback) const {
+pstd::optional<vec3i> Parameters::TryGetVec3i(const pstd::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
-    std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec3i]& do not have a value", name.c_str());
-        return fallback;
-    }
+        return pstd::nullopt;
+    pstd::string str = iter->second;
 
     vec3i v;
-    StrToInts(str, &v[0], 3);
+    pstd::stois(str, &v[0], 3);
     return v;
 }
-vec4i Parameters::GetVec4i(const std::string& name, vec4i fallback) const {
+pstd::optional<vec4i> Parameters::TryGetVec4i(const pstd::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
-    std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec4i]& do not have a value", name.c_str());
-        return fallback;
-    }
+        return pstd::nullopt;
+    pstd::string str = iter->second;
 
     vec4i v;
-    StrToInts(str, &v[0], 4);
+    pstd::stois(str, &v[0], 4);
     return v;
 }
 
-vec2 Parameters::GetVec2(const std::string& name, vec2 fallback) const {
+pstd::optional<vec2> Parameters::TryGetVec2(const pstd::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
-    std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec2]& do not have a value", name.c_str());
-        return fallback;
-    }
+        return pstd::nullopt;
+    pstd::string str = iter->second;
 
     vec2 v;
-    StrToFloats(str, &v[0], 2);
+    pstd::stofs(str, &v[0], 2);
     return v;
 }
-vec3 Parameters::GetVec3(const std::string& name, vec3 fallback) const {
+pstd::optional<vec3> Parameters::TryGetVec3(const pstd::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
-    std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec3]& do not have a value", name.c_str());
-        return fallback;
-    }
+        return pstd::nullopt;
+    pstd::string str = iter->second;
 
     vec3 v;
-    StrToFloats(str, &v[0], 3);
+    pstd::stofs(str, &v[0], 3);
     return v;
 }
-vec4 Parameters::GetVec4(const std::string& name, vec4 fallback) const {
+pstd::optional<vec4> Parameters::TryGetVec4(const pstd::string& name) const {
     auto iter = values.find(name);
     if (iter == values.end())
-        return fallback;
-    std::string str = iter->second;
-    if (str == "") {
-        LOG_WARNING("[Parameters][GetVec4]& do not have a value", name.c_str());
-        return fallback;
-    }
+        return pstd::nullopt;
+    pstd::string str = iter->second;
 
     vec4 v;
-    StrToFloats(str, &v[0], 4);
+    pstd::stofs(str, &v[0], 4);
     return v;
 }
 
-std::string Parameters::GetString(const std::string& name, const std::string& fallback) const {
+pstd::optional<pstd::string> Parameters::TryGetString(const pstd::string& name) const {
     auto iter = values.find(name);
-    if (iter == values.end())
-        return fallback;
-    std::string str = iter->second;
+    if (iter == values.end()) {
+        if (name == "type" && HasValue("@"))
+            return GetString("@");
+        return pstd::nullopt;
+    }
+    pstd::string str = iter->second;
 
     return str;
 }

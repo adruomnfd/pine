@@ -3,7 +3,7 @@
 
 #include <util/log.h>
 
-#include <utility>
+#include <pstd/type_traits.h>
 
 namespace pine {
 
@@ -14,7 +14,7 @@ template <typename T>
 struct TypePack<T> {
     template <typename Ty>
     static constexpr int Index() {
-        static_assert(std::is_same<T, Ty>(), "Type \"Ty\" is not a member of this TypePack");
+        static_assert(pstd::is_same<T, Ty>(), "Type \"Ty\" is not a member of this TypePack");
         return 0;
     }
 };
@@ -23,7 +23,7 @@ template <typename T, typename... Ts>
 struct TypePack<T, Ts...> : TypePack<Ts...> {
     template <typename Ty>
     static constexpr int Index() {
-        if constexpr (std::is_same<T, Ty>())
+        if constexpr (pstd::is_same<T, Ty>())
             return 0;
         else
             return 1 + TypePack<Ts...>::template Index<Ty>();
@@ -229,8 +229,6 @@ struct TaggedPointer {
     TaggedPointer() = default;
     template <typename T>
     TaggedPointer(T* ptr) {
-        CHECK(bits == 0);
-        CHECK((uint64_t)ptr == ((uint64_t)ptr & ptrMask));
         bits = (uint64_t)ptr;
         bits |= uint64_t(types::template Index<T>()) << tagShift;
     }
@@ -284,27 +282,16 @@ struct TaggedPointer {
 
     template <typename F>
     decltype(auto) Dispatch(F&& f) {
-        CHECK(Ptr() != nullptr);
         return pine::Dispatch<Ts...>(f, Tag(), Ptr());
     }
     template <typename F>
     decltype(auto) Dispatch(F&& f) const {
-        CHECK(Ptr() != nullptr);
         return pine::DispatchConst<Ts...>(f, Tag(), Ptr());
-    }
-
-    void InvokeDestructor() {
-        if (bits) {
-            Dispatch([](auto ptr) {
-                using T = std::decay_t<decltype(*ptr)>;
-                (ptr->~T)();
-            });
-        }
     }
 
     TaggedPointer Clone() const {
         Dispatch([&](auto ptr) {
-            using T = std::decay_t<decltype(*ptr)>;
+            using T = pstd::decay_t<decltype(*ptr)>;
             return new T(*ptr);
         });
     }
@@ -314,11 +301,6 @@ struct TaggedPointer {
             Dispatch([](auto ptr) { delete ptr; });
             bits = 0;
         }
-    }
-
-    template <typename... Args>
-    void Reset(Args&&... args) {
-        Dispatch([&](auto ptr) { *ptr = {std::forward<Args>(args)...}; });
     }
 
   protected:

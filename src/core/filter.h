@@ -4,6 +4,8 @@
 #include <core/vecmath.h>
 #include <util/taggedvariant.h>
 
+#include <pstd/math.h>
+
 namespace pine {
 
 struct FilterBase {
@@ -22,21 +24,22 @@ struct BoxFilter : FilterBase {
 struct TriangleFilter : FilterBase {
     using FilterBase::FilterBase;
     float Evaluate(vec2 p) const {
-        return max(radius.x - std::abs(p.x), 0.0f) * max(radius.y - std::abs(p.y), 0.0f);
+        return pstd::max(radius.x - pstd::abs(p.x), 0.0f) *
+               pstd::max(radius.y - pstd::abs(p.y), 0.0f);
     }
 };
 
 struct GaussianFilter : FilterBase {
     GaussianFilter(vec2 radius, float alpha) : FilterBase(radius), alpha(alpha) {
-        expX = std::exp(-alpha * Sqr(radius.x));
-        expY = std::exp(-alpha * Sqr(radius.y));
+        expX = pstd::exp(-alpha * pstd::sqr(radius.x));
+        expY = pstd::exp(-alpha * pstd::sqr(radius.y));
     }
     float Evaluate(vec2 p) const {
         return Gaussian(p.x, expX) * Gaussian(p.y, expY);
     }
 
     float Gaussian(float d, float expv) const {
-        return max(std::exp(-alpha * d * d) - expv, 0.0f);
+        return pstd::max(pstd::exp(-alpha * d * d) - expv, 0.0f);
     }
 
     float alpha;
@@ -52,7 +55,7 @@ struct MitchellFilter : FilterBase {
     }
 
     float Mitchell1D(float x) const {
-        x = std::abs(2 * x);
+        x = pstd::abs(2 * x);
         if (x > 1)
             return ((-B - 6 * C) * x * x * x + (6 * B + 30 * C) * x * x + (-12 * B - 48 * C) * x +
                     (8 * B + 24 * C)) *
@@ -75,14 +78,14 @@ struct LanczosSincFilter : FilterBase {
     }
 
     float Sinc(float x) const {
-        x = std::abs(x);
+        x = pstd::abs(x);
         if (x < 1e-5f)
             return 1.0f;
-        return std::sin(Pi * x) / (Pi * x);
+        return pstd::sin(Pi * x) / (Pi * x);
     }
 
     float WindowedSinc(float x, float radius) const {
-        x = std::abs(x);
+        x = pstd::abs(x);
         if (x > radius)
             return 0;
         float lanczos = Sinc(x / tau);
@@ -96,7 +99,6 @@ struct Filter
     : TaggedVariant<BoxFilter, TriangleFilter, GaussianFilter, MitchellFilter, LanczosSincFilter> {
   public:
     using TaggedVariant::TaggedVariant;
-    static Filter Create(const Parameters& params);
 
     float Evaluate(vec2 p) const {
         return Dispatch([&](auto&& x) { return x.Evaluate(p); });
@@ -105,6 +107,8 @@ struct Filter
         return Dispatch([&](auto&& x) { return x.radius; });
     }
 };
+
+Filter CreateFilter(const Parameters& params);
 
 }  // namespace pine
 

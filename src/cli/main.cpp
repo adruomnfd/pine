@@ -5,8 +5,8 @@
 
 int main(int argc, char* argv[]) {
     using namespace pine;
-    if (argc < 2) {
-        LOG("pine [filename]");
+    if (argc != 2) {
+        LOG("Usage: pine [filename]");
         return 0;
     }
 
@@ -14,20 +14,16 @@ int main(int argc, char* argv[]) {
     LOG_WARNING("[Performance]Built in debug mode");
 #endif
 
-    {
-        Profiler _("Main");
-        SampledProfiler::Initialize();
+    Profiler::Initialize();
+    SampledProfiler::Initialize();
+    SampledSpectrum::Initialize();
 
-        SampledSpectrum::Initialize();
+    auto scene = pstd::make_shared<Scene>();
+    LoadScene(argv[1], scene.get());
+    scene->integrator->Render();
 
-        std::shared_ptr<Scene> scene = std::make_shared<Scene>();
-        LoadScene(argv[1], scene.get());
-
-        scene->integrator->Render();
-    }
-
-    SampledProfiler::ReportStat();
-    Profiler::ReportStat();
+    SampledProfiler::Finalize();
+    Profiler::Finalize();
 
     return 0;
 }

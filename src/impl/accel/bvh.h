@@ -3,12 +3,12 @@
 
 #include <core/accel.h>
 
-#include <memory>
-#include <vector>
+#include <pstd/memory.h>
+#include <pstd/vector.h>
 
 namespace pine {
 
-class BVH : public Accel {
+class BVHImpl {
   public:
     struct alignas(16) Node {
         float SurfaceArea() const {
@@ -24,14 +24,14 @@ class BVH : public Accel {
                 nodes[parent].UpdateAABB(nodes);
         }
         float ComputeCost(Node* nodes) {
-            if (triangles)
+            if (primitiveIndices.size())
                 return SurfaceArea();
             return SurfaceArea() + nodes[children[0]].ComputeCost(nodes) +
                    nodes[children[1]].ComputeCost(nodes);
         }
         float Inefficiency() const {
             float mSum = SurfaceArea() / (2 * (aabbs[0].SurfaceArea() + aabbs[1].SurfaceArea()));
-            float mMin = SurfaceArea() / std::min(aabbs[0].SurfaceArea(), aabbs[1].SurfaceArea());
+            float mMin = SurfaceArea() / pstd::min(aabbs[0].SurfaceArea(), aabbs[1].SurfaceArea());
             float mArea = SurfaceArea();
             return mSum * mMin * mArea;
         }
@@ -44,34 +44,44 @@ class BVH : public Accel {
         int indexAsChild = -1;
         bool removed = false;
 
-        int numPrimitives = 0;
-        Triangle* triangles = nullptr;
+        pstd::vector<int> primitiveIndices;
     };
     struct Primitive {
         AABB aabb;
-        Triangle triangle;
+        int index = 0;
     };
 
-    BVH(const Parameters&) {
-    }
-    ~BVH() {
-        for (Node& node : nodes)
-            if (node.triangles)
-                delete[] node.triangles;
-    }
-    PINE_DELETE_COPY_MOVE(BVH)
+    void Build(pstd::vector<Primitive> primitives);
 
-    void Initialize(const TriangleMesh* mesh) override;
     int BuildSAHBinned(Primitive* begin, Primitive* end, AABB aabb);
     int BuildSAHFull(Primitive* begin, Primitive* end, AABB aabb);
-    int BuildSpatialSplit(Primitive* begin, Primitive* end, AABB aabb, float SAroot, int depth = 0);
     void Optimize();
 
-    bool Hit(Ray ray) const override;
-    bool Intersect(Ray& ray, Interaction& it) const override;
+    template <typename F>
+    bool Hit(const Ray& ray, F&& f) const;
+    template <typename F, typename G>
+    bool Intersect(Ray& ray, Interaction& it, F&& f, G&& g) const;
+    AABB GetAABB() const {
+        return Union(nodes[rootIndex].aabbs[0], nodes[rootIndex].aabbs[1]);
+    }
 
     int rootIndex = -1;
-    std::vector<Node> nodes;
+    pstd::vector<Node> nodes;
+};
+
+class BVH : public Accel {
+  public:
+    BVH(const Parameters&) {
+    }
+
+    void Initialize(const Scene* scene);
+    bool Hit(Ray ray) const;
+    bool Intersect(Ray& ray, Interaction& it) const;
+
+    pstd::vector<BVHImpl> lbvh;
+    BVHImpl tbvh;
+    pstd::vector<int> indices;
+    const Scene* scene;
 };
 
 }  // namespace pine

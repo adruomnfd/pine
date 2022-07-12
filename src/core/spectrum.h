@@ -48,6 +48,8 @@ class RGBSpectrum;
 template <int nSpectrumSamples>
 class CoefficientSpectrum {
   public:
+    static constexpr int nSamples = nSpectrumSamples;
+
     CoefficientSpectrum(float v = 0.0f) {
         for (int i = 0; i < nSpectrumSamples; i++)
             c[i] = v;
@@ -89,31 +91,41 @@ class CoefficientSpectrum {
 
     friend CoefficientSpectrum Sqrt(CoefficientSpectrum s) {
         for (int i = 0; i < nSpectrumSamples; i++)
-            s.c[i] = std::sqrt(s.c[i]);
+            s.c[i] = pstd::sqrt(s.c[i]);
         return s;
     }
 
     friend CoefficientSpectrum Pow(CoefficientSpectrum s, float exp) {
         for (int i = 0; i < nSpectrumSamples; i++)
-            s.c[i] = std::pow(s.c[i], exp);
+            s.c[i] = pstd::pow(s.c[i], exp);
         return s;
     }
 
     friend CoefficientSpectrum Exp(CoefficientSpectrum s) {
         for (int i = 0; i < nSpectrumSamples; i++)
-            s.c[i] = std::exp(s.c[i]);
+            s.c[i] = pstd::exp(s.c[i]);
         return s;
     }
 
     friend CoefficientSpectrum Clamp(CoefficientSpectrum s, float low = 0, float high = Infinity) {
         for (int i = 0; i < nSpectrumSamples; i++)
-            s.c[i] = pine::Clamp(s.c[i], low, high);
+            s.c[i] = pstd::clamp(s.c[i], low, high);
         return s;
     }
 
     friend CoefficientSpectrum Lerp(float t, const CoefficientSpectrum& s1,
                                     const CoefficientSpectrum& s2) {
         return (1 - t) * s1 + t * s2;
+    }
+
+    float Sum() const {
+        float s = 0;
+        for (int i = 0; i < nSpectrumSamples; i++)
+            s += c[i];
+        return s;
+    }
+    float Average() const {
+        return Sum() / nSpectrumSamples;
     }
 
     CoefficientSpectrum operator-() const {
@@ -139,7 +151,14 @@ class CoefficientSpectrum {
 
     bool HasNaNs() const {
         for (int i = 0; i < nSpectrumSamples; i++)
-            if (std::isnan(c[i]))
+            if (pstd::isnan(c[i]))
+                return true;
+        return false;
+    }
+
+    bool HasInfs() const {
+        for (int i = 0; i < nSpectrumSamples; i++)
+            if (pstd::isinf(c[i]))
                 return true;
         return false;
     }

@@ -26,7 +26,7 @@ static void extendedGCD(uint64_t a, uint64_t b, int64_t& gcd, int64_t& x, int64_
 static uint64_t multiplicativeInverse(int64_t a, int64_t n) {
     int64_t gcd, x, y;
     extendedGCD(a, n, gcd, x, y);
-    return Mod(x, n);
+    return pstd::mod(x, n);
 }
 
 HaltonSampler::HaltonSampler(int samplesPerPixel, vec2i filmSize,
@@ -41,7 +41,7 @@ HaltonSampler::HaltonSampler(int samplesPerPixel, vec2i filmSize,
     for (int i = 0; i < 2; i++) {
         int base = (i == 0) ? 2 : 3;
         int scale = 1, exp = 0;
-        while (scale < min(filmSize[i], MaxHaltonResolution)) {
+        while (scale < pstd::min(filmSize[i], MaxHaltonResolution)) {
             scale *= base;
             ++exp;
         }
@@ -58,7 +58,7 @@ HaltonSampler::HaltonSampler(int samplesPerPixel, vec2i filmSize,
 void HaltonSampler::StartPixel(vec2i p, int sampleIndex) {
     haltonIndex = 0;
     if (sampleStride > 1) {
-        vec2i pm = {Mod(p[0], MaxHaltonResolution), Mod(p[1], MaxHaltonResolution)};
+        vec2i pm = {pstd::mod(p[0], MaxHaltonResolution), pstd::mod(p[1], MaxHaltonResolution)};
         for (int i = 0; i < 2; i++) {
             uint64_t dimOffset = InverseRadicalInverse(pm[i], i == 0 ? 2 : 3, baseExponents[i]);
             haltonIndex += dimOffset * baseScales[1 - i] * multInverse[1 - i];
@@ -97,10 +97,10 @@ const uint16_t* HaltonSampler::PermutationForDimension(int dim) const {
 
 ZeroTwoSequenceSampler::ZeroTwoSequenceSampler(int spp, int nSampledDimensions)
     : nSampledDimensions(nSampledDimensions) {
-    samplesPerPixel = RoundUpPow2(spp);
+    samplesPerPixel = pstd::roundup2(spp);
     for (int i = 0; i < nSampledDimensions; i++) {
-        samples1D.push_back(std::vector<float>(samplesPerPixel));
-        samples2D.push_back(std::vector<vec2>(samplesPerPixel));
+        samples1D.push_back(pstd::vector<float>(samplesPerPixel));
+        samples2D.push_back(pstd::vector<vec2>(samplesPerPixel));
     }
 }
 void ZeroTwoSequenceSampler::StartPixel(vec2i, int sampleIndex) {
@@ -129,8 +129,8 @@ vec2 ZeroTwoSequenceSampler::Get2D() {
 SobolSampler::SobolSampler(int spp, vec2i filmSize, RandomizeStrategy randomizeStrategy)
     : randomizeStrategy(randomizeStrategy) {
     samplesPerPixel = spp;
-    scale = RoundUpPow2(max(filmSize.x, filmSize.y));
-    log2Scale = Log2Int(scale);
+    scale = pstd::roundup2(pstd::max(filmSize.x, filmSize.y));
+    log2Scale = pstd::log2int(scale);
 }
 
 void SobolSampler::StartPixel(vec2i p, int index) {
@@ -140,9 +140,9 @@ void SobolSampler::StartPixel(vec2i p, int index) {
     sobolIndex = SobolIntervalToIndex(log2Scale, sampleIndex, pixel);
 }
 void SobolSampler::StartNextSample() {
-    dimension = 2;
     sampleIndex++;
     sobolIndex = SobolIntervalToIndex(log2Scale, sampleIndex, pixel);
+    dimension = 2;
 }
 float SobolSampler::Get1D() {
     if (dimension >= NSobolDimensions)
@@ -219,6 +219,28 @@ float SobolSampler::SampleDimension(int dim) const {
     }
 }
 
+void MltSampler::EnsureReady(int dim) {
+    if (dim >= (int)X.size())
+        X.resize(dim + 1);
+    PrimarySample& Xi = X[dim];
+
+    if (Xi.lastModificationIndex < lastLargeStepIndex) {
+        Xi.value = rng.Uniformf();
+        Xi.lastModificationIndex = lastLargeStepIndex;
+    }
+
+    Xi.Backup();
+    if (largeStep) {
+        Xi.value = rng.Uniformf();
+    } else {
+        int64_t nSmall = sampleIndex - Xi.lastModificationIndex;
+        float normalSample = pstd::sqrt(2.0f) * ErfInv(2 * rng.Uniformf() - 1);
+        float effSigma = sigma * pstd::sqrt((float)nSmall);
+        Xi.value = pstd::fract(Xi.value + normalSample * effSigma);
+    }
+    Xi.lastModificationIndex = sampleIndex;
+}
+
 UniformSampler UniformSampler::Create(const Parameters& params) {
     return UniformSampler(params.GetInt("samplesPerPixel"));
 }
@@ -230,7 +252,7 @@ StratifiedSampler StratifiedSampler::Create(const Parameters& params) {
 
 HaltonSampler HaltonSampler::Create(const Parameters& params) {
     RandomizeStrategy randomizeStrategy = RandomizeStrategy::PermuteDigits;
-    SWITCH(params.GetString("randomizeStrategy")) {
+    SWITCH(params.GetString("randomizeStrategy", "permutateDigits")) {
         CASE("none") randomizeStrategy = RandomizeStrategy::None;
         CASE("permutateDigits") randomizeStrategy = RandomizeStrategy::PermuteDigits;
     }
@@ -245,7 +267,7 @@ ZeroTwoSequenceSampler ZeroTwoSequenceSampler::Create(const Parameters& params) 
 
 SobolSampler SobolSampler::Create(const Parameters& params) {
     RandomizeStrategy randomizeStrategy = RandomizeStrategy::BinaryPermutate;
-    SWITCH(params.GetString("randomizeStrategy")) {
+    SWITCH(params.GetString("randomizeStrategy", "fastOwen")) {
         CASE("none") randomizeStrategy = RandomizeStrategy::None;
         CASE("binaryPermutate") randomizeStrategy = RandomizeStrategy::BinaryPermutate;
         CASE("Owen") randomizeStrategy = RandomizeStrategy::Owen;
@@ -255,8 +277,8 @@ SobolSampler SobolSampler::Create(const Parameters& params) {
                         randomizeStrategy);
 }
 
-Sampler Sampler::Create(const Parameters& params) {
-    std::string type = params.GetString("type");
+Sampler CreateSampler(const Parameters& params) {
+    pstd::string type = params.GetString("type");
     SWITCH(type) {
         CASE("Uniform") return UniformSampler(UniformSampler::Create(params));
         CASE("Stratified") return StratifiedSampler(StratifiedSampler::Create(params));

@@ -1,6 +1,7 @@
 #include <core/geometry.h>
 #include <core/scene.h>
 #include <util/parameters.h>
+#include <util/objloader.h>
 #include <util/fileio.h>
 #include <util/misc.h>
 
@@ -102,38 +103,33 @@ bool Plane::Intersect(Ray& ray, Interaction& it) const {
     it.n = n;
     it.uv = vec2(Dot(it.p - position, u), Dot(it.p - position, v));
     it.p = position + it.uv.x * u + it.uv.y * v;
+    it.dpdu = u;
+    it.dpdv = v;
     return true;
 }
 AABB Plane::GetAABB() const {
     return {vec3(-1e+6f), vec3(1e+6f)};
 }
 
-bool Sphere::Hit(const Ray& ray) const {
-    float a = Dot(ray.d, ray.d);
-    float b = 2 * Dot(ray.o - c, ray.d);
-    float c = Dot(ray.o, ray.o) + Dot(this->c, this->c) - 2 * Dot(ray.o, this->c) - r * r;
+float Sphere::ComputeT(vec3 ro, vec3 rd, float tmin, vec3 p, float r) {
+    float a = Dot(rd, rd);
+    float b = 2 * Dot(ro - p, rd);
+    float c = Dot(ro, ro) + Dot(p, p) - 2 * Dot(ro, p) - r * r;
     float d = b * b - 4 * a * c;
     if (d <= 0.0f)
-        return false;
-    d = std::sqrt(d);
+        return -1.0f;
+    d = pstd::sqrt(d);
     float t = (-b - d) / (2 * a);
-    if (t < ray.tmin)
+    if (t < tmin)
         t = (-b + d) / (2 * a);
-    if (t < ray.tmin)
-        return false;
-    return t < ray.tmax;
+    return t;
+}
+bool Sphere::Hit(const Ray& ray) const {
+    float t = ComputeT(ray.o, ray.d, ray.tmin, c, r);
+    return t > ray.tmin && t < ray.tmax;
 }
 bool Sphere::Intersect(Ray& ray, Interaction& it) const {
-    float a = Dot(ray.d, ray.d);
-    float b = 2 * Dot(ray.o - c, ray.d);
-    float c = Dot(ray.o, ray.o) + Dot(this->c, this->c) - 2 * Dot(ray.o, this->c) - r * r;
-    float d = b * b - 4 * a * c;
-    if (d <= 0.0f)
-        return false;
-    d = std::sqrt(d);
-    float t = (-b - d) / (2 * a);
-    if (t < ray.tmin)
-        t = (-b + d) / (2 * a);
+    float t = ComputeT(ray.o, ray.d, ray.tmin, c, r);
     if (t < ray.tmin)
         return false;
     if (t > ray.tmax)
@@ -141,7 +137,12 @@ bool Sphere::Intersect(Ray& ray, Interaction& it) const {
     ray.tmax = t;
     it.n = Normalize(ray(t) - this->c);
     it.p = this->c + it.n * r;
-    it.uv = CartesianToSpherical(it.n) / vec2(Pi * 2, Pi);
+    auto [phi, theta] = CartesianToSpherical(it.n);
+    float sinTheta = pstd::sin(theta), cosTheta = pstd::cos(theta);
+    float sinPhi = pstd::sin(phi), cosPhi = pstd::cos(phi);
+    it.dpdu = vec3(sinTheta * -sinPhi, sinTheta * cosPhi, 0.0f);
+    it.dpdv = vec3(cosTheta * cosPhi, cosTheta * sinPhi, -sinTheta);
+    it.uv = vec2(phi, theta);
     return true;
 }
 AABB Sphere::GetAABB() const {
@@ -185,10 +186,11 @@ bool Rect::Intersect(Ray& ray, Interaction& it) const {
     if (v < -0.5f || v > 0.5f)
         return false;
     ray.tmax = t;
-    it.p = position + ex * u + ey * v;
+    it.p = position + lx * ex * u + ly * ey * v;
     it.n = n;
-    it.uv = vec2(u, v);
-    it.pdf = 1.0f / (lx * ly);
+    it.uv = vec2(u, v) + vec2(0.5f);
+    it.dpdu = ex;
+    it.dpdv = ey;
     return true;
 }
 AABB Rect::GetAABB() const {
@@ -202,13 +204,13 @@ AABB Rect::GetAABB() const {
 
 bool Cylinder::Hit(const Ray& ray) const {
     vec3 o = ray.o - pos, d = ray.d;
-    float a = Sqr(d.x) + Sqr(d.z);
+    float a = pstd::sqr(d.x) + pstd::sqr(d.z);
     float b = 2 * (o.x * d.x + o.z * d.z);
-    float c = Sqr(o.x) + Sqr(o.z) - Sqr(r);
+    float c = pstd::sqr(o.x) + pstd::sqr(o.z) - pstd::sqr(r);
     float determinant = b * b - 4 * a * c;
     if (determinant <= 0)
         return false;
-    determinant = std::sqrt(determinant);
+    determinant = pstd::sqrt(determinant);
 
     float t = (-b - determinant) / (2 * a);
     vec3 ip = ray(t) - pos;
@@ -221,13 +223,13 @@ bool Cylinder::Hit(const Ray& ray) const {
 }
 bool Cylinder::Intersect(Ray& ray, Interaction& it) const {
     vec3 o = ray.o - pos, d = ray.d;
-    float a = Sqr(d.x) + Sqr(d.z);
+    float a = pstd::sqr(d.x) + pstd::sqr(d.z);
     float b = 2 * (o.x * d.x + o.z * d.z);
-    float c = Sqr(o.x) + Sqr(o.z) - Sqr(r);
+    float c = pstd::sqr(o.x) + pstd::sqr(o.z) - pstd::sqr(r);
     float determinant = b * b - 4 * a * c;
     if (determinant <= 0)
         return false;
-    determinant = std::sqrt(determinant);
+    determinant = pstd::sqrt(determinant);
 
     float t = (-b - determinant) / (2 * a);
     vec3 ip = ray(t) - pos;
@@ -241,7 +243,6 @@ bool Cylinder::Intersect(Ray& ray, Interaction& it) const {
     it.p = ray(t);
     it.n = Normalize(vec3(ip.x, 0.0f, ip.z));
     it.uv = vec2(Phi2pi(ip.x, ip.z) / (Pi * 2), ip.y / height);
-    it.pdf = 1.0f / (r * phiMax * height);
 
     return true;
 }
@@ -256,7 +257,7 @@ bool Disk::Hit(const Ray& ray) const {
     if (t >= ray.tmax)
         return false;
     vec3 p = ray.o + t * ray.d - position;
-    if (LengthSquared(p) > Sqr(r))
+    if (LengthSquared(p) > pstd::sqr(r))
         return false;
     return true;
 }
@@ -267,13 +268,15 @@ bool Disk::Intersect(Ray& ray, Interaction& it) const {
     if (t >= ray.tmax)
         return false;
     vec3 p = ray.o + t * ray.d - position;
-    if (LengthSquared(p) > Sqr(r))
+    if (LengthSquared(p) > pstd::sqr(r))
         return false;
 
     ray.tmax = t;
     it.p = ray.o + t * ray.d;
     it.n = n;
-    it.uv = vec2(Length(p) / r, Phi2pi(p.x, p.z) / (Pi * 2));
+    it.uv = vec2(Length(p), Phi2pi(p.x, p.z));
+    it.dpdu = p / it.uv.x;
+    it.dpdv = vec3(pstd::cos(it.uv.y), 0.0f, pstd::sin(it.uv.y));
     return true;
 }
 
@@ -294,8 +297,8 @@ bool Line::Intersect(Ray& ray, Interaction& it) const {
     vec3 o = p0;
     vec3 d = p1 - p0;
     vec2 tz = Inverse(mat2(Dot(d, d), -d.z, -d.z, 1.0f)) * vec2(-Dot(o, d), o.z);
-    float t = Clamp(tz.x, 0.0f, 1.0f);
-    float z = Clamp(o.z + t * d.z, ray.tmin + thickness, ray.tmax);
+    float t = pstd::clamp(tz.x, 0.0f, 1.0f);
+    float z = pstd::clamp(o.z + t * d.z, ray.tmin + thickness, ray.tmax);
 
     float D = Length(o + t * d - vec3(0.0f, 0.0f, z));
 
@@ -347,8 +350,21 @@ Rect Rect::Create(const Parameters& params) {
     return Rect(params.GetVec3("position"), params.GetVec3("ex"), params.GetVec3("ey"));
 }
 
-Shape Shape::Create(const Parameters& params, const Scene* scene) {
-    std::string type = params.GetString("type");
+TriangleMesh TriangleMesh::Create(const Parameters& params) {
+    TriangleMesh mesh = LoadObj(params.GetString("file"));
+
+    if (auto s = params.TryGetVec3("scale"))
+        for (auto& v : mesh.vertices)
+            v *= *s;
+    if (auto p = params.TryGetVec3("position"))
+        for (auto& v : mesh.vertices)
+            v += *p;
+
+    return mesh;
+}
+
+Shape CreateShape(const Parameters& params, Scene* scene) {
+    pstd::string type = params.GetString("type");
     Shape shape;
 
     SWITCH(type) {
@@ -359,6 +375,7 @@ Shape Shape::Create(const Parameters& params, const Scene* scene) {
         CASE("Cylinder") shape = Cylinder(Cylinder::Create(params));
         CASE("Disk") shape = Disk(Disk::Create(params));
         CASE("Line") shape = Line(Line::Create(params));
+        CASE("TriangleMesh") shape = TriangleMesh(TriangleMesh::Create(params));
         DEFAULT {
             LOG_WARNING("[Shape][Create]Unknown type \"&\"", type);
             shape = Sphere(Sphere::Create(params));
@@ -366,12 +383,30 @@ Shape Shape::Create(const Parameters& params, const Scene* scene) {
     }
 
     shape.aabb = shape.Dispatch([](auto&& x) { return x.GetAABB(); });
-    if (auto material = Find(scene->materials, params.GetString("material")))
+    if (auto name = params.TryGetString("material")) {
+        auto material = Find(scene->materials, *name);
+        if (!material)
+            LOG_WARNING("[Shape][Create]Material \"&\" is not found", name);
         shape.material = *material;
-    if (auto mediumInside = Find(scene->mediums, params.GetString("mediumInside")))
-        shape.mediumInterface.inside = *mediumInside;
-    if (auto mediumOutside = Find(scene->mediums, params.GetString("mediumOutside")))
-        shape.mediumInterface.outside = *mediumOutside;
+    }
+    if (auto name = params.TryGetString("medium")) {
+        auto medium = Find(scene->mediums, *name);
+        if (!medium)
+            LOG_WARNING("[Shape][Create]Medium \"&\" is not found", name);
+        shape.mediumInterface.inside = *medium;
+    }
+    if (auto name = params.TryGetString("mediumInside")) {
+        auto medium = Find(scene->mediums, *name);
+        if (!medium)
+            LOG_WARNING("[Shape][Create]Medium \"&\" is not found", name);
+        shape.mediumInterface.inside = *medium;
+    }
+    if (auto name = params.TryGetString("mediumOutside")) {
+        auto medium = Find(scene->mediums, *name);
+        if (!medium)
+            LOG_WARNING("[Shape][Create]Medium \"&\" is not found", name);
+        shape.mediumInterface.outside = *medium;
+    }
     return shape;
 }
 }  // namespace pine

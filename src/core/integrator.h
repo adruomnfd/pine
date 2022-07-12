@@ -6,59 +6,59 @@
 #include <core/sampler.h>
 #include <core/accel.h>
 #include <core/film.h>
-#include <util/parameters.h>
 
-#include <memory>
-#include <map>
+#include <pstd/memory.h>
+#include <pstd/map.h>
 
 namespace pine {
 
 class Integrator {
   public:
-    static std::shared_ptr<Integrator> Create(const Parameters& parameters, const Scene* scene);
-    Integrator(const Parameters& parameters, const Scene* scene);
+    Integrator(const Parameters& params, Scene* scene);
     virtual ~Integrator() = default;
 
     virtual void Render() = 0;
 
-  protected:
-    const Scene* scene;
+    LightSampler lightSampler;
 
-    Film film;
+    Scene* scene = nullptr;
+    Film* film = nullptr;
     vec2i filmSize;
 
-    std::vector<Sampler> samplers;
+    pstd::vector<Sampler> samplers;
     int samplesPerPixel;
-    LightSampler lightSampler;
 };
 
 class RayIntegrator : public Integrator {
   public:
-    RayIntegrator(const Parameters& parameters, const Scene* scene);
+    RayIntegrator(const Parameters& params, Scene* scene);
 
-    bool Hit(const Ray& ray);
-    bool Intersect(Ray& ray, Interaction& it);
-    bool IntersectTr(Ray ray, Spectrum& tr, Sampler& sampler);
-    Spectrum EstimateDirect(Ray ray, Interaction it, Sampler& sampler);
+    bool Hit(Ray ray) const;
+    bool Intersect(Ray& ray, Interaction& it) const;
+    Spectrum IntersectTr(Ray ray, Sampler& sampler) const;
+    Spectrum EstimateDirect(Ray ray, Interaction it, Sampler& sampler) const;
 
-    std::vector<std::shared_ptr<Accel>> accels;
+    pstd::shared_ptr<Accel> accel;
+    int maxDepth;
 };
 
-class PixelSampleIntegrator : public RayIntegrator {
+class PixelIntegrator : public RayIntegrator {
   public:
     using RayIntegrator::RayIntegrator;
 
-    virtual void Render();
-    virtual std::optional<Spectrum> Li(Ray ray, Sampler& sampler) = 0;
+    void Render() override;
+    virtual void Compute(vec2i p, Sampler& sampler) = 0;
 };
 
-class SinglePassIntegrator : public RayIntegrator {
+class RadianceIntegrator : public PixelIntegrator {
   public:
-    using RayIntegrator::RayIntegrator;
+    using PixelIntegrator::PixelIntegrator;
 
-    virtual void Render();
-    virtual std::optional<Spectrum> Li(Ray ray, Sampler& sampler) = 0;
+    void Compute(vec2i p, Sampler& sampler) override;
+    virtual Spectrum Li(Ray ray, Sampler& sampler) = 0;
 };
+
+Integrator* CreateIntegrator(const Parameters& params, Scene* scene);
 
 }  // namespace pine
 

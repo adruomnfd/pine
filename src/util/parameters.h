@@ -2,43 +2,72 @@
 #define PINE_UTIL_PARAMETER_H
 
 #include <core/vecmath.h>
+#include <util/log.h>
 
-#include <map>
-#include <string>
-#include <vector>
+#include <pstd/map.h>
+#include <pstd/string.h>
+#include <pstd/vector.h>
+#include <pstd/optional.h>
 
 namespace pine {
 
 struct Parameters {
-    void Override(const Parameters& it);
     void Summarize(int indent = 0) const;
 
     template <typename T>
-    void Set(std::string name, T val) {
-        values[name] = ToString(val);
-    }
-    template <typename T>
-    void SetSubset(std::string subsetName, std::string name, T val) {
-        subset[subsetName].Set(name, val);
+    Parameters& Set(pstd::string name, T val) {
+        values[name] = pstd::to_string(val);
+        return *this;
     }
 
-    bool Has(const std::string& name) const;
-    bool GetBool(const std::string& name, bool fallback = {}) const;
-    int GetInt(const std::string& name, int fallback = {}) const;
-    float GetFloat(const std::string& name, float fallback = {}) const;
-    vec2i GetVec2i(const std::string& name, vec2i fallback = {}) const;
-    vec3i GetVec3i(const std::string& name, vec3i fallback = {}) const;
-    vec4i GetVec4i(const std::string& name, vec4i fallback = {}) const;
-    vec2 GetVec2(const std::string& name, vec2 fallback = {}) const;
-    vec3 GetVec3(const std::string& name, vec3 fallback = {}) const;
-    vec4 GetVec4(const std::string& name, vec4 fallback = {}) const;
-    std::string GetString(const std::string& name, const std::string& fallback = {}) const;
-    const Parameters& operator[](std::string name) const {
-        return subset[name];
+    bool HasValue(const pstd::string& name) const;
+    bool HasSubset(const pstd::string& name) const;
+
+    pstd::optional<bool> TryGetBool(const pstd::string& name) const;
+    pstd::optional<int> TryGetInt(const pstd::string& name) const;
+    pstd::optional<float> TryGetFloat(const pstd::string& name) const;
+    pstd::optional<vec2i> TryGetVec2i(const pstd::string& name) const;
+    pstd::optional<vec3i> TryGetVec3i(const pstd::string& name) const;
+    pstd::optional<vec4i> TryGetVec4i(const pstd::string& name) const;
+    pstd::optional<vec2> TryGetVec2(const pstd::string& name) const;
+    pstd::optional<vec3> TryGetVec3(const pstd::string& name) const;
+    pstd::optional<vec4> TryGetVec4(const pstd::string& name) const;
+    pstd::optional<pstd::string> TryGetString(const pstd::string& name) const;
+
+#define DefineGetX(R, Type)                                                 \
+    R Get##Type(const pstd::string& name) const {                           \
+        if (auto value = TryGet##Type(name))                                \
+            return *value;                                                  \
+        else                                                                \
+            LOG_FATAL("[Parameters][Get" #Type "]cannot find \"&\"", name); \
+        return {};                                                          \
+    }                                                                       \
+    R Get##Type(const pstd::string& name, const R& fallback) const {        \
+        if (auto value = TryGet##Type(name))                                \
+            return *value;                                                  \
+        else                                                                \
+            return fallback;                                                \
     }
-    Parameters& operator[](std::string name) {
-        return subset[name];
-    }
+    // clang-format off
+    DefineGetX(bool, Bool)
+    DefineGetX(int, Int)
+    DefineGetX(float, Float)
+    DefineGetX(vec2i, Vec2i)
+    DefineGetX(vec3i, Vec3i)
+    DefineGetX(vec4i, Vec4i)
+    DefineGetX(vec2, Vec2)
+    DefineGetX(vec3, Vec3)
+    DefineGetX(vec4, Vec4)
+    DefineGetX(pstd::string, String)
+    // clang-format on
+#undef DefineGetX
+
+                const pstd::vector<Parameters>& GetAll(pstd::string name) const;
+    Parameters& AddSubset(pstd::string name);
+
+    Parameters& operator[](pstd::string name);
+    const Parameters& operator[](pstd::string name) const;
+
     auto begin() {
         return subset.begin();
     }
@@ -52,9 +81,9 @@ struct Parameters {
         return subset.end();
     }
 
-    std::map<std::string, std::string> values;
-    mutable std::map<std::string, Parameters> subset;
-};
+    pstd::map<pstd::string, pstd::string> values;
+    mutable pstd::map<pstd::string, pstd::vector<Parameters>> subset;
+};  // namespace pine
 
 }  // namespace pine
 

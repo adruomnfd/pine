@@ -1,0 +1,130 @@
+Integrator: Path{
+    maxDepth: 6
+
+    sampler: Halton{
+        samplesPerPixel: 32
+    }
+}
+
+Camera: ThinLen{
+    film{
+        outputFileName: results/spheres.bmp
+        size: 1280 360
+        filter: LanczosSinc{
+            radius: 0.5
+        }
+    }
+
+    from: 0 4 16
+    to:   0 0 0
+    fov:  0.12
+}
+
+Shape: Rect{
+    position: 8 16 4
+    ex: 4 0 0
+    ey: 0 0 4
+    material: emissive
+}
+Shape: Plane{    
+    position: 0 0 0
+    normal: 0 1 0
+    material: matte
+}
+Shape: Sphere{
+    position: -2.5 0.5 1
+    radius: 0.5
+    material: glass
+}
+Shape: Sphere{
+    position: -1.25 0.5 1
+    radius: 0.5
+    material: plastic
+}
+Shape: Sphere{
+    position: 0 0.5 1
+    radius: 0.5
+    material: rusty
+}
+Shape: Sphere{
+    position: 1.25 0.5 1
+    radius: 0.5
+    material: silver
+}
+Shape: Sphere{
+    position: 2.5 0.5 1
+    radius: 0.5
+    material: diffuse
+}
+
+Material matte: Layered{
+    layer0: Diffuse{
+        albedo: MultiplyAdd{
+            input: Checkerboard{
+                input: TexCoord
+                frequency: 4.0
+            }
+            mulFactor: 0.95
+            addFactor: 0.05
+        }
+    }
+}
+Material diffuse: Layered{
+    layer0: Diffuse{
+        albedo: 0.95
+    }
+    bumpMap: Multiply{
+        input: Noise{
+            input: Position
+            frequency: 20
+            octaves: 4.0
+        }
+        factor: 0.05
+    }
+}
+Material glass: Layered{
+    layer0: Dielectric{
+        roughness: 0.0
+        eta: 1.45
+    }
+}
+Material plastic: Layered{
+    layer0: Diffuse{
+        albedo: 0.98 0.55 0.02
+    }
+    layer1: Dielectric{
+        albedo: 1.0
+        roughness: 0.0
+        eta: 1.45
+    }
+}
+Material glossy: Layered{
+    layer0: Conductor{
+        albedo: 0.99
+        roughness: Checkerboard{
+            input: TexCoord
+            frequency: 2.0
+        }
+        eta: 1.45
+    }
+}
+Material rusty: Layered{
+    layer0: Conductor{
+        albedo: Noise3D{
+            input: Position
+            frequency: 10
+            octaves: 4
+        }
+        roughness: 0.4
+        eta: 1.45
+    }
+}
+Material silver: Layered{
+    layer0: Conductor{
+        albedo: 0.99
+        roughness: 0.0
+    }
+}
+Material emissive: Emissive{
+    color: 80
+}

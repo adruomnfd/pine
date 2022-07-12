@@ -2,8 +2,8 @@
 
 namespace pine {
 
-std::vector<uint16_t> ComputeRadicalInversePermutations(RNG& rng) {
-    std::vector<uint16_t> perms;
+pstd::vector<uint16_t> ComputeRadicalInversePermutations(RNG& rng) {
+    pstd::vector<uint16_t> perms;
     int permArraySize = 0;
     for (int i = 0; i < PrimeTableSize; i++)
         permArraySize += Primes[i];

@@ -3,29 +3,51 @@
 
 #include <core/light.h>
 #include <util/taggedvariant.h>
+#include <util/distribution.h>
 
-#include <vector>
+#include <pstd/vector.h>
 
 namespace pine {
 
+struct SampledLight {
+    const Light* light = nullptr;
+    float pdf = 0.0f;
+};
+
 struct UniformLightSampler {
-    static UniformLightSampler Create(const Parameters& params, const std::vector<Light>& lights);
-    UniformLightSampler(const std::vector<Light>& lights) : lights(lights) {
+    static UniformLightSampler Create(const Parameters& params, const pstd::vector<Light>& lights);
+    UniformLightSampler(const pstd::vector<Light>& lights) : lights(lights) {
     }
 
-    LightSample Sample(vec3 p, float ul, vec2 ud);
+    SampledLight SampleLight(vec3 p, vec3 n, float ul) const;
+    SampledLight SampleLight(float ul) const;
 
-    std::vector<Light> lights;
+    pstd::vector<Light> lights;
 };
 
-struct LightSampler : TaggedVariant<UniformLightSampler> {
+struct PowerLightSampler {
+    static PowerLightSampler Create(const Parameters& params, const pstd::vector<Light>& lights);
+    PowerLightSampler(const pstd::vector<Light>& lights);
+
+    SampledLight SampleLight(vec3 p, vec3 n, float ul) const;
+    SampledLight SampleLight(float ul) const;
+
+    pstd::vector<Light> lights;
+    Distribution1D powerDistr;
+};
+
+struct LightSampler : TaggedVariant<UniformLightSampler, PowerLightSampler> {
     using TaggedVariant::TaggedVariant;
-    static LightSampler Create(const Parameters& params, const std::vector<Light>& lights);
 
-    LightSample Sample(vec3 p, float ul, vec2 ud) {
-        return Dispatch([&](auto&& x) { return x.Sample(p, ul, ud); });
+    SampledLight SampleLight(vec3 p, vec3 n, float ul) const {
+        return Dispatch([&](auto&& x) { return x.SampleLight(p, n, ul); });
+    }
+    SampledLight SampleLight(float ul) const {
+        return Dispatch([&](auto&& x) { return x.SampleLight(ul); });
     }
 };
+
+LightSampler CreateLightSampler(const Parameters& params, const pstd::vector<Light>& lights);
 
 }  // namespace pine
 

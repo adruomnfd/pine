@@ -3,15 +3,18 @@
 
 #include <util/log.h>
 
-#include <map>
-#include <memory>
+#include <pstd/map.h>
+#include <pstd/memory.h>
 
 namespace pine {
 
 struct Profiler {
-    static void ReportStat();
+    static void Initialize() {
+        main = pstd::unique_ptr<Profiler>(new Profiler("Main"));
+    }
+    static void Finalize();
 
-    Profiler(std::string description);
+    Profiler(pstd::string description);
     ~Profiler();
     PINE_DELETE_COPY_MOVE(Profiler)
 
@@ -21,14 +24,16 @@ struct Profiler {
                    lhs.name == rhs.name;
         }
 
-        std::shared_ptr<Record> parent;
-        std::map<std::string, std::shared_ptr<Record>> children;
-        std::string name;
+        pstd::shared_ptr<Record> parent;
+        pstd::map<pstd::string, pstd::shared_ptr<Record>> children;
+        pstd::string name;
         double time = 0.0f;
         int sampleCount = 0;
     };
 
     Timer timer;
+
+    static inline pstd::unique_ptr<Profiler> main;
 };
 
 enum class ProfilePhase {
@@ -49,7 +54,7 @@ enum class ProfilePhase {
     SampleEnvLight,
     NumPhase
 };
-static const char* profilePhaseName[] = {
+inline const char* profilePhaseName[] = {
     "GenerateRay",     "ShapeIntersect", "BoundingBoxIntersect", "IntersectClosest",
     "IntersectShadow", "IntersectTr",    "MaterialSample",       "EstimateDirect",
     "EstimateLi",      "MediumTr",       "MediumSample",         "SearchNeighbors",
@@ -57,7 +62,7 @@ static const char* profilePhaseName[] = {
 
 struct SampledProfiler {
     static void Initialize();
-    static void ReportStat();
+    static void Finalize();
 
     SampledProfiler(ProfilePhase phase);
     ~SampledProfiler();
