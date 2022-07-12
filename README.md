@@ -12,12 +12,12 @@ cmake --build build
 ```
 build/pine scenes/spheres.txt
 ```
-<img src="docs/teasers/spheres_no_tex.bmp" width="600"/>
-/pine.git
+<img src="docs/teasers/spheres_no_tex.bmp" width="600"/>  
+
 ```
 build/pine scenes/cloud.txt
 ```
-<img src="docs/teasers/cloud.png" width="600"/>
+<img src="docs/teasers/cloud.png" width="600"/>  
 
 <a name="TODOs"></a>
 
