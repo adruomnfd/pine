@@ -1,4 +1,4 @@
-*pine* is a physical based renderer.  
+*pine* is a physically based renderer.  
 Feel free to play around, open issues, or help with one of the [TODOs](#TODOs).
 
 ## Build with CMake:
