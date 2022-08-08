@@ -1,9 +1,9 @@
 #include <pstd/system.h>
 #include <pstd/string.h>
 
-#include <execinfo.h>
-#include <cxxabi.h>
-#include <stdlib.h>
+//#include <execinfo.h>
+//#include <cxxabi.h>
+//#include <stdlib.h>
 
 namespace pstd {
 
@@ -12,6 +12,8 @@ void abort() {
 }
 
 string stacktrace() {
+    return "";
+    /*
     string str = "stack trace\n";
 
     constexpr int MaxFrames = 64;
@@ -46,6 +48,7 @@ string stacktrace() {
     }
 
     return str;
+    */
 }
 
 }  // namespace pstd
